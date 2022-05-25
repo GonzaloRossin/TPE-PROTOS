@@ -1,0 +1,68 @@
+leer los rfcs (2). son cortitos.
+
+armar repo y meter los archivos
+
+sistema de construccion. los makes. makefile re pinta
+servidor y cliente
+
+f sanitize para erores de memoria
+valgrind puede ir
+
+para pruebas de performance se apaga el f-sanitize
+
+
+
+tenemos que hacer un servidor proxy
+
+mains y construye
+
+armar servidores, sockets pasivos ipv4 y ipv6 (2 sockets pasivos con el mismo handler)
+que se conecte a un origin cualquiera fijo
+
+aceptas conexiones y las mandas a ese fijo. ahora tenes un proxy transparente TCP funcional que no le podes decir a donde ir porque el origin es fijo.
+
+otro(s, ipv4 y 6) socket pasivo para el configuration managment (nuestro protocolo)
+
+handlers distintos para el socks y nuestro protocolo
+
+registro los sockets pasivos para lectura (me importa cuando viene alguien)
+
+se me conecta alguien. Le tengo que hacer ACCEPT (te da el socket de la nueva conexión tcp).
+
+creo otro socket (syscall SOCKET) para conectarme al origin. Le hago CONNECT.
+lo metés en el select con escritura para saber cuando tiene novedad, va a escribir.
+
+susbrimbis los sockets para lectura. cuando uno escribre me entero.
+
+hago dos buffers.
+
+de uno escribo lo que llega del cliente, y en el otro lo que llega del origin.
+cada buffer sale por el otro.
+
+si hay algo en un buffer, me inscribo al socket correspondiente.
+
+ej subscripcion os->buffer->c
+para escribir en el C me subscirbo a su escritura.
+Cuando se llena el buffer me desinscribo a la lectura del origin.
+
+(en linux con ulimit cambias la cantidad de file descriptors dispoinble.
+select banca hasta 1024 sockets) Ocupas sockets para los pasivos, salda, etc.
+quedan aprox 1000 sockets para 500 clientes.
+hay hasta 1000 buffers, elegir bien el tamaño de 1 buffer. (4k pinta bien, son 4mb en memoria)
+
+google-chrome --proxy-server
+
+
+
+
+
+
+
+arrancar descargando el main del campus.
+args.c y args.h son para usar bien el man. está en campus. ignorar doh, es dns over http de otros cuatris.
+hay banda de parches, para aplicarlos:
+	git am name.patch
+	o con gitkraken, debe tener un apply patch
+tests
+
+
