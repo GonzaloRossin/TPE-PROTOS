@@ -13,7 +13,7 @@ tcpEchoClient:
 tcpEchoServer:      
 	$(COMPILER) $(CFLAGS) -o tcpEchoServer tcpEchoServer.c tcpServerUtil.c $(COMMON)
 tcpEchoAddrInfo:      
-	$(COMPILER) $(CFLAGS) -o tcpEchoAddrInfo tcpEchoAddrInfo.c tcpServerUtil.c tcpClientUtil.c $(COMMON)
+	$(COMPILER) $(CFLAGS) -o tcpEchoAddrInfo tcpEchoAddrInfo.c tcpServerUtil.c tcpClientUtil.c proxyHandler.c $(COMMON)
 udpEchoServer:      
 	$(COMPILER) $(CFLAGS) -o udpEchoServer udpEchoServer.c $(COMMON)
 udpEchoClient:

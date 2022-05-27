@@ -12,6 +12,7 @@
 #include "logger.h"
 #include "tcpServerUtil.h"
 #include "tcpClientUtil.h"
+#include "proxyHandler.h"
 
 #define max(n1,n2)     ((n1)>(n2) ? (n1) : (n2))
 
@@ -28,10 +29,6 @@ struct buffer {
 	size_t len;     // longitud del buffer
 	size_t from;    // desde donde falta escribir
 };
-
-//Se encarga de devolver el socket a quien el proxy debe mandar
-//crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
-int handleProxyAddr();
 
 /**
   Se encarga de escribir la respuesta faltante en forma no bloqueante
@@ -245,8 +242,9 @@ int main(int argc , char *argv[])
 				int socketToWrite = handleProxyAddr();
 				//handleWrite(sd, bufferWrite + i, &writefds);
 				handleWrite(socketToWrite, bufferWrite + i, &writefds);
-				
-				FD_CLR(sd, &writefds);
+				FD_CLR(sd, &writefds); //ya que no lo cierra el handleWrite(sd
+
+				readFromProxy(socketToWrite);
 			}
 		}
 
@@ -294,22 +292,6 @@ void clear( struct buffer * buffer) {
 	free(buffer->buffer);
 	buffer->buffer = NULL;
 	buffer->from = buffer->len = 0;
-}
-
-int handleProxyAddr(){
-	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
-	char *echoString = "hola"; //argv[2]; // Second arg: string to echo
-
-	// Third arg server port
-	char * port = "80";//argv[3];
-
-	// Create a reliable, stream socket using TCP
-	int sock = tcpClientSocket(server, port);
-	if (sock < 0) {
-		log(FATAL, "socket() failed")
-	}
-	log(DEBUG, "new socket is %d", sock);
-	return sock;
 }
 
 // Hay algo para escribir?
