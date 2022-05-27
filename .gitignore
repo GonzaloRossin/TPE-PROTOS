@@ -348,3 +348,7 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+marcelo_starting_files/tcpEchoAddrInfo
+
+marcelo_starting_files/tcpEchoClient
