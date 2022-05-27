@@ -80,6 +80,7 @@ int main(int argc , char *argv[])
 	
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
+	
 	if( (master_socket[master_socket_size] = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
 	{
 		log(ERROR, "socket IPv4 failed");
