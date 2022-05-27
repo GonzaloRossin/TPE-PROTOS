@@ -40,6 +40,9 @@ int main(int argc, char *argv[]) {
 	unsigned int totalBytesRcvd = 0; // Count of total bytes received
 	log(INFO, "Received: ")     // Setup to print the echoed string
 	while (totalBytesRcvd < echoStringLen && numBytes >=0) {
+
+		log(DEBUG, "in while");
+		
 		char buffer[BUFSIZE]; 
 		/* Receive up to the buffer size (minus 1 to leave space for a null terminator) bytes from the sender */
 		numBytes = recv(sock, buffer, BUFSIZE - 1, 0);

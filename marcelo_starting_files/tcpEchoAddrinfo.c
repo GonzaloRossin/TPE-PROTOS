@@ -11,6 +11,7 @@
 #include <sys/time.h> 
 #include "logger.h"
 #include "tcpServerUtil.h"
+#include "tcpClientUtil.h"
 
 #define max(n1,n2)     ((n1)>(n2) ? (n1) : (n2))
 
@@ -27,6 +28,10 @@ struct buffer {
 	size_t len;     // longitud del buffer
 	size_t from;    // desde donde falta escribir
 };
+
+//Se encarga de devolver el socket a quien el proxy debe mandar
+//crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
+int handleProxyAddr();
 
 /**
   Se encarga de escribir la respuesta faltante en forma no bloqueante
@@ -78,6 +83,16 @@ int main(int argc , char *argv[])
 
 	// TODO adaptar setupTCPServerSocket para que cree socket para IPv4 e IPv6 y ademas soporte opciones (y asi no repetor codigo)
 	
+	/*
+	char * argvv = "8888";
+
+	int servSock = setupTCPServerSocket(argvv);
+	if (servSock < 0 )
+	{
+		return 1;
+	}
+	*/
+
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
 	
@@ -227,7 +242,11 @@ int main(int argc , char *argv[])
 			sd = client_socket[i];
 
 			if (FD_ISSET(sd, &writefds)) {
-				handleWrite(sd, bufferWrite + i, &writefds);
+				int socketToWrite = handleProxyAddr();
+				//handleWrite(sd, bufferWrite + i, &writefds);
+				handleWrite(socketToWrite, bufferWrite + i, &writefds);
+				
+				FD_CLR(sd, &writefds);
 			}
 		}
 
@@ -252,7 +271,7 @@ int main(int argc , char *argv[])
 					FD_CLR(sd, &writefds);
 					// Limpiamos el buffer asociado, para que no lo "herede" otra sesión
 					clear(bufferWrite + i);
-				}
+				} 
 				else {
 					log(DEBUG, "Received %zu bytes from socket %d\n", valread, sd);
 					// activamos el socket para escritura y almacenamos en el buffer de salida
@@ -275,6 +294,22 @@ void clear( struct buffer * buffer) {
 	free(buffer->buffer);
 	buffer->buffer = NULL;
 	buffer->from = buffer->len = 0;
+}
+
+int handleProxyAddr(){
+	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
+	char *echoString = "hola"; //argv[2]; // Second arg: string to echo
+
+	// Third arg server port
+	char * port = "80";//argv[3];
+
+	// Create a reliable, stream socket using TCP
+	int sock = tcpClientSocket(server, port);
+	if (sock < 0) {
+		log(FATAL, "socket() failed")
+	}
+	log(DEBUG, "new socket is %d", sock);
+	return sock;
 }
 
 // Hay algo para escribir?
