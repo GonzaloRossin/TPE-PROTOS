@@ -274,8 +274,7 @@ int main(int argc , char *argv[])
 			{
 				log(DEBUG, "reading client %d on socket %d", i, clientSocket);
 				//Check if it was for closing , and also read the incoming message
-				//if ((valread = read( sd , buffer_read_ptr(&bufferFromClient[i], &nbytes) , nbytes)) <= 0)
-				if ((valread = read( sd , &bufferFromClient[i].data , BUFFSIZE)) <= 0)
+				if ((valread = read( sd , &bufferFromClient[i].data_array , BUFFSIZE)) <= 0)
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -293,7 +292,7 @@ int main(int argc , char *argv[])
 					log(DEBUG, "Received %zu bytes from socket %d\n", valread, sd);
 					log(DEBUG, "buffer write ptr %c%c%c",&bufferFromClient[i].data[0],&bufferFromClient[i].data[1],&bufferFromClient[i].data[2]);
 					for(int a=0; a<10; a++){
-						log(DEBUG, "%c",&bufferFromClient[i].data[a]);
+						log(DEBUG, "%c",bufferFromClient[i].data_array[a]);
 					}
 					// activamos el socket para escritura y almacenamos en el buffer de salida
 					FD_SET(sd, &writefds);
@@ -325,13 +324,13 @@ int main(int argc , char *argv[])
 // salida, pero le pido que mande 1000 bytes.Por lo que tenemos que hacer un send no bloqueante,
 // verificando la cantidad de bytes que pudo consumir TCP.
 void handleWrite(int socket, struct buffer * buffer, fd_set * writefds) {
-	//size_t bytesToSend = buffer->write - buffer->read;
-	size_t bytesToSend = 121;
+	size_t bytesToSend = buffer->write - buffer->read;
 	log(DEBUG, "bytesToSend %d", bytesToSend);
 	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
 		log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
-		char manualSend[] = "GET http://google.com/ HTTP/1.1\nHost: google.com\n\nUser-Agent: curl/7.64.0\nAccept: */*\n";
-		size_t bytesSent = send(socket, manualSend, sizeof(manualSend),  MSG_DONTWAIT); 
+		//char manualSend[] = "GET http://google.com/ HTTP/1.1\nHost: google.com\n\nUser-Agent: curl/7.64.0\nAccept: */*\n";
+		//size_t bytesSent = send(socket, manualSend, sizeof(manualSend),  MSG_DONTWAIT); 
+		size_t bytesSent = send(socket, buffer->data_array, bytesToSend,  MSG_DONTWAIT); 
 		log(INFO, "Sent %zu bytes\n", bytesSent);
 
 		if ( bytesSent < 0) {
