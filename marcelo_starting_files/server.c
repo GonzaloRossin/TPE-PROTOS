@@ -46,7 +46,7 @@ int main(int argc , char *argv[])
 	int opt = TRUE;
 	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
-	int addrlen , new_socket , client_socket[MAX_SOCKETS/2] , remote_socket[MAX_SOCKETS/2] , max_clients = MAX_SOCKETS/2 , activity, i , sd;
+	int addrlen , new_socket , new_remote_socket , client_socket[MAX_SOCKETS/2] , remote_socket[MAX_SOCKETS/2] , max_clients = MAX_SOCKETS/2 , activity, i , sd, clientSocket, remoteSocket;
 	long valread;
 	int max_sd;
 	struct sockaddr_in address;
@@ -207,9 +207,14 @@ int main(int argc , char *argv[])
 			int mSock = master_socket[sdMaster];
 			if (FD_ISSET(mSock, &readfds)) 
 			{
-				if ((new_socket = acceptTCPConnection(mSock)) < 0)
+				if ((new_socket = acceptTCPConnection(mSock)) < 0) //open new client socket
 				{
 					log(ERROR, "Accept error on master socket %d", mSock);
+					continue;
+				}
+				if ((new_remote_socket = handleProxyAddr()) < 0) //open new remote socket
+				{
+					log(ERROR, "Accept error on creatin new remote socket %d", new_remote_socket);
 					continue;
 				}
 
@@ -220,15 +225,22 @@ int main(int argc , char *argv[])
 					if( client_socket[i] == 0 )
 					{
 						client_socket[i] = new_socket;
-						log(DEBUG, "Adding to list of sockets as %d\n" , i);
-								//init buffer from client of client i
-						uint8_t * data = (uint8_t *)malloc(sizeof u_int8_t * BUFFSIZE);
-						memset(data, 0, sizeof (uint8_t * BUFFSIZE));
-						buffer_init(bufferFromClient[i], BUFFSIZE, data);
-								//init buffer to client of client i
-						uint8_t * data_2 = (uint8_t *)malloc(sizeof u_int8_t * BUFFSIZE);
-						memset(data_2, 0, sizeof (uint8_t * BUFFSIZE));
-						buffer_init(bufferToClient[i], BUFFSIZE, data_2);
+						remote_socket[i] = new_remote_socket;
+
+						log(DEBUG, "Adding client to list of sockets as %d\n" , i);
+						log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
+
+								//init buffer fromClient of client i
+						uint8_t * data = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
+						memset(data, 0, sizeof(uint8_t) * BUFFSIZE);
+						buffer_init(&bufferFromClient[i], BUFFSIZE, data);
+					
+
+								//init buffer toClient of client i
+						uint8_t * data_2 = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
+						memset(data_2, 0, sizeof(uint8_t) * BUFFSIZE);
+						buffer_init(&bufferToClient[i], BUFFSIZE, data_2);
+
 						break;
 					}
 				}
@@ -237,11 +249,13 @@ int main(int argc , char *argv[])
 
 		for(i =0; i < max_clients; i++) {
 			sd = client_socket[i];
+			clientSocket = client_socket[i];
+			remoteSocket = remote_socket[i];
 
 			if (FD_ISSET(sd, &writefds)) {
-				int remoteSocket = handleProxyAddr();
 				//handleWrite(sd, bufferWrite + i, &writefds);
-				handleWrite(remoteSocket, bufferWrite + i, &writefds);
+				log(DEBUG, "trying to send");
+				handleWrite(remoteSocket, &bufferFromClient[i], &writefds);
 				FD_CLR(sd, &writefds); //ya que no lo cierra el handleWrite(sd
 
 				readFromProxy(remoteSocket, sd);
@@ -252,11 +266,16 @@ int main(int argc , char *argv[])
 		for (i = 0; i < max_clients; i++) 
 		{
 			sd = client_socket[i];
+			clientSocket = client_socket[i];
+			remoteSocket = remote_socket[i];
+			size_t nbytes;
 
 			if (FD_ISSET( sd , &readfds)) 
 			{
+				log(DEBUG, "reading client %d on socket %d", i, clientSocket);
 				//Check if it was for closing , and also read the incoming message
-				if ((valread = read( sd , buffer, BUFFSIZE)) <= 0)
+				//if ((valread = read( sd , buffer_read_ptr(&bufferFromClient[i], &nbytes) , nbytes)) <= 0)
+				if ((valread = read( sd , &bufferFromClient[i].data , BUFFSIZE)) <= 0)
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -268,18 +287,30 @@ int main(int argc , char *argv[])
 
 					FD_CLR(sd, &writefds);
 					// Limpiamos el buffer asociado, para que no lo "herede" otra sesión
-					clear(bufferWrite + i);
+					//clear(bufferWrite + i);
 				} 
 				else {
 					log(DEBUG, "Received %zu bytes from socket %d\n", valread, sd);
+					log(DEBUG, "buffer write ptr %c%c%c",&bufferFromClient[i].data[0],&bufferFromClient[i].data[1],&bufferFromClient[i].data[2]);
+					for(int a=0; a<10; a++){
+						log(DEBUG, "%c",&bufferFromClient[i].data[a]);
+					}
 					// activamos el socket para escritura y almacenamos en el buffer de salida
 					FD_SET(sd, &writefds);
+					buffer_write_adv(&bufferFromClient[i], valread);
+
+
 
 					// Tal vez ya habia datos en el buffer
 					// TODO: validar realloc != NULL
+
+					
+					//buffer_write(bufferFromClient[i], ); //esto ya lo hace la funcion read de arriba
+				/*
 					bufferWrite[i].buffer = realloc(bufferWrite[i].buffer, bufferWrite[i].len + valread);
 					memcpy(bufferWrite[i].buffer + bufferWrite[i].len, buffer, valread);
 					bufferWrite[i].len += valread;
+				*/
 				}
 			}
 		}
@@ -294,10 +325,13 @@ int main(int argc , char *argv[])
 // salida, pero le pido que mande 1000 bytes.Por lo que tenemos que hacer un send no bloqueante,
 // verificando la cantidad de bytes que pudo consumir TCP.
 void handleWrite(int socket, struct buffer * buffer, fd_set * writefds) {
-	size_t bytesToSend = buffer->len - buffer->from;
+	//size_t bytesToSend = buffer->write - buffer->read;
+	size_t bytesToSend = 121;
+	log(DEBUG, "bytesToSend %d", bytesToSend);
 	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
 		log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
-		size_t bytesSent = send(socket, buffer->buffer + buffer->from,bytesToSend,  MSG_DONTWAIT); 
+		char manualSend[] = "GET http://google.com/ HTTP/1.1\nHost: google.com\n\nUser-Agent: curl/7.64.0\nAccept: */*\n";
+		size_t bytesSent = send(socket, manualSend, sizeof(manualSend),  MSG_DONTWAIT); 
 		log(INFO, "Sent %zu bytes\n", bytesSent);
 
 		if ( bytesSent < 0) {
@@ -309,10 +343,10 @@ void handleWrite(int socket, struct buffer * buffer, fd_set * writefds) {
 
 			// Si se pudieron mandar todos los bytes limpiamos el buffer y sacamos el fd para el select
 			if ( bytesLeft == 0) {
-				clear(buffer);
+				buffer_reset(buffer);
 				FD_CLR(socket, writefds);
 			} else {
-				buffer->from += bytesSent;
+				buffer->write += bytesSent;
 			}
 		}
 	}
