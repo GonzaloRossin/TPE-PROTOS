@@ -1,9 +1,9 @@
 .PHONY=clean all
 COMPILER=gcc
 CFLAGS = -Wall -fsanitize=address -g
-all: clean tcpEchoClient tcpEchoAddrInfo udpEchoClient
+all: clean tcpEchoClient server udpEchoClient
 clean:	
-	- rm -f *.o  tcpEchoclient tcpEchoAddrInfo udpEchoClient
+	- rm -f *.o  tcpEchoclient server udpEchoClient
 
 COMMON =  logger.c util.c
 addrinfo:      
@@ -12,8 +12,8 @@ tcpEchoClient:
 	$(COMPILER) $(CFLAGS) -o tcpEchoClient tcpEchoClient.c tcpClientUtil.c $(COMMON)
 tcpEchoServer:      
 	$(COMPILER) $(CFLAGS) -o tcpEchoServer tcpEchoServer.c tcpServerUtil.c $(COMMON)
-tcpEchoAddrInfo:      
-	$(COMPILER) $(CFLAGS) -o tcpEchoAddrInfo tcpEchoAddrInfo.c tcpServerUtil.c tcpClientUtil.c proxyHandler.c $(COMMON)
+server:      
+	$(COMPILER) $(CFLAGS) -o server server.c tcpServerUtil.c tcpClientUtil.c proxyHandler.c $(COMMON)
 udpEchoServer:      
 	$(COMPILER) $(CFLAGS) -o udpEchoServer udpEchoServer.c $(COMMON)
 udpEchoClient:
