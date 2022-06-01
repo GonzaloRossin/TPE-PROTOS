@@ -23,9 +23,9 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#include "socks5.h"
+//include "socks5.h" //comento esto porque no lo dieron
 #include "selector.h"
-#include "socks5nio.h"
+//#include "socks5nio.h" //comento esto porque no lo dieron
 
 static bool done = false;
 
