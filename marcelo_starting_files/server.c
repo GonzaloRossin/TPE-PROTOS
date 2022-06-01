@@ -13,6 +13,7 @@
 #include "tcpServerUtil.h"
 #include "tcpClientUtil.h"
 #include "proxyHandler.h"
+#include "buffer.h"
 
 #define max(n1,n2)     ((n1)>(n2) ? (n1) : (n2))
 
@@ -24,20 +25,10 @@
 #define PORT_UDP 8888
 #define MAX_PENDING_CONNECTIONS   3    // un valor bajo, para realizar pruebas
 
-struct buffer {
-	char * buffer;
-	size_t len;     // longitud del buffer
-	size_t from;    // desde donde falta escribir
-};
-
 /**
   Se encarga de escribir la respuesta faltante en forma no bloqueante
   */
 void handleWrite(int socket, struct buffer * buffer, fd_set * writefds);
-/**
-  Limpia el buffer de escritura asociado a un socket
-  */
-void clear( struct buffer * buffer);
 
 /**
   Crea y "bindea" el socket server UDP
@@ -55,7 +46,7 @@ int main(int argc , char *argv[])
 	int opt = TRUE;
 	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
-	int addrlen , new_socket , client_socket[MAX_SOCKETS] , max_clients = MAX_SOCKETS , activity, i , sd;
+	int addrlen , new_socket , client_socket[MAX_SOCKETS/2] , remote_socket[MAX_SOCKETS/2] , max_clients = MAX_SOCKETS/2 , activity, i , sd;
 	long valread;
 	int max_sd;
 	struct sockaddr_in address;
@@ -63,33 +54,34 @@ int main(int argc , char *argv[])
 	struct sockaddr_storage clntAddr; // Client address
 	socklen_t clntAddrLen = sizeof(clntAddr);
 
-	char buffer[BUFFSIZE + 1];  //data buffer of 1K
+	//char buffer[BUFFSIZE + 1];  //data buffer of 1K
 
 	//set of socket descriptors
 	fd_set readfds;
-
-	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
-	struct buffer bufferWrite[MAX_SOCKETS];
-	memset(bufferWrite, 0, sizeof bufferWrite);
 
 	// y tambien los flags para writes
 	fd_set writefds;
 
 	//initialise all client_socket[] to 0 so not checked
 	memset(client_socket, 0, sizeof(client_socket));
+	//initialise all remote_socket[] to 0 so not checked
+	memset(remote_socket, 0, sizeof(remote_socket));
+
+	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
+	//struct buffer bufferWrite[MAX_SOCKETS];
+	//memset(bufferWrite, 0, sizeof bufferWrite);
+
+	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
+	struct buffer bufferFromClient[MAX_SOCKETS];
+	memset(bufferFromClient, 0, sizeof bufferFromClient);
+
+	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
+	struct buffer bufferToClient[MAX_SOCKETS];
+	memset(bufferToClient, 0, sizeof bufferToClient);
+
+
 
 	// TODO adaptar setupTCPServerSocket para que cree socket para IPv4 e IPv6 y ademas soporte opciones (y asi no repetor codigo)
-	
-	/*
-	char * argvv = "8888";
-
-	int servSock = setupTCPServerSocket(argvv);
-	if (servSock < 0 )
-	{
-		return 1;
-	}
-	*/
-
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
 	
@@ -229,6 +221,14 @@ int main(int argc , char *argv[])
 					{
 						client_socket[i] = new_socket;
 						log(DEBUG, "Adding to list of sockets as %d\n" , i);
+								//init buffer from client of client i
+						uint8_t * data = (uint8_t *)malloc(sizeof u_int8_t * BUFFSIZE);
+						memset(data, 0, sizeof (uint8_t * BUFFSIZE));
+						buffer_init(bufferFromClient[i], BUFFSIZE, data);
+								//init buffer to client of client i
+						uint8_t * data_2 = (uint8_t *)malloc(sizeof u_int8_t * BUFFSIZE);
+						memset(data_2, 0, sizeof (uint8_t * BUFFSIZE));
+						buffer_init(bufferToClient[i], BUFFSIZE, data_2);
 						break;
 					}
 				}
@@ -286,12 +286,6 @@ int main(int argc , char *argv[])
 	}
 
 	return 0;
-}
-
-void clear( struct buffer * buffer) {
-	free(buffer->buffer);
-	buffer->buffer = NULL;
-	buffer->from = buffer->len = 0;
 }
 
 // Hay algo para escribir?
