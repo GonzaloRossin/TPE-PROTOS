@@ -17,4 +17,4 @@
 //crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
 int handleProxyAddr();
 
-void readFromProxy(int socket);
+void readFromProxy(int remoteSocket, int clientSocket);

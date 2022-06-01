@@ -239,12 +239,12 @@ int main(int argc , char *argv[])
 			sd = client_socket[i];
 
 			if (FD_ISSET(sd, &writefds)) {
-				int socketToWrite = handleProxyAddr();
+				int remoteSocket = handleProxyAddr();
 				//handleWrite(sd, bufferWrite + i, &writefds);
-				handleWrite(socketToWrite, bufferWrite + i, &writefds);
+				handleWrite(remoteSocket, bufferWrite + i, &writefds);
 				FD_CLR(sd, &writefds); //ya que no lo cierra el handleWrite(sd
 
-				readFromProxy(socketToWrite);
+				readFromProxy(remoteSocket, sd);
 			}
 		}
 

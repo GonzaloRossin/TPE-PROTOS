@@ -27,8 +27,8 @@ int handleProxyAddr(){
 	return sock;
 }
 
-void readFromProxy(int sd){
-    if ((valread = read( sd , buffer, BUFFSIZE)) <= 0) {
+void readFromProxy(int remoteSocket, int clientSocket){
+    if ((valread = read( remoteSocket , buffer, BUFFSIZE)) <= 0) {
         /*
         //Somebody disconnected , get his details and print
         getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -45,7 +45,7 @@ void readFromProxy(int sd){
         log(INFO, "Host disconnected");
     } 
     else {
-        log(DEBUG, "Received %zu bytes from socket %d\n", valread, sd);
+        log(DEBUG, "Received %zu bytes from socket %d\n", valread, remoteSocket);
         // activamos el socket para escritura y almacenamos en el buffer de salida
         //FD_SET(sd, &writefds);
 
@@ -53,6 +53,9 @@ void readFromProxy(int sd){
         // TODO: validar realloc != NULL
 
         log(DEBUG, "%s", buffer);
+
+        size_t bytesSent = send(clientSocket, buffer, valread,  MSG_DONTWAIT); 
+        log(DEBUG, "bytesSent %d, valread %d", bytesSent, valread);
 
         /*
         bufferWrite[i].buffer = realloc(bufferWrite[i].buffer, bufferWrite[i].len + valread);
