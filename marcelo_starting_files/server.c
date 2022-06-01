@@ -26,11 +26,6 @@
 #define MAX_PENDING_CONNECTIONS   3    // un valor bajo, para realizar pruebas
 
 /**
-  Se encarga de escribir la respuesta faltante en forma no bloqueante
-  */
-void handleWrite(int socket, struct buffer * buffer, fd_set * writefds);
-
-/**
   Crea y "bindea" el socket server UDP
   */
 int udpSocket(int port);
@@ -177,9 +172,11 @@ int main(int argc , char *argv[])
 			// socket descriptor
 			sd = client_socket[i];
 
-			// if valid socket descriptor then add to read list
-			if(sd > 0)
+			// if valid socket descriptor then add to read list, and also its corresponding remote socket
+			if(sd > 0){
 				FD_SET( sd , &readfds);
+				FD_SET(remote_socket[i] , &readfds);
+			}
 
 			// highest file descriptor number, need it for the select function
 			if(sd > max_sd)
@@ -248,56 +245,104 @@ int main(int argc , char *argv[])
 		}
 
 		for(i =0; i < max_clients; i++) {
-			sd = client_socket[i];
 			clientSocket = client_socket[i];
 			remoteSocket = remote_socket[i];
 
-			if (FD_ISSET(sd, &writefds)) {
-				//handleWrite(sd, bufferWrite + i, &writefds);
+			if (FD_ISSET(clientSocket, &writefds)) {
+				log(DEBUG, "trying to send client content to his remote socket");
+				handleWrite(remoteSocket, &bufferFromClient[i], &writefds);
+				FD_CLR(clientSocket, &writefds);
+
+				FD_SET(remoteSocket, &writefds);
+				//readFromProxy(remoteSocket, clientSocket, &writefds);
+			}
+			if (FD_ISSET(remoteSocket, &writefds)) {
+				//remote socket wants to write, write it to client
+				log(DEBUG, "remote socket %d wants to write to its client socket %d", remoteSocket, clientSocket);
+				readFromProxy(remoteSocket, clientSocket, &writefds);
+				//readFromProxy(remoteSocket, clientSocket, &writefds); //hace read y write de una, hay que dividirlo
+			
+				/*
 				log(DEBUG, "trying to send");
 				handleWrite(remoteSocket, &bufferFromClient[i], &writefds);
-				FD_CLR(sd, &writefds); //ya que no lo cierra el handleWrite(sd
 
-				readFromProxy(remoteSocket, sd);
+				readFromProxy(remoteSocket, sd, &bufferFromClient[i]);
+				*/
 			}
+
 		}
 
 		//else its some IO operation on some other socket :)
 		for (i = 0; i < max_clients; i++) 
 		{
-			sd = client_socket[i];
+			//sd = client_socket[i];
 			clientSocket = client_socket[i];
 			remoteSocket = remote_socket[i];
 			size_t nbytes;
 
-			if (FD_ISSET( sd , &readfds)) 
+			if (FD_ISSET( clientSocket , &readfds)) 
 			{
 				log(DEBUG, "reading client %d on socket %d", i, clientSocket);
 				//Check if it was for closing , and also read the incoming message
-				if ((valread = read( sd , &bufferFromClient[i].data_array , BUFFSIZE)) <= 0)
+				if ((valread = read( clientSocket , &bufferFromClient[i].data_array , BUFFSIZE)) <= 0)
 				{
 					//Somebody disconnected , get his details and print
-					getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
+					getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
 					log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
 
 					//Close the socket and mark as 0 in list for reuse
-					close( sd );
+					close( clientSocket );
 					client_socket[i] = 0;
 
-					FD_CLR(sd, &writefds);
+					FD_CLR(clientSocket, &writefds);
 					// Limpiamos el buffer asociado, para que no lo "herede" otra sesión
-					//clear(bufferWrite + i);
+					buffer_reset(&bufferFromClient[i]);
 				} 
 				else {
-					log(DEBUG, "Received %zu bytes from socket %d\n", valread, sd);
-					log(DEBUG, "buffer write ptr %c%c%c",&bufferFromClient[i].data[0],&bufferFromClient[i].data[1],&bufferFromClient[i].data[2]);
-					for(int a=0; a<10; a++){
-						log(DEBUG, "%c",bufferFromClient[i].data_array[a]);
-					}
-					// activamos el socket para escritura y almacenamos en el buffer de salida
-					FD_SET(sd, &writefds);
+					log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
+					// activamos el socket para escritura
+					// ya almacena en el buffer de salida la funcion read de arriba
+					FD_SET(clientSocket, &writefds);
 					buffer_write_adv(&bufferFromClient[i], valread);
 
+
+
+					// Tal vez ya habia datos en el buffer
+					// TODO: validar realloc != NULL
+
+					
+					//buffer_write(bufferFromClient[i], ); //esto ya lo hace la funcion read de arriba
+				/*
+					bufferWrite[i].buffer = realloc(bufferWrite[i].buffer, bufferWrite[i].len + valread);
+					memcpy(bufferWrite[i].buffer + bufferWrite[i].len, buffer, valread);
+					bufferWrite[i].len += valread;
+				*/
+				}
+			}
+			if (FD_ISSET(remoteSocket , &readfds)) 
+			{
+				log(DEBUG, "reading remote of client %d on socket %d", i, remoteSocket);
+				//Check if it was for closing , and also read the incoming message
+				if ((valread = read( clientSocket , &bufferToClient[i].data_array , BUFFSIZE)) <= 0)
+				{
+					//Somebody disconnected , get his details and print
+					getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
+					log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+
+					//Close the socket and mark as 0 in list for reuse
+					close( clientSocket );
+					client_socket[i] = 0;
+
+					FD_CLR(clientSocket, &writefds);
+					// Limpiamos el buffer asociado, para que no lo "herede" otra sesión
+					buffer_reset(&bufferFromClient[i]);
+				} 
+				else {
+					log(DEBUG, "Received %zu bytes from (remote) socket %d\n", valread, remoteSocket);
+					// activamos el socket para escritura
+					// ya almacena en el buffer de salida la funcion read de arriba
+					FD_SET(remoteSocket, &writefds);
+					buffer_write_adv(&bufferToClient[i], valread);
 
 
 					// Tal vez ya habia datos en el buffer
@@ -316,39 +361,6 @@ int main(int argc , char *argv[])
 	}
 
 	return 0;
-}
-
-// Hay algo para escribir?
-// Si está listo para escribir, escribimos. El problema es que a pesar de tener buffer para poder
-// escribir, tal vez no sea suficiente. Por ejemplo podría tener 100 bytes libres en el buffer de
-// salida, pero le pido que mande 1000 bytes.Por lo que tenemos que hacer un send no bloqueante,
-// verificando la cantidad de bytes que pudo consumir TCP.
-void handleWrite(int socket, struct buffer * buffer, fd_set * writefds) {
-	size_t bytesToSend = buffer->write - buffer->read;
-	log(DEBUG, "bytesToSend %d", bytesToSend);
-	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
-		log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
-		//char manualSend[] = "GET http://google.com/ HTTP/1.1\nHost: google.com\n\nUser-Agent: curl/7.64.0\nAccept: */*\n";
-		//size_t bytesSent = send(socket, manualSend, sizeof(manualSend),  MSG_DONTWAIT); 
-		size_t bytesSent = send(socket, buffer->data_array, bytesToSend,  MSG_DONTWAIT); 
-		log(INFO, "Sent %zu bytes\n", bytesSent);
-
-		if ( bytesSent < 0) {
-			// Esto no deberia pasar ya que el socket estaba listo para escritura
-			// TODO: manejar el error
-			log(FATAL, "Error sending to socket %d", socket);
-		} else {
-			size_t bytesLeft = bytesSent - bytesToSend;
-
-			// Si se pudieron mandar todos los bytes limpiamos el buffer y sacamos el fd para el select
-			if ( bytesLeft == 0) {
-				buffer_reset(buffer);
-				FD_CLR(socket, writefds);
-			} else {
-				buffer->write += bytesSent;
-			}
-		}
-	}
 }
 
 int udpSocket(int port) {

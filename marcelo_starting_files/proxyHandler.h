@@ -12,9 +12,15 @@
 #include "logger.h"
 #include "tcpServerUtil.h"
 #include "tcpClientUtil.h"
+#include "buffer.h"
 
 //Se encarga de devolver el socket a quien el proxy debe mandar
 //crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
 int handleProxyAddr();
 
-void readFromProxy(int remoteSocket, int clientSocket);
+void readFromProxy(int remoteSocket, int clientSocket, fd_set * writefds);
+
+/**
+  Se encarga de escribir la respuesta faltante en forma no bloqueante
+  */
+void handleWrite(int socket, struct buffer * buffer, fd_set * writefds);
