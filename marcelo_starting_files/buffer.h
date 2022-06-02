@@ -83,8 +83,6 @@
  */
 typedef struct buffer buffer;
 struct buffer {
-    uint8_t data_array[1024];
-
     uint8_t *data;
 
     /** límite superior del buffer. inmutable */
