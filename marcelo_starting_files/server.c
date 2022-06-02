@@ -21,7 +21,7 @@
 #define FALSE  0
 #define PORT 8888
 #define MAX_SOCKETS 30
-#define BUFFSIZE 1024
+#define BUFFSIZE 4096
 #define MAX_PENDING_CONNECTIONS   3    // un valor bajo, para realizar pruebas
 
 /**
@@ -232,8 +232,10 @@ int main(int argc , char *argv[])
 			if (FD_ISSET(remoteSocket , &readfds)) 
 			{
 				log(DEBUG, "reading remote of client %d on socket %d", i, remoteSocket);
+				nbytes = bufferToClient[i].limit - bufferToClient[i].write;
+				log(DEBUG, "available bytes to write in bufferToClient: %zu", nbytes)
 				//Check if it was for closing , and also read the incoming message
-				if ((valread = read( remoteSocket , bufferToClient[i].data , BUFFSIZE)) <= 0) //escribe en el buffer
+				if ((valread = read( remoteSocket , bufferToClient[i].data , nbytes)) <= 0) //escribe en el buffer
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(remoteSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);

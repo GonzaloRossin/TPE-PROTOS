@@ -76,7 +76,6 @@ void handleWrite(int socket, struct buffer * buffer, fd_set * writefds) {
 	log(DEBUG, "bytesToSend %zu", bytesToSend);
 	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
 		log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
-		log(DEBUG, "sending:\n%s", buffer->data);
 		size_t bytesSent = send(socket, buffer->data, bytesToSend,  MSG_DONTWAIT); 
 		log(INFO, "Sent %zu bytes\n", bytesSent);
 
