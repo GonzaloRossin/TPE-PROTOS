@@ -76,7 +76,8 @@ void handleWrite(int socket, struct buffer * buffer, fd_set * writefds) {
 	log(DEBUG, "bytesToSend %zu", bytesToSend);
 	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
 		log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
-		size_t bytesSent = send(socket, buffer->data_array, bytesToSend,  MSG_DONTWAIT); 
+		log(DEBUG, "sending:\n%s", buffer->data);
+		size_t bytesSent = send(socket, buffer->data, bytesToSend,  MSG_DONTWAIT); 
 		log(INFO, "Sent %zu bytes\n", bytesSent);
 
 		if ( bytesSent < 0) {
@@ -85,13 +86,16 @@ void handleWrite(int socket, struct buffer * buffer, fd_set * writefds) {
 			log(FATAL, "Error sending to socket %d", socket);
 		} else {
 			size_t bytesLeft = bytesSent - bytesToSend;
+			buffer_read_adv(buffer, bytesSent);
+
 
 			// Si se pudieron mandar todos los bytes limpiamos el buffer y sacamos el fd para el select
+			
 			if ( bytesLeft == 0) {
-				buffer_reset(buffer);
+				//buffer_reset(buffer);
 				FD_CLR(socket, writefds);
 			} else {
-				buffer->write += bytesSent;
+				//buffer->write += bytesSent;
 			}
 		}
 	}

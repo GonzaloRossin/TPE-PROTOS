@@ -188,6 +188,8 @@ int main(int argc , char *argv[])
 
 		//If something happened on the TCP master socket , then its an incoming connection
 		masterSocketHandler(master_socket_size, master_socket, readfds, writefds, max_clients, client_socket, remote_socket, bufferFromClient, bufferToClient);
+		
+		size_t nbytes;
 
 		//reads from sockets
 		for (i = 0; i < max_clients; i++) 
@@ -195,14 +197,15 @@ int main(int argc , char *argv[])
 			//sd = client_socket[i];
 			clientSocket = client_socket[i];
 			remoteSocket = remote_socket[i];
-			size_t nbytes;
 
 			//read from client
 			if (FD_ISSET( clientSocket , &readfds)) 
 			{
 				log(DEBUG, "reading client %d on socket %d", i, clientSocket);
 				//Check if it was for closing , and also read the incoming message
-				if ((valread = read( clientSocket , &bufferFromClient[i].data_array , BUFFSIZE)) <= 0)
+				nbytes = bufferFromClient[i].limit - bufferFromClient[i].write;
+				log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes)
+				if ((valread = read( clientSocket , bufferFromClient[i].data, nbytes)) <= 0) //hace write en el buffer
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -230,7 +233,7 @@ int main(int argc , char *argv[])
 			{
 				log(DEBUG, "reading remote of client %d on socket %d", i, remoteSocket);
 				//Check if it was for closing , and also read the incoming message
-				if ((valread = read( remoteSocket , &bufferToClient[i].data_array , BUFFSIZE)) <= 0)
+				if ((valread = read( remoteSocket , bufferToClient[i].data , BUFFSIZE)) <= 0) //escribe en el buffer
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(remoteSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -245,7 +248,7 @@ int main(int argc , char *argv[])
 					buffer_reset(&bufferToClient[i]);
 				} 
 				else {
-					log(DEBUG, "Received %zu bytes from (remote) socket %d\n", valread, remoteSocket);
+					log(DEBUG, "Received %zu bytes from (remote) socket %d:\n", valread, remoteSocket);
 					// activamos el socket para escritura
 					// ya almacena en el buffer de salida la funcion read de arriba
 					FD_SET(clientSocket, &writefds);
@@ -381,11 +384,12 @@ void masterSocketHandler(int master_socket_size, int * master_socket, fd_set rea
 						log(DEBUG, "Adding client to list of sockets as %d\n" , i);
 						log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
 
+								//TODO if mallocs fail
+
 								//init buffer fromClient of client i
 						uint8_t * data = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
 						memset(data, 0, sizeof(uint8_t) * BUFFSIZE);
-						buffer_init(&bufferFromClient[i], BUFFSIZE, data);
-					
+						buffer_init(&bufferFromClient[i], BUFFSIZE, data);					
 
 								//init buffer toClient of client i
 						uint8_t * data_2 = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
