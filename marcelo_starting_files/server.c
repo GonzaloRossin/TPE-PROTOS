@@ -29,13 +29,18 @@
   */
 void handleAddrInfo(int socket);
 
+/**
+  Maneja la actitud del master socket.
+  */
+void masterSocketHandler(int master_socket_size, int * master_socket, fd_set readfds, fd_set writefds, int max_clients, int * client_socket, int * remote_socket, struct buffer * bufferFromClient, struct buffer * bufferToClient);
+
 
 int main(int argc , char *argv[])
 {
 	int opt = TRUE;
 	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
-	int addrlen , new_socket , new_remote_socket , client_socket[MAX_SOCKETS/2] , remote_socket[MAX_SOCKETS/2] , max_clients = MAX_SOCKETS/2 , activity, i , sd, clientSocket, remoteSocket;
+	int addrlen , client_socket[MAX_SOCKETS/2] , remote_socket[MAX_SOCKETS/2] , max_clients = MAX_SOCKETS/2 , activity, i , sd, clientSocket, remoteSocket;
 	long valread;
 	int max_sd;
 	struct sockaddr_in address;
@@ -153,17 +158,21 @@ int main(int argc , char *argv[])
 		for ( i = 0 ; i < max_clients ; i++) 
 		{
 			// socket descriptor
-			sd = client_socket[i];
+			clientSocket = client_socket[i];
+			remoteSocket = remote_socket[i];
+
 
 			// if valid socket descriptor then add to read list, and also its corresponding remote socket
-			if(sd > 0){
-				FD_SET( sd , &readfds);
-				FD_SET(remote_socket[i] , &readfds);
+			if(clientSocket > 0){
+				FD_SET( clientSocket , &readfds);
+				FD_SET( remoteSocket , &readfds);
 			}
 
 			// highest file descriptor number, need it for the select function
-			if(sd > max_sd)
-				max_sd = sd;
+			if(clientSocket > max_sd)
+				max_sd = clientSocket;
+			if(remoteSocket > max_sd)
+				max_sd = remoteSocket;
 		}
 
 		//wait for an activity on one of the sockets , timeout is NULL , so wait indefinitely
@@ -178,79 +187,9 @@ int main(int argc , char *argv[])
 		}
 
 		//If something happened on the TCP master socket , then its an incoming connection
-		for (int sdMaster=0; sdMaster < master_socket_size; sdMaster++) {
-			int mSock = master_socket[sdMaster];
-			if (FD_ISSET(mSock, &readfds)) 
-			{
-				if ((new_socket = acceptTCPConnection(mSock)) < 0) //open new client socket
-				{
-					log(ERROR, "Accept error on master socket %d", mSock);
-					continue;
-				}
-				if ((new_remote_socket = handleProxyAddr()) < 0) //open new remote socket
-				{
-					log(ERROR, "Accept error on creatin new remote socket %d", new_remote_socket);
-					continue;
-				}
+		masterSocketHandler(master_socket_size, master_socket, readfds, writefds, max_clients, client_socket, remote_socket, bufferFromClient, bufferToClient);
 
-				// add new socket to array of sockets
-				for (i = 0; i < max_clients; i++) 
-				{
-					// if position is empty
-					if( client_socket[i] == 0 )
-					{
-						client_socket[i] = new_socket;
-						remote_socket[i] = new_remote_socket;
-
-						log(DEBUG, "Adding client to list of sockets as %d\n" , i);
-						log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
-
-								//init buffer fromClient of client i
-						uint8_t * data = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
-						memset(data, 0, sizeof(uint8_t) * BUFFSIZE);
-						buffer_init(&bufferFromClient[i], BUFFSIZE, data);
-					
-
-								//init buffer toClient of client i
-						uint8_t * data_2 = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
-						memset(data_2, 0, sizeof(uint8_t) * BUFFSIZE);
-						buffer_init(&bufferToClient[i], BUFFSIZE, data_2);
-
-						break;
-					}
-				}
-			}
-		}
-
-		for(i =0; i < max_clients; i++) {
-			clientSocket = client_socket[i];
-			remoteSocket = remote_socket[i];
-
-			if (FD_ISSET(clientSocket, &writefds)) {
-				log(DEBUG, "trying to send client content to his remote socket");
-				handleWrite(remoteSocket, &bufferFromClient[i], &writefds);
-				FD_CLR(clientSocket, &writefds);
-
-				FD_SET(remoteSocket, &writefds);
-				//readFromProxy(remoteSocket, clientSocket, &writefds);
-			}
-			if (FD_ISSET(remoteSocket, &writefds)) {
-				//remote socket wants to write, write it to client
-				log(DEBUG, "remote socket %d wants to write to its client socket %d", remoteSocket, clientSocket);
-				readFromProxy(remoteSocket, clientSocket, &writefds);
-				//readFromProxy(remoteSocket, clientSocket, &writefds); //hace read y write de una, hay que dividirlo
-			
-				/*
-				log(DEBUG, "trying to send");
-				handleWrite(remoteSocket, &bufferFromClient[i], &writefds);
-
-				readFromProxy(remoteSocket, sd, &bufferFromClient[i]);
-				*/
-			}
-
-		}
-
-		//else its some IO operation on some other socket :)
+		//reads from sockets
 		for (i = 0; i < max_clients; i++) 
 		{
 			//sd = client_socket[i];
@@ -258,6 +197,7 @@ int main(int argc , char *argv[])
 			remoteSocket = remote_socket[i];
 			size_t nbytes;
 
+			//read from client
 			if (FD_ISSET( clientSocket , &readfds)) 
 			{
 				log(DEBUG, "reading client %d on socket %d", i, clientSocket);
@@ -278,62 +218,57 @@ int main(int argc , char *argv[])
 				} 
 				else {
 					log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
-					// activamos el socket para escritura
-					// ya almacena en el buffer de salida la funcion read de arriba
-					FD_SET(clientSocket, &writefds);
+					// activamos el socket para escribir en remote
+					// ya se almacena en el buffer con la funcion read de arriba
+					FD_SET(remoteSocket, &writefds);
 					buffer_write_adv(&bufferFromClient[i], valread);
-
-
-
-					// Tal vez ya habia datos en el buffer
-					// TODO: validar realloc != NULL
-
-					
-					//buffer_write(bufferFromClient[i], ); //esto ya lo hace la funcion read de arriba
-				/*
-					bufferWrite[i].buffer = realloc(bufferWrite[i].buffer, bufferWrite[i].len + valread);
-					memcpy(bufferWrite[i].buffer + bufferWrite[i].len, buffer, valread);
-					bufferWrite[i].len += valread;
-				*/
 				}
 			}
+
+			//read from remote
 			if (FD_ISSET(remoteSocket , &readfds)) 
 			{
 				log(DEBUG, "reading remote of client %d on socket %d", i, remoteSocket);
 				//Check if it was for closing , and also read the incoming message
-				if ((valread = read( clientSocket , &bufferToClient[i].data_array , BUFFSIZE)) <= 0)
+				if ((valread = read( remoteSocket , &bufferToClient[i].data_array , BUFFSIZE)) <= 0)
 				{
 					//Somebody disconnected , get his details and print
-					getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
+					getpeername(remoteSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
 					log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
 
 					//Close the socket and mark as 0 in list for reuse
-					close( clientSocket );
-					client_socket[i] = 0;
+					close( remoteSocket );
+					remote_socket[i] = 0;
 
-					FD_CLR(clientSocket, &writefds);
+					FD_CLR(remoteSocket, &writefds);
 					// Limpiamos el buffer asociado, para que no lo "herede" otra sesión
-					buffer_reset(&bufferFromClient[i]);
+					buffer_reset(&bufferToClient[i]);
 				} 
 				else {
 					log(DEBUG, "Received %zu bytes from (remote) socket %d\n", valread, remoteSocket);
 					// activamos el socket para escritura
 					// ya almacena en el buffer de salida la funcion read de arriba
-					FD_SET(remoteSocket, &writefds);
+					FD_SET(clientSocket, &writefds);
 					buffer_write_adv(&bufferToClient[i], valread);
-
-
-					// Tal vez ya habia datos en el buffer
-					// TODO: validar realloc != NULL
-
-					
-					//buffer_write(bufferFromClient[i], ); //esto ya lo hace la funcion read de arriba
-				/*
-					bufferWrite[i].buffer = realloc(bufferWrite[i].buffer, bufferWrite[i].len + valread);
-					memcpy(bufferWrite[i].buffer + bufferWrite[i].len, buffer, valread);
-					bufferWrite[i].len += valread;
-				*/
 				}
+			}
+		}
+
+		//write to sockets
+		for(i =0; i < max_clients; i++) {
+			clientSocket = client_socket[i];
+			remoteSocket = remote_socket[i];
+
+			//write to client
+			if (FD_ISSET(clientSocket, &writefds)) {
+				log(DEBUG, "remote socket %d wants to write to its client socket %d", remoteSocket, clientSocket);
+				handleWrite(clientSocket, &bufferToClient[i], &writefds);
+			}
+			//write to remote
+			if (FD_ISSET(remoteSocket, &writefds)) {
+				//remote socket wants to write, write it to client
+				log(DEBUG, "trying to send client content to his remote socket");
+				handleWrite(remoteSocket, &bufferFromClient[i], &writefds);
 			}
 		}
 	}
@@ -413,5 +348,53 @@ void handleAddrInfo(int socket) {
 	sendto(socket, bufferOut, strlen(bufferOut), 0, (const struct sockaddr *) &clntAddr, len);
 
 	log(DEBUG, "UDP sent:%s", bufferOut );
+}
 
+void masterSocketHandler(int master_socket_size, int * master_socket, fd_set readfds, fd_set writefds, int max_clients, int * client_socket, int * remote_socket, struct buffer * bufferFromClient, struct buffer * bufferToClient){
+		int new_socket = 0;
+		int new_remote_socket = 0;
+		for (int sdMaster=0; sdMaster < master_socket_size; sdMaster++) {
+			int mSock = master_socket[sdMaster];
+			if (FD_ISSET(mSock, &readfds)) 
+			{
+				if ((new_socket = acceptTCPConnection(mSock)) < 0) //open new client socket
+				{
+					log(ERROR, "Accept error on master socket %d", mSock);
+					continue;
+				}
+				if ((new_remote_socket = handleProxyAddr()) < 0) //open new remote socket
+				{
+					log(ERROR, "Accept error on creating new remote socket %d", new_remote_socket);
+					continue;
+				}
+
+				// add new socket to array of sockets
+				int i;
+				for (i = 0; i < max_clients; i++) 
+				{
+					// if position is empty
+					if( client_socket[i] == 0 )
+					{
+						client_socket[i] = new_socket;
+						remote_socket[i] = new_remote_socket;
+
+						log(DEBUG, "Adding client to list of sockets as %d\n" , i);
+						log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
+
+								//init buffer fromClient of client i
+						uint8_t * data = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
+						memset(data, 0, sizeof(uint8_t) * BUFFSIZE);
+						buffer_init(&bufferFromClient[i], BUFFSIZE, data);
+					
+
+								//init buffer toClient of client i
+						uint8_t * data_2 = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
+						memset(data_2, 0, sizeof(uint8_t) * BUFFSIZE);
+						buffer_init(&bufferToClient[i], BUFFSIZE, data_2);
+
+						break;
+					}
+				}
+			}
+		}
 }
