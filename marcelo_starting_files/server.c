@@ -22,13 +22,7 @@
 #define PORT 8888
 #define MAX_SOCKETS 30
 #define BUFFSIZE 1024
-#define PORT_UDP 8888
 #define MAX_PENDING_CONNECTIONS   3    // un valor bajo, para realizar pruebas
-
-/**
-  Crea y "bindea" el socket server UDP
-  */
-int udpSocket(int port);
 
 /**
   Lee el datagrama del socket, obtiene info asociado con getaddrInfo y envia la respuesta
@@ -142,16 +136,6 @@ int main(int argc , char *argv[])
 		}
 	}
 
-	// Socket UDP para responder en base a addrInfo
-	int udpSock = udpSocket(PORT);
-	if ( udpSock < 0) {
-		log(FATAL, "UDP socket failed");
-		// exit(EXIT_FAILURE);
-	} else {
-		log(DEBUG, "Waiting for UDP IPv4 on socket %d\n", udpSock);
-
-	}
-
 	// Limpiamos el conjunto de escritura
 	FD_ZERO(&writefds);
 	while(TRUE) 
@@ -160,11 +144,10 @@ int main(int argc , char *argv[])
 		FD_ZERO(&readfds);
 
 		//add masters sockets to set
-		for (int sdMaster=0; sdMaster < master_socket_size; sdMaster++)
+		for (int sdMaster=0; sdMaster < master_socket_size; sdMaster++){
 			FD_SET(master_socket[sdMaster], &readfds);
-		FD_SET(udpSock, &readfds);
-
-		max_sd = udpSock;
+			max_sd = master_socket[sdMaster];
+		}
 
 		// add child sockets to set
 		for ( i = 0 ; i < max_clients ; i++) 
@@ -192,11 +175,6 @@ int main(int argc , char *argv[])
 		{
 			log(ERROR, "select error, errno=%d",errno);
 			continue;
-		}
-
-		// Servicio UDP
-		if(FD_ISSET(udpSock, &readfds)) {
-			handleAddrInfo(udpSock);
 		}
 
 		//If something happened on the TCP master socket , then its an incoming connection
@@ -361,31 +339,6 @@ int main(int argc , char *argv[])
 	}
 
 	return 0;
-}
-
-int udpSocket(int port) {
-
-	int sock;
-	struct sockaddr_in serverAddr;
-	if ( (sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
-		log(ERROR, "UDP socket creation failed, errno: %d %s", errno, strerror(errno));
-		return sock;
-	}
-	log(DEBUG, "UDP socket %d created", sock);
-	memset(&serverAddr, 0, sizeof(serverAddr));
-	serverAddr.sin_family    = AF_INET; // IPv4cle
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
-	serverAddr.sin_port = htons(port);
-
-	if ( bind(sock, (const struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0 )
-	{
-		log(ERROR, "UDP bind failed, errno: %d %s", errno, strerror(errno));
-		close(sock);
-		return -1;
-	}
-	log(DEBUG, "UDP socket bind OK ");
-
-	return sock;
 }
 
 
