@@ -19,7 +19,7 @@ int tcpClientSocket(const char *host, const char *service) {
 
 	// Get address(es)
 	struct addrinfo *servAddr; // Holder for returned list of server addrs
-	int rtnVal = getaddrinfo(host, service, &addrCriteria, &servAddr);
+	int rtnVal = getaddrinfo(host, service, &addrCriteria, &servAddr); //es bloqueante, ojo, hacerlo en un hijo/thread
 	if (rtnVal != 0) {
 		log(ERROR, "getaddrinfo() failed %s", gai_strerror(rtnVal))
 		return -1;
@@ -29,11 +29,12 @@ int tcpClientSocket(const char *host, const char *service) {
 	for (struct addrinfo *addr = servAddr; addr != NULL && sock == -1; addr = addr->ai_next) {
 		// Create a reliable, stream socket using TCP
 		sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		//setear socket como no bloqueante
 		if (sock >= 0) {
 			errno = 0;
 			// Establish the connection to the server
-			if ( connect(sock, addr->ai_addr, addr->ai_addrlen) != 0) {
-				log(INFO, "can't connectto %s: %s", printAddressPort(addr, addrBuffer), strerror(errno))
+			if ( connect(sock, addr->ai_addr, addr->ai_addrlen) != 0) { //se bloquea hasta que se conecte
+				log(INFO, "can't connectto %s: %s", printAddressPort(addr, addrBuffer), strerror(errno));
 				close(sock); 	// Socket connection failed; try next address
 				sock = -1;
 			}
