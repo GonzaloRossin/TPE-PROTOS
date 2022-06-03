@@ -19,7 +19,7 @@
 
 #define TRUE   1
 #define FALSE  0
-#define PORT 8888
+#define PORT "8888"
 #define MAX_SOCKETS 30
 #define BUFFSIZE 4096
 #define MAX_PENDING_CONNECTIONS   3    // un valor bajo, para realizar pruebas
@@ -78,68 +78,81 @@ int main(int argc , char *argv[])
 	// TODO adaptar setupTCPServerSocket para que cree socket para IPv4 e IPv6 y ademas soporte opciones (y asi no repetir codigo)
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
-	
-	if( (master_socket[master_socket_size] = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
-	{
+	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET, master_socket, master_socket_size)) < 0) {
 		log(ERROR, "socket IPv4 failed");
 	} else {
-		//set master socket to allow multiple connections , this is just a good habit, it will work without this
-		if( setsockopt(master_socket[master_socket_size], SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )
-		{
-			log(ERROR, "set IPv4 socket options failed");
-		}
-
-		//type of socket created
-		address.sin_family = AF_INET;
-		address.sin_addr.s_addr = INADDR_ANY;
-		address.sin_port = htons( PORT );
-
-		// bind the socket to localhost port 8888
-		if (bind(master_socket[master_socket_size], (struct sockaddr *)&address, sizeof(address))<0) 
-		{
-			log(ERROR, "bind for IPv4 failed");
-			close(master_socket[master_socket_size]);
-		}
-		else {
-			if (listen(master_socket[0], MAX_PENDING_CONNECTIONS) < 0)
-			{
-				log(ERROR, "listen on IPv4 socket failes");
-				close(master_socket[master_socket_size]);
-			} else {
-				log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
-				master_socket_size++;
-			}
-		}
+		log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
+		master_socket_size++;
 	}
-	///////////////////////////////////////////////////////////// IPv6
-	struct sockaddr_in6 server6addr;
-	if ((master_socket[master_socket_size] = socket(AF_INET6, SOCK_STREAM, 0)) < 0)
-	{
-		log(ERROR, "socket IPv6 failed");
-	} else {
-		if (setsockopt(master_socket[master_socket_size], SOL_SOCKET, SO_REUSEADDR, (char *)&opt,sizeof(opt)) < 0)
-		{
-			log(ERROR, "set IPv6 socket options failed");
-		}
-		memset(&server6addr, 0, sizeof(server6addr));
-		server6addr.sin6_family = AF_INET6;
-		server6addr.sin6_port   = htons(PORT);
-		server6addr.sin6_addr   = in6addr_any;
-		if (bind(master_socket[master_socket_size], (struct sockaddr *)&server6addr,sizeof(server6addr)) < 0)
-		{
-			log(ERROR, "bind for IPv6 failed");
-			close(master_socket[master_socket_size]);
-		} else {
-			if (listen(master_socket[master_socket_size], MAX_PENDING_CONNECTIONS) < 0)
-			{
-				log(ERROR, "listen on IPv6 failed");
-				close(master_socket[master_socket_size]);
-			} else {
-				log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
-				master_socket_size++;
-			}
-		}
-	}
+
+	// if ((master_socket[master_socket_size++] = setupTCPServerSocket(PORT, AF_INET6, master_socket, master_socket_size)) < 0) {
+	// 	log(ERROR, "socket IPv6 failed");
+	// } else {
+	// 	log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
+	// 	master_socket_size++;
+	// }
+	
+	// if( (master_socket[master_socket_size] = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
+	// {
+	// 	log(ERROR, "socket IPv4 failed");
+	// } else {
+	// 	//set master socket to allow multiple connections , this is just a good habit, it will work without this
+	// 	if( setsockopt(master_socket[master_socket_size], SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )
+	// 	{
+	// 		log(ERROR, "set IPv4 socket options failed");
+	// 	}
+
+	// 	//type of socket created
+	// 	address.sin_family = AF_INET;
+	// 	address.sin_addr.s_addr = INADDR_ANY;
+	// 	address.sin_port = htons( PORT );
+
+	// 	// bind the socket to localhost port 8888
+	// 	if (bind(master_socket[master_socket_size], (struct sockaddr *)&address, sizeof(address))<0) 
+	// 	{
+	// 		log(ERROR, "bind for IPv4 failed");
+	// 		close(master_socket[master_socket_size]);
+	// 	}
+	// 	else {
+	// 		if (listen(master_socket[0], MAX_PENDING_CONNECTIONS) < 0)
+	// 		{
+	// 			log(ERROR, "listen on IPv4 socket failes");
+	// 			close(master_socket[master_socket_size]);
+	// 		} else {
+	// 			log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
+	// 			master_socket_size++;
+	// 		}
+	// 	}
+	// }
+	// ///////////////////////////////////////////////////////////// IPv6
+	// struct sockaddr_in6 server6addr;
+	// if ((master_socket[master_socket_size] = socket(AF_INET6, SOCK_STREAM, 0)) < 0)
+	// {
+	// 	log(ERROR, "socket IPv6 failed");
+	// } else {
+	// 	if (setsockopt(master_socket[master_socket_size], SOL_SOCKET, SO_REUSEADDR, (char *)&opt,sizeof(opt)) < 0)
+	// 	{
+	// 		log(ERROR, "set IPv6 socket options failed");
+	// 	}
+	// 	memset(&server6addr, 0, sizeof(server6addr));
+	// 	server6addr.sin6_family = AF_INET6;
+	// 	server6addr.sin6_port   = htons(PORT);
+	// 	server6addr.sin6_addr   = in6addr_any;
+	// 	if (bind(master_socket[master_socket_size], (struct sockaddr *)&server6addr,sizeof(server6addr)) < 0)
+	// 	{
+	// 		log(ERROR, "bind for IPv6 failed");
+	// 		close(master_socket[master_socket_size]);
+	// 	} else {
+	// 		if (listen(master_socket[master_socket_size], MAX_PENDING_CONNECTIONS) < 0)
+	// 		{
+	// 			log(ERROR, "listen on IPv6 failed");
+	// 			close(master_socket[master_socket_size]);
+	// 		} else {
+	// 			log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
+	// 			master_socket_size++;
+	// 		}
+	// 	}
+	// }
 
 	// Limpiamos el conjunto de escritura
 	FD_ZERO(&writefds);
