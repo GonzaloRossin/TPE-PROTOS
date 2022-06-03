@@ -6,6 +6,8 @@
 #include <string.h>
 #include "logger.h"
 #include "util.h"
+#define TRUE   1
+#define FALSE  0
 
 #define MAXPENDING 5 // Maximum outstanding connection requests
 #define BUFSIZE 256
@@ -16,7 +18,8 @@ static char addrBuffer[MAX_ADDR_BUFFER];
  ** Se encarga de resolver el número de puerto para service (puede ser un string con el numero o el nombre del servicio)
  ** y crear el socket pasivo, para que escuche en cualquier IP, ya sea v4 o v6
  */
-int setupTCPServerSocket(const char *service, const int family, int * master_socket, int master_socket_size) {
+int setupTCPServerSocket(const char *service, const int family) {
+	int opt = TRUE;
 	// Construct the server address structure
 	struct addrinfo addrCriteria;                   // Criteria for address match
 	memset(&addrCriteria, 0, sizeof(addrCriteria)); // Zero out structure
@@ -44,7 +47,13 @@ int setupTCPServerSocket(const char *service, const int family, int * master_soc
 			log(DEBUG, "Cant't create socket on %s : %s ", printAddressPort(addr, addrBuffer), strerror(errno));  
 			continue;       // Socket creation failed; try next address
 		}
-
+		if (family == AF_INET6) {
+			if( setsockopt(servSock, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&opt, sizeof(opt)) < 0 )
+			{
+				log(ERROR, "set IPv6 socket options failed %s", strerror(errno));
+			}
+		}
+	
 		// bind the socket to localhost port 8888
 		if (bind(servSock, addr->ai_addr, addr->ai_addrlen) < 0) 
 		{
@@ -56,7 +65,7 @@ int setupTCPServerSocket(const char *service, const int family, int * master_soc
 			if (listen(servSock, MAXPENDING) < 0)
 			{
 				log(ERROR, "listen on IPv4 socket failes");
-				close(master_socket[master_socket_size]);
+				close(servSock);
 			} else {
 				// Print local address of socket
 				struct sockaddr_storage localAddr;
@@ -67,23 +76,6 @@ int setupTCPServerSocket(const char *service, const int family, int * master_soc
 				}
 			}
 		}
-
-		// Bind to ALL the address and set socket to listen
-		// if ((bind(servSock, addr->ai_addr, addr->ai_addrlen) == 0) && (listen(servSock, MAXPENDING) == 0)) { 
-		// 	// Print local address of socket
-		// 	struct sockaddr_storage localAddr;
-		// 	socklen_t addrSize = sizeof(localAddr);
-		// 	if (getsockname(servSock, (struct sockaddr *) &localAddr, &addrSize) >= 0) {
-		// 		printSocketAddress((struct sockaddr *) &localAddr, addrBuffer);
-		// 		log(INFO, "Binding to %s", addrBuffer);
-		// 	}
-
-
-		// } else {
-		// 	log(DEBUG, "Cant't bind %s", strerror(errno));  
-		// 	close(servSock);  // Close and try with the next one
-		// 	servSock = -1;
-		// }
 	}
 
 	freeaddrinfo(servAddr);
