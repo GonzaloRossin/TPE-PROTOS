@@ -59,31 +59,12 @@ int main(int argc , char *argv[])
 	// y tambien los flags para writes
 	fd_set writefds;
 
-	//initialise all client_socket[] to 0 so not checked
-	//memset(client_socket, 0, sizeof(client_socket));
-	//initialise all remote_socket[] to 0 so not checked
-	//memset(remote_socket, 0, sizeof(remote_socket));
 	//initialise all clients to 0
 	memset(clients, 0, sizeof(clients));
 	for(i=0; i<max_clients; i++){
 		clients[i].isAvailable = true;
 	}
 
-	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
-	//struct buffer bufferWrite[MAX_SOCKETS];
-	//memset(bufferWrite, 0, sizeof bufferWrite);
-
-	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
-	//struct buffer bufferFromClient[MAX_SOCKETS];
-	//memset(bufferFromClient, 0, sizeof bufferFromClient);
-
-	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
-	//struct buffer bufferFromRemote[MAX_SOCKETS];
-	//memset(bufferFromRemote, 0, sizeof bufferFromRemote);
-
-
-
-	// TODO adaptar setupTCPServerSocket para que cree socket para IPv4 e IPv6 y ademas soporte opciones (y asi no repetir codigo)
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET)) < 0) {
@@ -117,12 +98,8 @@ int main(int argc , char *argv[])
 		// add child sockets to set
 		for ( i = 0 ; i < max_clients ; i++) 
 		{
-			
-			// socket descriptor
 			clientSocket = clients[i].client_socket;
 			remoteSocket = clients[i].remote_socket;
-
-			//log(DEBUG, "looking if client is set %d, sock %d", i, clientSocket);
 
 			// if valid socket descriptor
 			if(clientSocket > 0){
@@ -133,7 +110,6 @@ int main(int argc , char *argv[])
 				if( buffer_can_write(&(clients[i].bufferFromRemote)) ){
 					FD_SET( remoteSocket , &readfds);
 				}
-
 				//and can read buffer, subscribe socket for writing
 				if( buffer_can_read(&(clients[i].bufferFromClient)) ){
 					FD_SET( remoteSocket , &writefds);
@@ -141,9 +117,7 @@ int main(int argc , char *argv[])
 				if( buffer_can_read(&(clients[i].bufferFromRemote)) ){
 					FD_SET( clientSocket , &writefds);
 				}
-
 			}
-
 			// highest file descriptor number, need it for the select function
 			if(clientSocket > max_sd)
 				max_sd = clientSocket;
@@ -193,7 +167,6 @@ int main(int argc , char *argv[])
 				else {
 					log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
 					// ya se almacena en el buffer con la funcion read de arriba
-					//buffer_write_adv(&bufferFromClient[i], valread);
 					buffer_write_adv(&clients[i].bufferFromClient, valread);
 				}
 			}
@@ -234,13 +207,11 @@ int main(int argc , char *argv[])
 			}
 			//write to remote
 			if (FD_ISSET(remoteSocket, &writefds)) {
-				//remote socket wants to write, write it to client
 				log(DEBUG, "trying to send client content to his remote socket");
 				handleWrite(remoteSocket, &clients[i].bufferFromClient, &writefds);
 			}
 		}
 	}
-
 	return 0;
 }
 
@@ -349,27 +320,8 @@ void masterSocketHandler(int master_socket_size, int * master_socket, fd_set rea
 						new_client(&clients[i], new_socket, BUFFSIZE);
 						set_client_remote(&clients[i], new_remote_socket, BUFFSIZE);
 
-						// clients[i].client_socket = new_socket;
-						//clients[i].remote_socket = new_remote_socket;
-
 						log(DEBUG, "Adding client %d in socket %d\n" , i, new_socket);
 						log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
-
-								//TODO if mallocs fail
-
-								//init buffer fromClient of client i
-						/*
-						uint8_t * data = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
-						memset(data, 0, sizeof(uint8_t) * BUFFSIZE);
-						buffer_init(&bufferFromClient[i], BUFFSIZE, data);
-						*/					
-
-								//init buffer toClient of client i
-						/*
-						uint8_t * data_2 = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
-						memset(data_2, 0, sizeof(uint8_t) * BUFFSIZE);
-						buffer_init(&bufferFromRemote[i], BUFFSIZE, data_2);
-						*/
 
 						break;
 					}
