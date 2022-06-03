@@ -85,12 +85,12 @@ int main(int argc , char *argv[])
 		master_socket_size++;
 	}
 
-	// if ((master_socket[master_socket_size++] = setupTCPServerSocket(PORT, AF_INET6, master_socket, master_socket_size)) < 0) {
-	// 	log(ERROR, "socket IPv6 failed");
-	// } else {
-	// 	log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
-	// 	master_socket_size++;
-	// }
+	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET6, master_socket, master_socket_size)) < 0) {
+		log(ERROR, "socket IPv6 failed\n");
+	} else {
+		log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
+		master_socket_size++;
+	}
 	
 	// if( (master_socket[master_socket_size] = socket(AF_INET , SOCK_STREAM , 0)) == 0) 
 	// {
@@ -174,11 +174,24 @@ int main(int argc , char *argv[])
 			clientSocket = client_socket[i];
 			remoteSocket = remote_socket[i];
 
-
-			// if valid socket descriptor then add to read list, and also its corresponding remote socket
+			// if valid socket descriptor
 			if(clientSocket > 0){
-				FD_SET( clientSocket , &readfds);
-				FD_SET( remoteSocket , &readfds);
+				//and can write in buffer, subscribe socket for reading
+				if( buffer_can_write(&bufferFromClient[i]) ){
+					FD_SET( clientSocket , &readfds);
+				}
+				if( buffer_can_write(&bufferFromRemote[i]) ){
+					FD_SET( remoteSocket , &readfds);
+				}
+
+				//and can read buffer, subscribe socket for writing
+				if( buffer_can_read(&bufferFromClient[i]) ){
+					FD_SET( remoteSocket , &writefds);
+				}
+				if( buffer_can_read(&bufferFromRemote[i]) ){
+					FD_SET( clientSocket , &writefds);
+				}
+
 			}
 
 			// highest file descriptor number, need it for the select function
@@ -234,9 +247,7 @@ int main(int argc , char *argv[])
 				} 
 				else {
 					log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
-					// activamos el socket para escribir en remote
 					// ya se almacena en el buffer con la funcion read de arriba
-					FD_SET(remoteSocket, &writefds);
 					buffer_write_adv(&bufferFromClient[i], valread);
 				}
 			}
@@ -264,9 +275,7 @@ int main(int argc , char *argv[])
 				} 
 				else {
 					log(DEBUG, "Received %zu bytes from (remote) socket %d:\n", valread, remoteSocket);
-					// activamos el socket para escritura
 					// ya almacena en el buffer de salida la funcion read de arriba
-					FD_SET(clientSocket, &writefds);
 					buffer_write_adv(&bufferFromRemote[i], valread);
 				}
 			}
@@ -279,7 +288,7 @@ int main(int argc , char *argv[])
 
 			//write to client
 			if (FD_ISSET(clientSocket, &writefds)) {
-				log(DEBUG, "remote socket %d wants to write to its client socket %d", remoteSocket, clientSocket);
+				log(DEBUG, "remote socket %d wants to write to his client socket %d", remoteSocket, clientSocket);
 				handleWrite(clientSocket, &bufferFromRemote[i], &writefds);
 			}
 			//write to remote
