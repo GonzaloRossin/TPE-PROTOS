@@ -32,7 +32,7 @@ void handleAddrInfo(int socket);
 /**
   Maneja la actitud del master socket.
   */
-void masterSocketHandler(int master_socket_size, int * master_socket, fd_set readfds, fd_set writefds, int max_clients, int * client_socket, int * remote_socket, struct buffer * bufferFromClient, struct buffer * bufferToClient);
+void masterSocketHandler(int master_socket_size, int * master_socket, fd_set readfds, fd_set writefds, int max_clients, int * client_socket, int * remote_socket, struct buffer * bufferFromClient, struct buffer * bufferFromRemote);
 
 
 int main(int argc , char *argv[])
@@ -70,12 +70,12 @@ int main(int argc , char *argv[])
 	memset(bufferFromClient, 0, sizeof bufferFromClient);
 
 	// Agregamos un buffer de escritura asociado a cada socket, para no bloquear por escritura
-	struct buffer bufferToClient[MAX_SOCKETS];
-	memset(bufferToClient, 0, sizeof bufferToClient);
+	struct buffer bufferFromRemote[MAX_SOCKETS];
+	memset(bufferFromRemote, 0, sizeof bufferFromRemote);
 
 
 
-	// TODO adaptar setupTCPServerSocket para que cree socket para IPv4 e IPv6 y ademas soporte opciones (y asi no repetor codigo)
+	// TODO adaptar setupTCPServerSocket para que cree socket para IPv4 e IPv6 y ademas soporte opciones (y asi no repetir codigo)
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
 	
@@ -187,7 +187,7 @@ int main(int argc , char *argv[])
 		}
 
 		//If something happened on the TCP master socket , then its an incoming connection
-		masterSocketHandler(master_socket_size, master_socket, readfds, writefds, max_clients, client_socket, remote_socket, bufferFromClient, bufferToClient);
+		masterSocketHandler(master_socket_size, master_socket, readfds, writefds, max_clients, client_socket, remote_socket, bufferFromClient, bufferFromRemote);
 		
 		size_t nbytes;
 
@@ -232,10 +232,10 @@ int main(int argc , char *argv[])
 			if (FD_ISSET(remoteSocket , &readfds)) 
 			{
 				log(DEBUG, "reading remote of client %d on socket %d", i, remoteSocket);
-				nbytes = bufferToClient[i].limit - bufferToClient[i].write;
-				log(DEBUG, "available bytes to write in bufferToClient: %zu", nbytes)
+				nbytes = bufferFromRemote[i].limit - bufferFromRemote[i].write;
+				log(DEBUG, "available bytes to write in bufferFromRemote: %zu", nbytes)
 				//Check if it was for closing , and also read the incoming message
-				if ((valread = read( remoteSocket , bufferToClient[i].data , nbytes)) <= 0) //escribe en el buffer
+				if ((valread = read( remoteSocket , bufferFromRemote[i].data , nbytes)) <= 0) //escribe en el buffer
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(remoteSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -247,14 +247,14 @@ int main(int argc , char *argv[])
 
 					FD_CLR(remoteSocket, &writefds);
 					// Limpiamos el buffer asociado, para que no lo "herede" otra sesión
-					buffer_reset(&bufferToClient[i]);
+					buffer_reset(&bufferFromRemote[i]);
 				} 
 				else {
 					log(DEBUG, "Received %zu bytes from (remote) socket %d:\n", valread, remoteSocket);
 					// activamos el socket para escritura
 					// ya almacena en el buffer de salida la funcion read de arriba
 					FD_SET(clientSocket, &writefds);
-					buffer_write_adv(&bufferToClient[i], valread);
+					buffer_write_adv(&bufferFromRemote[i], valread);
 				}
 			}
 		}
@@ -267,7 +267,7 @@ int main(int argc , char *argv[])
 			//write to client
 			if (FD_ISSET(clientSocket, &writefds)) {
 				log(DEBUG, "remote socket %d wants to write to its client socket %d", remoteSocket, clientSocket);
-				handleWrite(clientSocket, &bufferToClient[i], &writefds);
+				handleWrite(clientSocket, &bufferFromRemote[i], &writefds);
 			}
 			//write to remote
 			if (FD_ISSET(remoteSocket, &writefds)) {
@@ -281,7 +281,7 @@ int main(int argc , char *argv[])
 	return 0;
 }
 
-
+//era del echo UDP pero talvez nos sirva
 void handleAddrInfo(int socket) {
 	// En el datagrama viene el nombre a resolver
 	// Se le devuelve la informacion asociada
@@ -355,7 +355,7 @@ void handleAddrInfo(int socket) {
 	log(DEBUG, "UDP sent:%s", bufferOut );
 }
 
-void masterSocketHandler(int master_socket_size, int * master_socket, fd_set readfds, fd_set writefds, int max_clients, int * client_socket, int * remote_socket, struct buffer * bufferFromClient, struct buffer * bufferToClient){
+void masterSocketHandler(int master_socket_size, int * master_socket, fd_set readfds, fd_set writefds, int max_clients, int * client_socket, int * remote_socket, struct buffer * bufferFromClient, struct buffer * bufferFromRemote){
 		int new_socket = 0;
 		int new_remote_socket = 0;
 		for (int sdMaster=0; sdMaster < master_socket_size; sdMaster++) {
@@ -396,7 +396,7 @@ void masterSocketHandler(int master_socket_size, int * master_socket, fd_set rea
 								//init buffer toClient of client i
 						uint8_t * data_2 = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
 						memset(data_2, 0, sizeof(uint8_t) * BUFFSIZE);
-						buffer_init(&bufferToClient[i], BUFFSIZE, data_2);
+						buffer_init(&bufferFromRemote[i], BUFFSIZE, data_2);
 
 						break;
 					}
