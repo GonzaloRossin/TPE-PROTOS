@@ -1,4 +1,4 @@
-#include "../socks5.h"
+#include "socks5.h"
 
 static void on_hello_method(struct hello_parser * parser, const uint8_t method){
     uint8_t * selected = parser->data;
@@ -91,7 +91,7 @@ socks5_handle_connection(const int fd, const struct sockaddr *caddr){
                     if(originfd == -1){
                         error = true;
                     } else {
-                        if(-1 == connect(originfd, originaddr, origin_domain)){//hay más a la derecha que no se ve
+                        if(connect(originfd, originaddr, origin_domain) == -1){//hay más a la derecha que no se ve
                             status = errno_to_socks(errno);
                             errir = true;
                         } else {

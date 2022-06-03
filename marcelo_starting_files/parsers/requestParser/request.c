@@ -147,5 +147,25 @@ extern enum request_state request_parser_feed(struct request_parser * p, const u
     }
     return p->state = next;
 }
+#include <errno.h>
 
+enum socks_response_status errno_to_socks(const int e){
+    enum socks_response_status ret = status_general_SOCKLS_server_failure;
+    switch (e)
+    {
+    case 0:
+        ret = status_succeeded;
+        break;
+    case ECONNREFUSED:
+        ret = status_connection_refused;
+        break;
+    case EHOSTUNREACH:
+        ret = status_host_unreachable;
+        break;
+    case ETIMEDOUT:
+        ret = status_ttl_expired;
+        break;
+    }
+    return ret;
+}
 //hay mas acá abajo que se ve en el video (tipo 2:50:00) pero no doy más bro
