@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "hello.h"
+#include "../include/hello.h"
 
 
 extern void hello_parser_init(struct hello_parser * parser){
@@ -42,7 +42,7 @@ extern enum hello_state hello_parser_feed(struct hello_parser * parser, const ui
             break;
         
         default:
-            log(ERROR, "unknown state %d", parser->state);
+            //log(ERROR, "unknown state %d", parser->state);
             abort();
             break;
     }
