@@ -14,6 +14,7 @@
 #include "./include/tcpClientUtil.h"
 #include "./include/proxyHandler.h"
 #include "./include/buffer.h"
+#include "./include/client.h"
 
 #define max(n1,n2)     ((n1)>(n2) ? (n1) : (n2))
 

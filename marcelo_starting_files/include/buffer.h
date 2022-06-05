@@ -3,7 +3,9 @@
 
 #include <stdbool.h>
 #include <unistd.h>  // size_t, ssize_t
+#include <string.h>
 #include <stdint.h>
+#include <assert.h>
 
 /**
  * buffer.c - buffer con acceso directo (útil para I/O) que mantiene
