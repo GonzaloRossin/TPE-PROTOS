@@ -5,8 +5,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <errno.h>
-#include "logger.h"
-#include "util.h"
+#include "./include/logger.h"
+#include "./include/util.h"
 
 
 /* En esta version no iteramos por las posibles IPs del servidor Echo, como se hizo para TCP

@@ -1,4 +1,4 @@
-#include "proxyHandler.h"
+#include "./include/proxyHandler.h"
 
 #define BUFFSIZE 1024
 long valread;
@@ -13,7 +13,6 @@ char buffer_hardcode[BUFFSIZE + 1];  //data buffer of 1K
 
 int handleProxyAddr(){
 	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
-	char *echoString = "hola"; //argv[2]; // Second arg: string to echo
 
 	// Third arg server port
 	char * port = "80";//argv[3];

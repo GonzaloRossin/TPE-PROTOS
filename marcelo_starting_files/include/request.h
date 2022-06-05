@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "../buffer.h"
-#include "../logger.h"
+#include "buffer.h"
+#include "logger.h"
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <string.h> //"memset"
@@ -30,7 +30,7 @@ struct request{
     enum socks_addr_type    dest_addr_type;
     union socks_addr        dest_addr;
     in_port_t               dest_port;
-}
+};
 
 enum request_state {
     request_version,
@@ -68,7 +68,7 @@ enum socks_response_status {
     status_ttl_expired = 0x06,
     status_command_not_supported = 0x07,
     status_address_type_not_supported = 0x08,
-}
+};
 
 //inicializa el parser
 void request_parser_init(struct request_parser *p);
@@ -84,7 +84,7 @@ enum request_state request_consume(buffer *b, struct request_parser *p, bool *er
 bool request_is_done(const enum request_state state, bool * errored);
 
 //error handler
-extern const char * request_error(const struct request_parser * parser);
+extern const char * request_error_handler(const struct request_parser * parser);
 
 //libera recursos internos del parser
 void request_close(struct request_parser * parser);
@@ -95,6 +95,8 @@ int request_marshall(buffer * buffer, const enum socks_response_status status);
 
 //convierte a errno en socks_response_status
 enum socks_response_status errno_to_socks(int e);
+
+void free_request(struct request_parser* parser);
 
 //se encarga de la resolución de un request
 enum socks_response_status cmd_resolve(struct request * request, struct sockaddr **originaddr, socklen_t *originlen, int *domain);
