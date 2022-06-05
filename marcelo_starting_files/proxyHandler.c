@@ -11,7 +11,7 @@ struct proxyBuffer {
 
 char buffer_hardcode[BUFFSIZE + 1];  //data buffer of 1K
 
-int handleProxyAddr(){
+int handleProxyAddr() {
 	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
 	char *echoString = "hola"; //argv[2]; // Second arg: string to echo
 

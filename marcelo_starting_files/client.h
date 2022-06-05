@@ -20,6 +20,12 @@ enum client_state {
     error_state,
 };
 
+struct clients_data
+{
+    struct client * clients;
+    int clients_size;
+};
+
 struct client
 {
     int client_socket;
