@@ -209,7 +209,7 @@ void masterSocketHandler(struct selector_key *key) {
 
 			const struct fd_handler socksv5 = {
 				.handle_read       = socks5_active_read_client,
-				.handle_write      = NULL,
+				.handle_write      = socks5_active_write_client,
 				.handle_close      = NULL, // nada que liberar
     		};
 			

@@ -11,14 +11,14 @@ struct proxyBuffer {
 
 
 static const struct fd_handler remote_socksv5 = {
-	.handle_read       = NULL,
+	.handle_read       = socks5_active_read_remote,
 	.handle_write      = socks5_active_write_remote,
 	.handle_close      = NULL, // nada que liberar
 };
 
 static const struct fd_handler client_socksv5 = {
 	.handle_read       = socks5_active_read_client,
-	.handle_write      = NULL,
+	.handle_write      = socks5_active_write_client,
 	.handle_close      = NULL, // nada que liberar
 };
 
@@ -45,7 +45,7 @@ int handleProxyAddr() {
 // escribir, tal vez no sea suficiente. Por ejemplo podría tener 100 bytes libres en el buffer de
 // salida, pero le pido que mande 1000 bytes.Por lo que tenemos que hacer un send no bloqueante,
 // verificando la cantidad de bytes que pudo consumir TCP.
-void handleWrite(int socket, struct buffer * buffer) {
+int handleWrite(int socket, struct buffer * buffer) {
 	size_t bytesToSend = buffer->write - buffer->read;
 	log(DEBUG, "bytesToSend %zu", bytesToSend);
 	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
@@ -57,23 +57,102 @@ void handleWrite(int socket, struct buffer * buffer) {
 			// Esto no deberia pasar ya que el socket estaba listo para escritura
 			// TODO: manejar el error
 			log(FATAL, "Error sending to socket %d", socket);
+			return -1;
 		} else {
 			size_t bytesLeft = bytesSent - bytesToSend;
 			buffer_read_adv(buffer, bytesSent);
 
-
-			// Si se pudieron mandar todos los bytes limpiamos el buffer y sacamos el fd para el select
-			
-			if ( bytesLeft == 0) {
-				//buffer_reset(buffer);
-			} else {
-				//buffer->write += bytesSent;
-			}
+			return bytesLeft;
 		}
 	}
+	return 0;
 }
 
 void socks5_active_read_client(struct selector_key *key){
+	struct client * currClient = (struct client *)key->data;
+	enum client_state currState = currClient->state;
+	int clientSocket = currClient->client_socket;
+	int remoteSocket = currClient->remote_socket;
+	//esto es temporal:
+	currState = connected_state;
+
+	switch (currState)
+	{
+		case socks_hello_state:
+			// do socks5 hello read
+			break;
+		
+		case socks_request_state:
+			// do socks5 request read
+			break;
+
+		case connected_state:
+			// do normal read
+			//read from client
+			//hacer función separada mas cheto
+			log(DEBUG, "reading client on socket %d", clientSocket);
+			//Check if it was for closing , and also read the incoming message
+			size_t nbytes = currClient->bufferFromClient.limit - currClient->bufferFromClient.write;
+			log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
+			if ((valread = read( clientSocket , currClient->bufferFromClient.data, nbytes)) <= 0) //hace write en el buffer
+			{
+				//Somebody disconnected , get his details and print
+				//getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
+				//log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+				log(INFO, "Host disconnected\n");
+
+				removeClient(currClient);
+			} 
+			else {
+				log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
+				log(DEBUG, "%s", currClient->bufferFromClient.data);
+				// ya se almacena en el buffer con la funcion read de arriba
+				buffer_write_adv(&currClient->bufferFromClient, valread);
+				selector_register(key->s, remoteSocket, &client_socksv5, OP_WRITE, currClient);
+			}
+			break;
+
+		default:
+			break;
+	}
+}
+
+void socks5_active_write_client(struct selector_key *key){
+	struct client * currClient = (struct client *)key->data;
+	enum client_state currState = currClient->state;
+	int clientSocket = currClient->client_socket;
+	int remoteSocket = currClient->remote_socket;
+	//esto es temporal:
+	currState = connected_state;
+
+	switch (currState)
+	{
+		case socks_hello_state:
+			// do socks5 hello read
+			break;
+		
+		case socks_request_state:
+			// do socks5 request read
+			break;
+
+		case connected_state:
+			//write to remote
+			log(DEBUG, "trying to send client content to his remote socket");
+			if(handleWrite(remoteSocket, &currClient->bufferFromClient) == 0){
+				//ya se mandaron todos los bytes
+				selector_set_interest(key->s, remoteSocket, OP_READ);
+			}
+			selector_register(key->s, remoteSocket, &remote_socksv5, OP_READ, currClient);
+			break;
+		
+		default:
+			break;
+	}
+}
+
+//-----------
+
+void socks5_active_read_remote(struct selector_key *key){
 	struct client * currClient = (struct client *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
@@ -99,7 +178,7 @@ void socks5_active_read_client(struct selector_key *key){
 			//Check if it was for closing , and also read the incoming message
 			size_t nbytes = currClient->bufferFromClient.limit - currClient->bufferFromClient.write;
 			log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
-			if ((valread = read( clientSocket , currClient->bufferFromClient.data, nbytes)) <= 0) //hace write en el buffer
+			if ((valread = read( remoteSocket , currClient->bufferFromRemote.data, nbytes)) <= 0) //hace write en el buffer
 			{
 				//Somebody disconnected , get his details and print
 				//getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -109,11 +188,11 @@ void socks5_active_read_client(struct selector_key *key){
 				removeClient(currClient);
 			} 
 			else {
-				log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
-				log(DEBUG, "%s", currClient->bufferFromClient.data);
+				log(DEBUG, "Received %zu bytes from (remote) socket %d\n", valread, remoteSocket);
+				log(DEBUG, "%s", currClient->bufferFromRemote.data);
 				// ya se almacena en el buffer con la funcion read de arriba
 				buffer_write_adv(&currClient->bufferFromClient, valread);
-				int ss = selector_register(key->s, remoteSocket, &remote_socksv5, OP_WRITE, &currClient);
+				selector_register(key->s, clientSocket, &remote_socksv5, OP_WRITE, currClient);
 			}
 			break;
 
@@ -143,7 +222,10 @@ void socks5_active_write_remote(struct selector_key *key){
 		case connected_state:
 			//write to remote
 			log(DEBUG, "trying to send client content to his remote socket");
-			handleWrite(remoteSocket, &currClient->bufferFromClient);
+			if(handleWrite(clientSocket, &currClient->bufferFromRemote) == 0){
+				//ya se mandaron todos los bytes
+				selector_set_interest(key->s, clientSocket, OP_READ);
+			}
 			break;
 		
 		default:

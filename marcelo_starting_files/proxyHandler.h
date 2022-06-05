@@ -23,10 +23,15 @@ int handleProxyAddr();
 void readFromProxy(int remoteSocket, int clientSocket, fd_set * writefds);
 
 /**
-  Se encarga de escribir la respuesta faltante en forma no bloqueante
+  Se encarga de escribir la respuesta faltante en forma no bloqueante, retorna bytesLeft To Send
   */
-void handleWrite(int socket, struct buffer * buffer);
+int handleWrite(int socket, struct buffer * buffer);
 
+//read y write handlers del client (si éste quiere leer o escribir)
 void socks5_active_read_client(struct selector_key *key);
+void socks5_active_write_client(struct selector_key *key);
 
+//read y write handlers del remote (si éste quiere leer o escribir)
+void socks5_active_read_remote(struct selector_key *key);
 void socks5_active_write_remote(struct selector_key *key);
+

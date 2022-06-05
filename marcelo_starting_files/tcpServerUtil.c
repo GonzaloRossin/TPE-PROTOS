@@ -53,7 +53,8 @@ int setupTCPServerSocket(const char *service, const int family) {
 				log(ERROR, "set IPv6 socket options failed %s", strerror(errno));
 			}
 		}
-	
+
+		setsockopt(servSock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
 		// bind the socket to localhost port 8888
 		if (bind(servSock, addr->ai_addr, addr->ai_addrlen) < 0) 
 		{
