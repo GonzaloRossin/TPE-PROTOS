@@ -212,8 +212,15 @@ void masterSocketHandler(struct selector_key *key) {
 				.handle_write      = socks5_active_write_client,
 				.handle_close      = NULL, // nada que liberar
     		};
+
+			static const struct fd_handler remote_socksv5 = {
+				.handle_read       = socks5_active_read_remote,
+				.handle_write      = socks5_active_write_remote,
+				.handle_close      = NULL, // nada que liberar
+			};
 			
 			int ss = selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
+			selector_register(key->s, new_remote_socket, &remote_socksv5, OP_READ, &clis[i]);
 
 			log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
 			log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
