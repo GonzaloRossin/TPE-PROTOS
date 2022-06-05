@@ -22,7 +22,7 @@ int handleProxyAddr(){
 	if (sock < 0) {
 		log(FATAL, "socket() failed")
 	}
-	log(DEBUG, "new socket is %d", sock);
+	//log(DEBUG, "new (remote) socket is %d", sock);
 	return sock;
 }
 
