@@ -38,7 +38,7 @@ static enum request_state rsv(const uint8_t c, struct request_parser * p){
 static enum request_state atyp(const uint8_t c, struct request_parser * p){
     enum request_state next;
 
-    p->request->dest_addr_type = continue;
+    p->request->dest_addr_type = c;
     switch (p->request->dest_addr_type) {
         case socks_req_addrtype_ipv4:
             remaining_set(p, 4);
@@ -49,7 +49,7 @@ static enum request_state atyp(const uint8_t c, struct request_parser * p){
         case socks_req_addrtype_ipv6:
             remaining_set(p, 16);
             memset(&(p->request->dest_addr.ipv6), 0, sizeof(p->request->dest_addr.ipv6));
-            p->request->dest_addr.ipv6.sin_family = AF_INET6;
+            p->request->dest_addr.ipv6.sin6_family = AF_INET6;
             next = request_dstaddr;
             break;
         case socks_req_addrtype_domain:
@@ -83,7 +83,7 @@ static enum request_state dstaddr(const uint8_t c, struct request_parser * p){
             p->request->dest_addr.fqdn[p->i++] = c;
             break;
     }
-    if (remaininf_is_done(p)) {
+    if (remaining_is_done(p)) {
         remaining_set(p, 2);
         p->request->dest_port = 0;
         next = request_dstport;
@@ -107,9 +107,47 @@ static enum request_state dstport(const uint8_t c, struct request_parser * p){ /
 
 extern void request_parser_init (struct request_parser * p) {
     p->state = request_version;
-    memset(p->request, 0, sizeof(*(p->request)));
+    p->request = calloc(1,sizeof(struct request));
+    //memset(p->request,0,sizeof(struct request));
 }
 
+extern enum request_state request_consume(buffer * buffer, struct request_parser * parser, bool *errored){
+    enum request_state st = parser->state;
+
+    while(buffer_can_read(buffer)) {
+        const uint8_t c = buffer_read(buffer);
+        st = request_parser_feed(parser, c);
+        if(request_is_done(st, errored)){
+            break;
+        }
+    }
+    return st;
+}
+void free_request(struct request_parser* parser){
+    if(parser != NULL){
+        free(parser->request);
+    }
+    return;
+}
+extern bool request_is_done(const enum request_state state, bool * errored){
+    bool ret;
+    switch (state)
+        {
+        case request_error:
+            if (0 != errored){
+                *errored = true;
+            }
+            // no break;
+        case request_done:
+            ret = true;
+            break;
+
+        default:
+            ret = false;
+            break;
+        }
+    return ret;
+}
 extern enum request_state request_parser_feed(struct request_parser * p, const uint8_t c){
     enum request_state next;
 
