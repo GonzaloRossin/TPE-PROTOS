@@ -117,7 +117,7 @@ void socks5_active_read_client(struct selector_key *key){
 	}
 }
 
-void socks5_active_write_client(struct selector_key *key){
+void socks5_active_write_remote(struct selector_key *key){
 	struct client * currClient = (struct client *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
@@ -201,7 +201,7 @@ void socks5_active_read_remote(struct selector_key *key){
 	}
 }
 
-void socks5_active_write_remote(struct selector_key *key){
+void socks5_active_write_client(struct selector_key *key){
 	struct client * currClient = (struct client *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
