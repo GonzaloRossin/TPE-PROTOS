@@ -13,7 +13,7 @@ server has array of clients
 #include <stdlib.h>
 
 enum client_state {
-    socks_hello_state,
+    socks_hello_state = 0,
     socks_request_state,
     connected_state,
     close_state,
@@ -44,8 +44,7 @@ void
 new_client(struct client * newClient, int clientSocket, int BUFFSIZE);
 
 //frees client resources
-void
-removeClient();
+void removeClient(struct client * client);
 
 enum client_state
 advanceClientState();

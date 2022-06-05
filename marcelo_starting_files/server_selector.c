@@ -15,7 +15,6 @@
 #include "tcpClientUtil.h"
 #include "proxyHandler.h"
 #include "buffer.h"
-#include "client.h"
 #include "selector.h"
 
 static bool done = false;
@@ -182,90 +181,14 @@ finally:
     return ret;
 }
 
-
-//era del echo UDP pero talvez nos sirva
-void handleAddrInfo(int socket) {
-	// En el datagrama viene el nombre a resolver
-	// Se le devuelve la informacion asociada
-
-	char buffer[BUFFSIZE];
-	unsigned int len, n;
-
-	struct sockaddr_in clntAddr;
-
-	// Es bloqueante, deberian invocar a esta funcion solo si hay algo disponible en el socket    
-	n = recvfrom(socket, buffer, BUFFSIZE, 0, ( struct sockaddr *) &clntAddr, &len);
-	if ( buffer[n-1] == '\n') // Por si lo estan probando con netcat, en modo interactivo
-		n--;
-	buffer[n] = '\0';
-	log(DEBUG, "UDP received:%s", buffer );
-	// TODO: parsear lo recibido para obtener nombre, puerto, etc. Asumimos viene solo el nombre
-
-	// Especificamos solo SOCK_STREAM para que no duplique las respuestas
-	struct addrinfo addrCriteria;                   // Criteria for address match
-	memset(&addrCriteria, 0, sizeof(addrCriteria)); // Zero out structure
-	addrCriteria.ai_family = AF_UNSPEC;             // Any address family
-	addrCriteria.ai_socktype = SOCK_STREAM;         // Only stream sockets
-	addrCriteria.ai_protocol = IPPROTO_TCP;         // Only TCP protocol
-
-
-	// Armamos el datagrama con las direcciones de respuesta, separadas por \r\n
-	// TODO: hacer una concatenacion segura
-	// TODO: modificar la funcion printAddressInfo usada en sockets bloqueantes para que sirva
-	//       tanto si se quiere obtener solo la direccion o la direccion mas el puerto
-	char bufferOut[BUFFSIZE];
-	bufferOut[0] = '\0';
-
-	struct addrinfo *addrList;
-	int rtnVal = getaddrinfo(buffer, NULL, &addrCriteria, &addrList);
-	if (rtnVal != 0) {
-		log(ERROR, "getaddrinfo() failed: %d: %s", rtnVal, gai_strerror(rtnVal));
-		strcat(strcpy(bufferOut,"Can't resolve "), buffer);
-
-	} else {
-		for (struct addrinfo *addr = addrList; addr != NULL; addr = addr->ai_next) {
-			struct sockaddr *address = addr->ai_addr;
-			char addrBuffer[INET6_ADDRSTRLEN];
-
-			void *numericAddress = NULL;
-			switch (address->sa_family) {
-				case AF_INET:
-					numericAddress = &((struct sockaddr_in *) address)->sin_addr;
-					break;
-				case AF_INET6:
-					numericAddress = &((struct sockaddr_in6 *) address)->sin6_addr;
-					break;
-			}
-			if ( numericAddress == NULL) {
-				strcat(bufferOut, "[Unknown Type]");
-			} else {
-				// Convert binary to printable address
-				if (inet_ntop(address->sa_family, numericAddress, addrBuffer, sizeof(addrBuffer)) == NULL)
-					strcat(bufferOut, "[invalid address]");
-				else {
-					strcat(bufferOut, addrBuffer);
-				}
-			}
-			strcat(bufferOut, "\r\n");
-		}
-		freeaddrinfo(addrList);
-	}
-
-	// Enviamos respuesta (el sendto no bloquea)
-	sendto(socket, bufferOut, strlen(bufferOut), 0, (const struct sockaddr *) &clntAddr, len);
-
-	log(DEBUG, "UDP sent:%s", bufferOut );
-}
-
-
 void masterSocketHandler(struct selector_key *key) {
 	struct client *cli;
 	
 	const int new_client_socket = acceptTCPConnection(key->fd);
-
 	selector_fd_set_nio(new_client_socket);
 
 	const int new_remote_socket = handleProxyAddr();
+	selector_fd_set_nio(new_remote_socket);
 
 	if ((new_remote_socket < 0)) {//open new remote socket
 		log(ERROR, "Accept error on creating new remote socket %d", new_remote_socket);
@@ -285,7 +208,7 @@ void masterSocketHandler(struct selector_key *key) {
 			set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
 
 			const struct fd_handler socksv5 = {
-				.handle_read       = NULL,
+				.handle_read       = socks5_active_read_client,
 				.handle_write      = NULL,
 				.handle_close      = NULL, // nada que liberar
     		};
