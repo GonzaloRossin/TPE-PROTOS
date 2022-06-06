@@ -34,7 +34,7 @@ int handleProxyAddr() {
 	// Create a reliable, stream socket using TCP
 	int sock = tcpClientSocket(server, port);
 	if (sock < 0) {
-		log(FATAL, "socket() failed")
+		log(FATAL, "socket() failed");
 	}
 	//log(DEBUG, "new (remote) socket is %d", sock);
 	return sock;
@@ -74,6 +74,7 @@ void socks5_active_read_client(struct selector_key *key){
 	int clientSocket = currClient->client_socket;
 	int remoteSocket = currClient->remote_socket;
 	//esto es temporal:
+	size_t nbytes = 0;
 	currState = connected_state;
 
 	switch (currState)
@@ -92,8 +93,8 @@ void socks5_active_read_client(struct selector_key *key){
 			//hacer función separada mas cheto
 			log(DEBUG, "reading client on socket %d", clientSocket);
 			//Check if it was for closing , and also read the incoming message
-			size_t nbytes = currClient->bufferFromClient.limit - currClient->bufferFromClient.write;
-			log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
+			nbytes = (currClient->bufferFromClient.limit - currClient->bufferFromClient.write);
+			//log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
 			if ((valread = read( clientSocket , currClient->bufferFromClient.data, nbytes)) <= 0) //hace write en el buffer
 			{
 				//Somebody disconnected , get his details and print
@@ -105,8 +106,8 @@ void socks5_active_read_client(struct selector_key *key){
 				selector_unregister_fd(key->s, currClient->client_socket);
 			} 
 			else {
-				log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
-				log(DEBUG, "%s", currClient->bufferFromClient.data);
+				//log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
+				//log(DEBUG, "%s", currClient->bufferFromClient.data);
 				// ya se almacena en el buffer con la funcion read de arriba
 				buffer_write_adv(&currClient->bufferFromClient, valread);
 				selector_set_interest(key->s, remoteSocket, OP_WRITE);
@@ -193,7 +194,6 @@ void socks5_active_read_remote(struct selector_key *key){
 				// ya se almacena en el buffer con la funcion read de arriba
 				buffer_write_adv(&currClient->bufferFromRemote, valread);
 				selector_set_interest(key->s, clientSocket, OP_WRITE);
-
 			}
 			break;
 

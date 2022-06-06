@@ -52,7 +52,7 @@ int main(int argc , char *argv[])
 	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
 	int addrlen , max_clients = MAX_SOCKETS/2 , activity, i , clientSocket, remoteSocket;
-	struct client clients[max_clients];
+	//struct client clients[max_clients];
 	long valread;
 	int max_sd;
 	struct sockaddr_in address;
@@ -64,19 +64,14 @@ int main(int argc , char *argv[])
 	selector_status   ss      = SELECTOR_SUCCESS;
     fd_selector selector      = NULL;
 
-	//char buffer[BUFFSIZE + 1];  //data buffer of 1K
-
-	//set of socket descriptors
-	fd_set readfds;
-
-	// y tambien los flags para writes
-	fd_set writefds;
 
 	//initialise all clients to 0
-	memset(clients, 0, sizeof(clients));
+	//memset(clients, 0, sizeof(clients));
+	struct client * clients = (struct client *)malloc(sizeof(struct client) * max_clients);
 	for(i=0; i<max_clients; i++){
 		clients[i].isAvailable = true;
 	}
+
 
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
@@ -121,19 +116,27 @@ int main(int argc , char *argv[])
         err_msg = "unable to create selector";
         goto finally;
     }
-    const struct fd_handler socksv5 = {
-        .handle_read       = masterSocketHandler,
-        .handle_write      = NULL,
-        .handle_close      = NULL, // nada que liberar
-    };
 
-	struct clients_data clients_struct = {
-		.clients = clients,
-		.clients_size = max_clients
-	};
+	struct fd_handler * socksv5_master = (struct fd_handler *)malloc(sizeof(struct fd_handler));
+	socksv5_master->handle_read        = masterSocketHandler;
+	socksv5_master->handle_write       = NULL;
+	socksv5_master->handle_close       = NULL;
+    // const struct fd_handler socksv5_master = {
+    //     .handle_read       = masterSocketHandler,
+    //     .handle_write      = NULL,
+    //     .handle_close      = NULL, // nada que liberar
+    // };
+
+	struct clients_data * clients_struct = (struct clients_data *)malloc(sizeof(struct clients_data));
+	clients_struct->clients = clients;
+	clients_struct->clients_size = max_clients;
+	// struct clients_data clients_struct = {
+	// 	.clients = clients,
+	// 	.clients_size = max_clients
+	// };
 
 	for (int i = 0; i < master_socket_size; i++) {
-		ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, &clients_struct);
+		ss = selector_register(selector, master_socket[i], socksv5_master, OP_READ, clients_struct);
 
 		if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";
@@ -207,20 +210,30 @@ void masterSocketHandler(struct selector_key *key) {
 			new_client(&clis[i], new_client_socket, BUFFSIZE);
 			set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
 
-			const struct fd_handler socksv5 = {
-				.handle_read       = socks5_active_read_client,
-				.handle_write      = socks5_active_write_client,
-				.handle_close      = NULL, // nada que liberar
-    		};
+			struct fd_handler * client_socksv5 = malloc(sizeof(struct fd_handler));
 
-			static const struct fd_handler remote_socksv5 = {
-				.handle_read       = socks5_active_read_remote,
-				.handle_write      = socks5_active_write_remote,
-				.handle_close      = NULL, // nada que liberar
-			};
+			client_socksv5->handle_read 	  = socks5_active_read_client;
+			client_socksv5->handle_write      = socks5_active_write_client;
+			client_socksv5->handle_close      = NULL;
+			//  {
+			// 	.handle_read       = socks5_active_read_client,
+			// 	.handle_write      = socks5_active_write_client,
+			// 	.handle_close      = NULL, // nada que liberar
+    		// };
+
+			struct fd_handler * remote_socksv5 = malloc(sizeof(struct fd_handler));
+			remote_socksv5->handle_read 	  = socks5_active_read_remote;
+			remote_socksv5->handle_write      = socks5_active_write_remote;
+			remote_socksv5->handle_close      = NULL;
+
+			// static const struct fd_handler remote_socksv5 = {
+			// 	.handle_read       = socks5_active_read_remote,
+			// 	.handle_write      = socks5_active_write_remote,
+			// 	.handle_close      = NULL, // nada que liberar
+			// };
 			
-			int ss = selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
-			selector_register(key->s, new_remote_socket, &remote_socksv5, OP_READ, &clis[i]);
+			selector_register(key->s, new_client_socket, client_socksv5, OP_READ, &clis[i]);
+			selector_register(key->s, new_remote_socket, remote_socksv5, OP_READ, &clis[i]);
 
 			log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
 			log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
