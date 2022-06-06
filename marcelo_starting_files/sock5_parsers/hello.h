@@ -56,7 +56,7 @@ enum hello_state hello_consume(buffer * b, struct hello_parser *parser, bool * e
 bool hello_is_done(const enum hello_state state, bool * errored);
 
 //error handler
-extern const cahr * hello_error(const struct hello_parser * parser);
+extern const char * hello_error(const struct hello_parser * parser);
 
 //libera recursos internos del parser
 void hello_parser_close(struct hello_parser * parser);

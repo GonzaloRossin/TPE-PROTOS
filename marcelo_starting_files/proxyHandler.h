@@ -20,6 +20,11 @@
 //crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
 int handleProxyAddr();
 
+/**
+  Maneja la actividad del master socket.
+  */
+void masterSocketHandler(struct selector_key *key);
+
 void readFromProxy(int remoteSocket, int clientSocket, fd_set * writefds);
 
 /**

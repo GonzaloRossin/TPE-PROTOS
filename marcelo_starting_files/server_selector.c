@@ -41,11 +41,6 @@ sigterm_handler(const int signal) {
   */
 void handleAddrInfo(int socket);
 
-/**
-  Maneja la actividad del master socket.
-  */
-void masterSocketHandler(struct selector_key *key);
-
 
 int main(int argc , char *argv[])
 {
@@ -179,53 +174,4 @@ finally:
 	}
     
     return ret;
-}
-
-void masterSocketHandler(struct selector_key *key) {
-	struct client *cli;
-	
-	const int new_client_socket = acceptTCPConnection(key->fd);
-	selector_fd_set_nio(new_client_socket);
-
-	const int new_remote_socket = handleProxyAddr();
-	selector_fd_set_nio(new_remote_socket);
-
-	if ((new_remote_socket < 0)) {//open new remote socket
-		log(ERROR, "Accept error on creating new remote socket %d", new_remote_socket);
-	}
-
-	// add new socket to array of sockets
-	int i;
-	struct clients_data * cli_data = (struct clients_data *)key->data;
-	struct client * clis = cli_data->clients;
-
-	for (i = 0; i < cli_data->clients_size; i++) 
-	{
-		// if position is empty
-		if(clis[i].isAvailable )
-		{
-			new_client(&clis[i], new_client_socket, BUFFSIZE);
-			set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
-
-			const struct fd_handler socksv5 = {
-				.handle_read       = socks5_active_read_client,
-				.handle_write      = socks5_active_write_client,
-				.handle_close      = NULL, // nada que liberar
-    		};
-
-			static const struct fd_handler remote_socksv5 = {
-				.handle_read       = socks5_active_read_remote,
-				.handle_write      = socks5_active_write_remote,
-				.handle_close      = NULL, // nada que liberar
-			};
-			
-			int ss = selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
-			selector_register(key->s, new_remote_socket, &remote_socksv5, OP_READ, &clis[i]);
-
-			log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
-			log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
-
-			break;
-		}
-	}
 }
