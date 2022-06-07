@@ -130,20 +130,19 @@ void socks5_read(struct selector_key *key) {
 			break;
 
 		case connected_state:
-	
+			if (!currClient->client.st_connected.init) {
+				init_client_copy(currClient);
+			}
+			if (!currClient->remote.st_connected.init) {
+				init_remote_copy(currClient);
+			}
 			if(key->fd == clientSocket) {
-				if (!currClient->client.st_connected.init) {
-					init_client_copy(currClient);
-				}
 				fd_read = currClient->client.st_connected.read_fd;
-				fd_write = currClient->client.st_connected.write_fd;
+				fd_write = currClient->remote.st_connected.read_fd;
 				buff = currClient->client.st_connected.w;
 			} else {
-				if (!currClient->client.st_connected.init) {
-					init_remote_copy(currClient);
-				}
 				fd_read = currClient->remote.st_connected.read_fd;
-				fd_write = currClient->remote.st_connected.write_fd;
+				fd_write = currClient->client.st_connected.read_fd;
 				buff = currClient->remote.st_connected.w;
 			}
 			log(DEBUG, "reading on socket %d", fd_read);
@@ -190,19 +189,19 @@ void socks5_write(struct selector_key *key) {
 			break;
 
 		case connected_state:
+			if (!currClient->client.st_connected.init) {
+				init_client_copy(currClient);
+			}
+			if (!currClient->remote.st_connected.init) {
+				init_remote_copy(currClient);
+			}
 			if(key->fd == clientSocket) {
-				if (!currClient->client.st_connected.init) {
-					init_client_copy(currClient);
-				}
-				fd_read = currClient->client.st_connected.read_fd;
-				fd_write = currClient->client.st_connected.write_fd;
+				fd_read = currClient->client.st_connected.write_fd;
+				fd_write = currClient->remote.st_connected.write_fd;
 				buff = currClient->client.st_connected.r;
 			} else {
-				if (!currClient->remote.st_connected.init) {
-					init_remote_copy(currClient);
-				}
-				fd_read = currClient->remote.st_connected.read_fd;
-				fd_write = currClient->remote.st_connected.write_fd;
+				fd_read = currClient->remote.st_connected.write_fd;
+				fd_write = currClient->client.st_connected.write_fd;
 				buff = currClient->remote.st_connected.r;
 			}
 			log(DEBUG, "trying to send client content to his remote socket");
