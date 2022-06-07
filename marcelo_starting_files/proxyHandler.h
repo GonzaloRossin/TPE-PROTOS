@@ -32,6 +32,8 @@ void readFromProxy(int remoteSocket, int clientSocket, fd_set * writefds);
   */
 int handleWrite(int socket, struct buffer * buffer);
 
+void socks5_read(struct selector_key *key);
+
 //read y write handlers del client (si éste quiere leer o escribir)
 void socks5_active_read_client(struct selector_key *key);
 void socks5_active_write_client(struct selector_key *key);

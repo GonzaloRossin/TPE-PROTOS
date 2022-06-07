@@ -47,7 +47,7 @@ int main(int argc , char *argv[])
 	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
 	int addrlen , max_clients = MAX_SOCKETS/2 , activity, i , clientSocket, remoteSocket;
-	struct client clients[max_clients];
+	struct socks5 clients[max_clients];
 	long valread;
 	int max_sd;
 	struct sockaddr_in address;

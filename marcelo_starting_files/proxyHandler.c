@@ -10,20 +10,26 @@ struct proxyBuffer {
 };
 
 
-static const struct fd_handler remote_socksv5 = {
-	.handle_read       = socks5_active_read_remote,
-	.handle_write      = socks5_active_write_remote,
-	.handle_close      = NULL, // nada que liberar
-};
+// static const struct fd_handler remote_socksv5 = {
+// 	.handle_read       = socks5_active_read_remote,
+// 	.handle_write      = socks5_active_write_remote,
+// 	.handle_close      = NULL, // nada que liberar
+// };
 
-static const struct fd_handler client_socksv5 = {
-	.handle_read       = socks5_active_read_client,
-	.handle_write      = socks5_active_write_client,
+// static const struct fd_handler client_socksv5 = {
+// 	.handle_read       = socks5_active_read_client,
+// 	.handle_write      = socks5_active_write_client,
+// 	.handle_close      = NULL, // nada que liberar
+// };
+
+static const struct fd_handler socksv5 = {
+	.handle_read       = socks5_read,
+	.handle_write      = NULL,
 	.handle_close      = NULL, // nada que liberar
 };
 
 void masterSocketHandler(struct selector_key *key) {
-	struct client *cli;
+	struct socks5 *cli;
 	
 	const int new_client_socket = acceptTCPConnection(key->fd);
 	selector_fd_set_nio(new_client_socket);
@@ -38,7 +44,7 @@ void masterSocketHandler(struct selector_key *key) {
 	// add new socket to array of sockets
 	int i;
 	struct clients_data * cli_data = (struct clients_data *)key->data;
-	struct client * clis = cli_data->clients;
+	struct socks5 * clis = cli_data->clients;
 
 	for (i = 0; i < cli_data->clients_size; i++) 
 	{
@@ -48,8 +54,8 @@ void masterSocketHandler(struct selector_key *key) {
 			new_client(&clis[i], new_client_socket, BUFFSIZE);
 			set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
 			
-			int ss = selector_register(key->s, new_client_socket, &client_socksv5, OP_READ, &clis[i]);
-			selector_register(key->s, new_remote_socket, &remote_socksv5, OP_READ, &clis[i]);
+			int ss = selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
+			selector_register(key->s, new_remote_socket, &socksv5, OP_READ, &clis[i]);
 
 			log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
 			log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
@@ -103,8 +109,75 @@ int handleWrite(int socket, struct buffer * buffer) {
 	return 0;
 }
 
-void socks5_active_read_client(struct selector_key *key){
-	struct client * currClient = (struct client *)key->data;
+void socks5_read(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	struct connection_state currState = currClient->connection_state;
+	int clientSocket = currClient->client_socket;
+	int remoteSocket = currClient->remote_socket;
+	int fd_read, fd_write;
+	buffer * buff;
+	//esto es temporal:
+	currState.client_state = connected_state;
+
+	switch (currState.client_state)
+	{
+		case socks_hello_state:
+			// do socks5 hello read
+			break;
+		
+		case socks_request_state:
+			// do socks5 request read
+			break;
+
+		case connected_state:
+		
+			if(key->fd == clientSocket) {
+				if (!currState.init) {
+					init_client_copy(currClient);
+				}
+				fd_read = currClient->client.st_copy.read_fd;
+				fd_write = currClient->client.st_copy.write_fd;
+				buff = &currClient->client.st_copy.r;
+			} else {
+				fd_read = remoteSocket;
+			}
+			log(DEBUG, "reading on socket %d", fd_read);
+			//Check if it was for closing , and also read the incoming message
+			size_t nbytes = buff->limit - buff->write;
+			log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
+			if ((valread = read( fd_read , buff->data, nbytes)) <= 0) //hace write en el buffer
+			{
+				log(INFO, "Host disconnected\n");
+
+				removeClient(currClient);
+				selector_unregister_fd(key->s, currClient->client_socket);
+			} 
+			else {
+				log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
+				log(DEBUG, "%s", buff->data);
+				// ya se almacena en el buffer con la funcion read de arriba
+				buffer_write_adv(buff, valread);
+				selector_set_interest(key->s, fd_write, OP_WRITE);
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+// void socks5_write(struct selector_key *key) {
+// 	struct socks5 * currClient = (struct socks5 *)key->data;
+// 	// enum client_state currState = currClient.state;
+// 	int clientSocket = currClient->client_socket;
+// 	int remoteSocket = currClient->remote_socket;
+// 	//esto es temporal:
+// 	// currState = connected_state;
+// }
+
+
+
+/* void socks5_active_read_client(struct selector_key *key){
+	struct socks5 * currClient = (struct socks5 *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
 	int remoteSocket = currClient->remote_socket;
@@ -122,18 +195,12 @@ void socks5_active_read_client(struct selector_key *key){
 			break;
 
 		case connected_state:
-			// do normal read
-			//read from client
-			//hacer función separada mas cheto
 			log(DEBUG, "reading client on socket %d", clientSocket);
 			//Check if it was for closing , and also read the incoming message
 			size_t nbytes = currClient->bufferFromClient.limit - currClient->bufferFromClient.write;
 			log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
 			if ((valread = read( clientSocket , currClient->bufferFromClient.data, nbytes)) <= 0) //hace write en el buffer
 			{
-				//Somebody disconnected , get his details and print
-				//getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
-				//log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
 				log(INFO, "Host disconnected\n");
 
 				removeClient(currClient);
@@ -154,7 +221,7 @@ void socks5_active_read_client(struct selector_key *key){
 }
 
 void socks5_active_write_remote(struct selector_key *key){
-	struct client * currClient = (struct client *)key->data;
+	struct socks5 * currClient = (struct socks5 *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
 	int remoteSocket = currClient->remote_socket;
@@ -188,7 +255,7 @@ void socks5_active_write_remote(struct selector_key *key){
 //-----------
 
 void socks5_active_read_remote(struct selector_key *key){
-	struct client * currClient = (struct client *)key->data;
+	struct socks5 * currClient = (struct socks5 *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
 	int remoteSocket = currClient->remote_socket;
@@ -238,7 +305,7 @@ void socks5_active_read_remote(struct selector_key *key){
 }
 
 void socks5_active_write_client(struct selector_key *key){
-	struct client * currClient = (struct client *)key->data;
+	struct socks5 * currClient = (struct socks5 *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
 	int remoteSocket = currClient->remote_socket;
@@ -267,4 +334,4 @@ void socks5_active_write_client(struct selector_key *key){
 		default:
 			break;
 	}
-}
+} */

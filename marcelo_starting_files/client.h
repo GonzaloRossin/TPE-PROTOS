@@ -22,34 +22,57 @@ enum client_state {
 
 struct clients_data
 {
-    struct client * clients;
+    struct socks5 * clients;
     int clients_size;
 };
 
-struct client
+struct copy {
+  int write_fd;
+  struct buffer w;
+  struct buffer r;
+  int read_fd;
+};
+
+struct connection_state {
+    int init;
+    enum client_state client_state;
+};
+
+struct socks5
 {
     int client_socket;
+
     int remote_socket;
 
     struct buffer bufferFromClient;
     struct buffer bufferFromRemote;
 
-    enum client_state state;
+    struct connection_state connection_state;
+
+    union {
+        struct copy st_copy;
+    } client;
+
+    union {
+        struct copy st_copy;
+    } remote;
 
     bool isAvailable;
 };
 
 //creates new client
 void
-new_client(struct client * newClient, int clientSocket, int BUFFSIZE);
+new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE);
+
+void init_client_copy(struct socks5 * client);
 
 //frees client resources
-void removeClient(struct client * client);
+void removeClient(struct socks5 * client);
 
 enum client_state
 advanceClientState();
 
 void
-set_client_remote(struct client * client, int remote_socket, int BUFFSIZE);
+set_client_remote(struct socks5 * client, int remote_socket, int BUFFSIZE);
 
 
