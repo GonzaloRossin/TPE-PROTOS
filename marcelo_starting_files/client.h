@@ -43,7 +43,6 @@ struct connection_state {
 struct socks5
 {
     int client_socket;
-
     int remote_socket;
 
     buffer * bufferFromClient;

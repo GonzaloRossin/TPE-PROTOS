@@ -50,9 +50,8 @@ void init_remote_copy(struct socks5 * client) {
 
 
 
-void removeClient(struct socks5 * client){
+void removeClient(struct socks5 * client) {
     close( client->client_socket );
-    close( client->remote_socket );
 
     client->client_socket = 0;
     client->remote_socket = 0;
