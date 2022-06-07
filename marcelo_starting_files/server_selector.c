@@ -31,7 +31,6 @@ sigterm_handler(const int signal) {
 #define FALSE  0
 #define PORT "8888"
 #define MAX_SOCKETS 30
-#define BUFFSIZE 4096
 #define MAX_PENDING_CONNECTIONS   3    // un valor bajo, para realizar pruebas
 
 

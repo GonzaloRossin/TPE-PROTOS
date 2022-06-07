@@ -16,6 +16,8 @@
 #include "client.h"
 #include "selector.h"
 
+#define BUFFSIZE 4096
+
 //Se encarga de devolver el socket a quien el proxy debe mandar
 //crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
 int handleProxyAddr();
@@ -33,6 +35,7 @@ void readFromProxy(int remoteSocket, int clientSocket, fd_set * writefds);
 int handleWrite(int socket, struct buffer * buffer);
 
 void socks5_read(struct selector_key *key);
+void socks5_write(struct selector_key *key);
 
 //read y write handlers del client (si éste quiere leer o escribir)
 void socks5_active_read_client(struct selector_key *key);

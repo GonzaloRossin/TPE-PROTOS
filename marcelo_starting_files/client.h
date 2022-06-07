@@ -26,11 +26,13 @@ struct clients_data
     int clients_size;
 };
 
-struct copy {
+struct connected {
   int write_fd;
-  struct buffer w;
-  struct buffer r;
   int read_fd;
+
+  buffer * w;
+  buffer * r;
+  int init;
 };
 
 struct connection_state {
@@ -44,17 +46,17 @@ struct socks5
 
     int remote_socket;
 
-    struct buffer bufferFromClient;
-    struct buffer bufferFromRemote;
+    buffer * bufferFromClient;
+    buffer * bufferFromRemote;
 
     struct connection_state connection_state;
 
     union {
-        struct copy st_copy;
+        struct connected st_connected;
     } client;
 
     union {
-        struct copy st_copy;
+        struct connected st_connected;
     } remote;
 
     bool isAvailable;
@@ -65,6 +67,7 @@ void
 new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE);
 
 void init_client_copy(struct socks5 * client);
+void init_remote_copy(struct socks5 * client);
 
 //frees client resources
 void removeClient(struct socks5 * client);

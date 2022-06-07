@@ -1,6 +1,6 @@
 #include "proxyHandler.h"
 
-#define BUFFSIZE 1024
+
 long valread;
 
 struct proxyBuffer {
@@ -24,7 +24,7 @@ struct proxyBuffer {
 
 static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
-	.handle_write      = NULL,
+	.handle_write      = socks5_write,
 	.handle_close      = NULL, // nada que liberar
 };
 
@@ -130,16 +130,21 @@ void socks5_read(struct selector_key *key) {
 			break;
 
 		case connected_state:
-		
+	
 			if(key->fd == clientSocket) {
-				if (!currState.init) {
+				if (!currClient->client.st_connected.init) {
 					init_client_copy(currClient);
 				}
-				fd_read = currClient->client.st_copy.read_fd;
-				fd_write = currClient->client.st_copy.write_fd;
-				buff = &currClient->client.st_copy.r;
+				fd_read = currClient->client.st_connected.read_fd;
+				fd_write = currClient->client.st_connected.write_fd;
+				buff = currClient->client.st_connected.w;
 			} else {
-				fd_read = remoteSocket;
+				if (!currClient->client.st_connected.init) {
+					init_remote_copy(currClient);
+				}
+				fd_read = currClient->remote.st_connected.read_fd;
+				fd_write = currClient->remote.st_connected.write_fd;
+				buff = currClient->remote.st_connected.w;
 			}
 			log(DEBUG, "reading on socket %d", fd_read);
 			//Check if it was for closing , and also read the incoming message
@@ -165,14 +170,52 @@ void socks5_read(struct selector_key *key) {
 	}
 }
 
-// void socks5_write(struct selector_key *key) {
-// 	struct socks5 * currClient = (struct socks5 *)key->data;
-// 	// enum client_state currState = currClient.state;
-// 	int clientSocket = currClient->client_socket;
-// 	int remoteSocket = currClient->remote_socket;
-// 	//esto es temporal:
-// 	// currState = connected_state;
-// }
+void socks5_write(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	struct connection_state currState = currClient->connection_state;
+	int clientSocket = currClient->client_socket;
+	int remoteSocket = currClient->remote_socket;
+	int fd_read, fd_write;
+	buffer * buff;
+	//esto es temporal:
+	currState.client_state = connected_state;
+
+	switch (currState.client_state) {
+		case socks_hello_state:
+			// do socks5 hello read
+			break;
+		
+		case socks_request_state:
+			// do socks5 request read
+			break;
+
+		case connected_state:
+			if(key->fd == clientSocket) {
+				if (!currClient->client.st_connected.init) {
+					init_client_copy(currClient);
+				}
+				fd_read = currClient->client.st_connected.read_fd;
+				fd_write = currClient->client.st_connected.write_fd;
+				buff = currClient->client.st_connected.r;
+			} else {
+				if (!currClient->remote.st_connected.init) {
+					init_remote_copy(currClient);
+				}
+				fd_read = currClient->remote.st_connected.read_fd;
+				fd_write = currClient->remote.st_connected.write_fd;
+				buff = currClient->remote.st_connected.r;
+			}
+			log(DEBUG, "trying to send client content to his remote socket");
+			if(handleWrite(fd_write, buff) == 0){
+				//ya se mandaron todos los bytes, solo queda leer
+				selector_set_interest(key->s, fd_write, OP_READ);
+			}
+			break;
+		
+		default:
+			break;
+	}
+}
 
 
 
@@ -218,43 +261,43 @@ void socks5_read(struct selector_key *key) {
 		default:
 			break;
 	}
-}
+} */
 
-void socks5_active_write_remote(struct selector_key *key){
-	struct socks5 * currClient = (struct socks5 *)key->data;
-	enum client_state currState = currClient->state;
-	int clientSocket = currClient->client_socket;
-	int remoteSocket = currClient->remote_socket;
-	//esto es temporal:
-	currState = connected_state;
+// void socks5_active_write_remote(struct selector_key *key){
+// 	struct socks5 * currClient = (struct socks5 *)key->data;
+// 	enum client_state currState = currClient->state;
+// 	int clientSocket = currClient->client_socket;
+// 	int remoteSocket = currClient->remote_socket;
+// 	//esto es temporal:
+// 	currState = connected_state;
 
-	switch (currState)
-	{
-		case socks_hello_state:
-			// do socks5 hello read
-			break;
+// 	switch (currState)
+// 	{
+// 		case socks_hello_state:
+// 			// do socks5 hello read
+// 			break;
 		
-		case socks_request_state:
-			// do socks5 request read
-			break;
+// 		case socks_request_state:
+// 			// do socks5 request read
+// 			break;
 
-		case connected_state:
-			//write to remote
-			log(DEBUG, "trying to send client content to his remote socket");
-			if(handleWrite(remoteSocket, &currClient->bufferFromClient) == 0){
-				//ya se mandaron todos los bytes, solo queda leer
-				selector_set_interest(key->s, remoteSocket, OP_READ);
-			}
-			break;
+// 		case connected_state:
+// 			//write to remote
+// 			log(DEBUG, "trying to send client content to his remote socket");
+// 			if(handleWrite(remoteSocket, &currClient->bufferFromClient) == 0){
+// 				//ya se mandaron todos los bytes, solo queda leer
+// 				selector_set_interest(key->s, remoteSocket, OP_READ);
+// 			}
+// 			break;
 		
-		default:
-			break;
-	}
-}
+// 		default:
+// 			break;
+// 	}
+// }
 
 //-----------
 
-void socks5_active_read_remote(struct selector_key *key){
+/* void socks5_active_read_remote(struct selector_key *key){
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	enum client_state currState = currClient->state;
 	int clientSocket = currClient->client_socket;
