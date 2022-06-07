@@ -359,3 +359,5 @@ marcelo_starting_files/udpEchoClient
 marcelo_starting_files/server
 
 marcelo_starting_files/server_selector
+
+*.o

@@ -23,7 +23,7 @@ int udpClientSocket(const char *host, const char *service, struct addrinfo **ser
   // Tomamos la primera de la lista
   int rtnVal = getaddrinfo(host, service, &addrCriteria, servAddr);
   if (rtnVal != 0) {
-    log(FATAL, "getaddrinfo() failed: %s", gai_strerror(rtnVal));
+    print_log(FATAL, "getaddrinfo() failed: %s", gai_strerror(rtnVal));
 	return -1;
   }
 
@@ -35,7 +35,7 @@ int udpClientSocket(const char *host, const char *service, struct addrinfo **ser
 int main(int argc, char *argv[]) {
 
   if (argc < 3 || argc > 4) 
-    log(FATAL, "Usage: %s <Server Address/Name> <Echo Word> <Server Port/Service>", argv[0]);
+    print_log(FATAL, "Usage: %s <Server Address/Name> <Echo Word> <Server Port/Service>", argv[0]);
 
   // A diferencia de TCP, guardamos a que IP/puerto se envia la data, para verificar
   // que la respuesta sea del mismo host
@@ -51,14 +51,14 @@ int main(int argc, char *argv[]) {
   errno = 0;
   int sock = udpClientSocket(server, servPort, &servAddr);
   if (sock < 0)
-    log(FATAL, "socket() failed: %s", strerror(errno));
+    print_log(FATAL, "socket() failed: %s", strerror(errno));
 
   // Enviamos el string
   ssize_t numBytes = sendto(sock, echoString, echoStringLen, 0, servAddr->ai_addr, servAddr->ai_addrlen);
   if (numBytes < 0) {
-    log(FATAL, "sendto() failed: %s", strerror(errno))
+    print_log(FATAL, "sendto() failed: %s", strerror(errno))
   } else if (numBytes != echoStringLen) {
-    log(FATAL, "sendto() error, sent unexpected number of bytes");
+    print_log(FATAL, "sendto() error, sent unexpected number of bytes");
   }
 
   // Guardamos la direccion/puerto de respuesta para verificar que coincida con el servidor
@@ -71,19 +71,19 @@ int main(int argc, char *argv[]) {
   tv.tv_sec = 5;
   tv.tv_usec = 0;
   if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
-      log(ERROR, "setsockopt error: %s", strerror(errno))
+      print_log(ERROR, "setsockopt error: %s", strerror(errno))
   }
 
   numBytes = recvfrom(sock, buffer, echoStringLen, 0, (struct sockaddr *) &fromAddr, &fromAddrLen);
   if (numBytes < 0) {
-    log(ERROR, "recvfrom() failed: %s", strerror(errno))
+    print_log(ERROR, "recvfrom() failed: %s", strerror(errno))
   } else {
     if (numBytes != echoStringLen)
-    	log(ERROR, "recvfrom() error. Received unexpected number of bytes, expected:%zu received:%zu ", echoStringLen, numBytes);
+    	print_log(ERROR, "recvfrom() error. Received unexpected number of bytes, expected:%zu received:%zu ", echoStringLen, numBytes);
 
     // "Autenticamos" la respuesta
     if (!sockAddrsEqual(servAddr->ai_addr, (struct sockaddr *) &fromAddr))
-       log(ERROR, "recvfrom() received a packet from other source");
+       print_log(ERROR, "recvfrom() received a packet from other source");
 
     buffer[numBytes] = '\0';     
     printf("Received: %s\n", buffer); 

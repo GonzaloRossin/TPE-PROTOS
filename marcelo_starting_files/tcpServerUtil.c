@@ -31,7 +31,7 @@ int setupTCPServerSocket(const char *service, const int family) {
 	struct addrinfo *servAddr; 			// List of server addresses
 	int rtnVal = getaddrinfo(NULL, service, &addrCriteria, &servAddr);
 	if (rtnVal != 0) {
-		log(FATAL, "getaddrinfo() failed %s", gai_strerror(rtnVal));
+		print_log(FATAL, "getaddrinfo() failed %s", gai_strerror(rtnVal));
 		return -1;
 	}
 
@@ -44,13 +44,13 @@ int setupTCPServerSocket(const char *service, const int family) {
 		// Create a TCP socket
 		servSock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (servSock < 0) {
-			log(DEBUG, "Cant't create socket on %s : %s ", printAddressPort(addr, addrBuffer), strerror(errno));  
+			print_log(DEBUG, "Cant't create socket on %s : %s ", printAddressPort(addr, addrBuffer), strerror(errno));  
 			continue;       // Socket creation failed; try next address
 		}
 		if (family == AF_INET6) {
 			if( setsockopt(servSock, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&opt, sizeof(opt)) < 0 )
 			{
-				log(ERROR, "set IPv6 socket options failed %s", strerror(errno));
+				print_log(ERROR, "set IPv6 socket options failed %s", strerror(errno));
 			}
 		}
 
@@ -58,14 +58,14 @@ int setupTCPServerSocket(const char *service, const int family) {
 		// bind the socket to localhost port 8888
 		if (bind(servSock, addr->ai_addr, addr->ai_addrlen) < 0) 
 		{
-			log(DEBUG, "Cant't bind %s", strerror(errno));  
+			print_log(DEBUG, "Cant't bind %s", strerror(errno));  
 			close(servSock);  // Close and try with the next one
 			servSock = -1;
 		}
 		else {
 			if (listen(servSock, MAXPENDING) < 0)
 			{
-				log(ERROR, "listen on IPv4 socket failes");
+				print_log(ERROR, "listen on IPv4 socket failes");
 				close(servSock);
 			} else {
 				// Print local address of socket
@@ -73,7 +73,7 @@ int setupTCPServerSocket(const char *service, const int family) {
 				socklen_t addrSize = sizeof(localAddr);
 				if (getsockname(servSock, (struct sockaddr *) &localAddr, &addrSize) >= 0) {
 					printSocketAddress((struct sockaddr *) &localAddr, addrBuffer);
-					log(INFO, "Binding to %s", addrBuffer);
+					print_log(INFO, "Binding to %s", addrBuffer);
 				}
 			}
 		}
@@ -92,13 +92,13 @@ int acceptTCPConnection(int servSock) {
 	// Wait for a client to connect
 	int clntSock = accept(servSock, (struct sockaddr *) &clntAddr, &clntAddrLen);
 	if (clntSock < 0) {
-		log(ERROR, "accept() failed");
+		print_log(ERROR, "accept() failed");
 		return -1;
 	}
 
 	// clntSock is connected to a client!
 	printSocketAddress((struct sockaddr *) &clntAddr, addrBuffer);
-	log(INFO, "Handling client %s", addrBuffer);
+	print_log(INFO, "Handling client %s", addrBuffer);
 
 	return clntSock;
 }
@@ -108,7 +108,7 @@ int handleTCPEchoClient(int clntSocket) {
 	// Receive message from client
 	ssize_t numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
 	if (numBytesRcvd < 0) {
-		log(ERROR, "recv() failed");
+		print_log(ERROR, "recv() failed");
 		return -1;   // TODO definir codigos de error
 	}
 
@@ -117,18 +117,18 @@ int handleTCPEchoClient(int clntSocket) {
 		// Echo message back to client
 		ssize_t numBytesSent = send(clntSocket, buffer, numBytesRcvd, 0);
 		if (numBytesSent < 0) {
-			log(ERROR, "send() failed");
+			print_log(ERROR, "send() failed");
 			return -1;   // TODO definir codigos de error
 		}
 		else if (numBytesSent != numBytesRcvd) {
-			log(ERROR, "send() sent unexpected number of bytes ");
+			print_log(ERROR, "send() sent unexpected number of bytes ");
 			return -1;   // TODO definir codigos de error
 		}
 
 		// See if there is more data to receive
 		numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
 		if (numBytesRcvd < 0) {
-			log(ERROR, "recv() failed");
+			print_log(ERROR, "recv() failed");
 			return -1;   // TODO definir codigos de error
 		}
 	}

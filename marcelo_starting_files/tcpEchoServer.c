@@ -12,7 +12,7 @@
 int main(int argc, char *argv[]) {
 
 	if (argc != 2) {
-		log(FATAL, "usage: %s <Server Port>", argv[0]);
+		print_log(FATAL, "usage: %s <Server Port>", argv[0]);
 	}
 
 	char * servPort = argv[1];
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 		// Wait for a client to connect
 		int clntSock = acceptTCPConnection(servSock);
 		if (clntSock < 0)
-			log(ERROR, "accept() failed")
+			print_log(ERROR, "accept() failed")
 		else {
 			handleTCPEchoClient(clntSock);
 		}

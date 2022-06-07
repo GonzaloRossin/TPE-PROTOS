@@ -14,7 +14,7 @@
 int main(int argc, char *argv[]) {
 
 	if (argc != 4) {
-		log(FATAL, "usage: %s <Server Name/Address> <Echo Word> <Server Port/Name>", argv[0]);
+		print_log(FATAL, "usage: %s <Server Name/Address> <Echo Word> <Server Port/Name>", argv[0]);
 	}
 
 	char *server = argv[1];     // First arg: server name IP address 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 	// Create a reliable, stream socket using TCP
 	int sock = tcpClientSocket(server, port);
 	if (sock < 0) {
-		log(FATAL, "socket() failed")
+		print_log(FATAL, "socket() failed")
 	}
 
 	size_t echoStringLen = strlen(echoString); // Determine input length
@@ -34,27 +34,27 @@ int main(int argc, char *argv[]) {
 	// Send the string to the server
 	ssize_t numBytes = send(sock, echoString, echoStringLen, 0);
 	if (numBytes < 0 || numBytes != echoStringLen)
-		log(FATAL, "send() failed expected %zu sent %zu", echoStringLen, numBytes);
+		print_log(FATAL, "send() failed expected %zu sent %zu", echoStringLen, numBytes);
 
 	// Receive the same string back from the server
 	unsigned int totalBytesRcvd = 0; // Count of total bytes received
-	log(INFO, "Received: ")     // Setup to print the echoed string
+	print_log(INFO, "Received: ")     // Setup to print the echoed string
 	while (totalBytesRcvd < echoStringLen && numBytes >=0) {
 
-		log(DEBUG, "in while");
+		print_log(DEBUG, "in while");
 		
 		char buffer[BUFSIZE]; 
 		/* Receive up to the buffer size (minus 1 to leave space for a null terminator) bytes from the sender */
 		numBytes = recv(sock, buffer, BUFSIZE - 1, 0);
 		if (numBytes < 0) {
-			log(ERROR, "recv() failed")
+			print_log(ERROR, "recv() failed")
 		}  
 		else if (numBytes == 0)
-			log(ERROR, "recv() connection closed prematurely")
+			print_log(ERROR, "recv() connection closed prematurely")
 		else {
 			totalBytesRcvd += numBytes; // Keep tally of total bytes
 			buffer[numBytes] = '\0';    // Terminate the string!
-			log(INFO, "%s", buffer);      // Print the echo buffer
+			print_log(INFO, "%s", buffer);      // Print the echo buffer
 		}
 	}
 

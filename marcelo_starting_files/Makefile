@@ -1,18 +1,20 @@
 .PHONY=clean all
-COMPILER=gcc
-CFLAGS = -Wall -fsanitize=address -g -lpthread
-all: clean tcpEchoClient server_selector
+CFLAGS = -fsanitize=address -fno-omit-frame-pointer -g --std=c11 -pedantic -pedantic-errors -Wall -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough -D_POSIX_C_SOURCE=200112L 
+LDFLAGS = -lpthread
+all: server_selector
 clean:	
-	- rm -f *.o  tcpEchoclient server_selector
+	- rm -f *.o server_selector
 
-COMMON =  logger.c util.c
-addrinfo:      
-	$(COMPILER) $(CFLAGS) -o addrinfo addrinfo.c $(COMMON) 
-tcpEchoClient:      
-	$(COMPILER) $(CFLAGS) -o tcpEchoClient tcpEchoClient.c tcpClientUtil.c $(COMMON)
-tcpEchoServer:      
-	$(COMPILER) $(CFLAGS) -o tcpEchoServer tcpEchoServer.c tcpServerUtil.c $(COMMON)
-server:      
-	$(COMPILER) $(CFLAGS) -o server server.c tcpServerUtil.c tcpClientUtil.c proxyHandler.c buffer.c client.c $(COMMON)
-server_selector:      
-	$(COMPILER) $(CFLAGS) -o server_selector server_selector.c selector.c tcpServerUtil.c tcpClientUtil.c proxyHandler.c buffer.c client.c  $(COMMON)
+COMMON =  logger.o util.o 
+SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o tcpClientUtil.o proxyHandler.o buffer.o client.o
+buffer.o: buffer.h
+selector.o: selector.h
+tcpServerUtil.o: tcpServerUtil.h
+tcpClientUtil.o: tcpClientUtil.h
+proxyHandler.o: proxyHandler.h
+buffer.o: buffer.h
+client.o: client.h
+
+
+server_selector: $(COMMON) $(SERVER_SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o server_selector $(SERVER_SOURCES) $(COMMON)

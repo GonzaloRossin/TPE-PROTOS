@@ -45,26 +45,14 @@ int main(int argc , char *argv[])
 {
 	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
-	int addrlen , max_clients = MAX_SOCKETS/2 , activity, i , clientSocket, remoteSocket;
+	int max_clients = MAX_SOCKETS/2 , i;
 	struct socks5 clients[max_clients];
-	long valread;
-	int max_sd;
-	struct sockaddr_in address;
-
-	struct sockaddr_storage clntAddr; // Client address
-	socklen_t clntAddrLen = sizeof(clntAddr);
 
 	const char       *err_msg = NULL;
 	selector_status   ss      = SELECTOR_SUCCESS;
     fd_selector selector      = NULL;
 
 	//char buffer[BUFFSIZE + 1];  //data buffer of 1K
-
-	//set of socket descriptors
-	fd_set readfds;
-
-	// y tambien los flags para writes
-	fd_set writefds;
 
 	//initialise all clients to 0
 	memset(clients, 0, sizeof(clients));
@@ -75,16 +63,16 @@ int main(int argc , char *argv[])
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET)) < 0) {
-		log(ERROR, "socket IPv4 failed");
+		print_log(ERROR, "socket IPv4 failed");
 	} else {
-		log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
+		print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
 		master_socket_size++;
 	}
 
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET6)) < 0) {
-		log(ERROR, "socket IPv6 failed");
+		print_log(ERROR, "socket IPv6 failed");
 	} else {
-		log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
+		print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
 		master_socket_size++;
 	}
 

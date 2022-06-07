@@ -68,16 +68,16 @@ int main(int argc , char *argv[])
 	// socket para IPv4 y para IPv6 (si estan disponibles)
 	///////////////////////////////////////////////////////////// IPv4
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET)) < 0) {
-		log(ERROR, "socket IPv4 failed");
+		print_log(ERROR, "socket IPv4 failed");
 	} else {
-		log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
+		print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
 		master_socket_size++;
 	}
 
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET6)) < 0) {
-		log(ERROR, "socket IPv6 failed");
+		print_log(ERROR, "socket IPv6 failed");
 	} else {
-		log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
+		print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
 		master_socket_size++;
 	}
 
@@ -128,11 +128,11 @@ int main(int argc , char *argv[])
 		//wait for an activity on one of the sockets , timeout is NULL , so wait indefinitely
 		activity = select( max_sd + 1 , &readfds , &writefds , NULL , NULL);
 
-		log(DEBUG, "select has something...");	
+		print_log(DEBUG, "select has something...");	
 
 		if ((activity < 0) && (errno!=EINTR)) 
 		{
-			log(ERROR, "select error, errno=%d",errno);
+			print_log(ERROR, "select error, errno=%d",errno);
 			continue;
 		}
 
@@ -151,21 +151,21 @@ int main(int argc , char *argv[])
 			//read from client
 			if (FD_ISSET( clientSocket , &readfds)) 
 			{
-				log(DEBUG, "reading client %d on socket %d", i, clientSocket);
+				print_log(DEBUG, "reading client %d on socket %d", i, clientSocket);
 				//Check if it was for closing , and also read the incoming message
 				nbytes = clients[i].bufferFromClient.limit - clients[i].bufferFromClient.write;
-				log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes)
+				print_log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes)
 				if ((valread = read( clientSocket , clients[i].bufferFromClient.data, nbytes)) <= 0) //hace write en el buffer
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(clientSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
-					log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+					print_log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
 
 					removeClient(&clients[i]);
 					FD_CLR(clientSocket, &writefds);
 				} 
 				else {
-					log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
+					print_log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
 					// ya se almacena en el buffer con la funcion read de arriba
 					buffer_write_adv(&clients[i].bufferFromClient, valread);
 				}
@@ -174,21 +174,21 @@ int main(int argc , char *argv[])
 			//read from remote
 			if (FD_ISSET(remoteSocket , &readfds)) 
 			{
-				log(DEBUG, "reading remote of client %d on socket %d", i, remoteSocket);
+				print_log(DEBUG, "reading remote of client %d on socket %d", i, remoteSocket);
 				nbytes = clients[i].bufferFromRemote.limit - clients[i].bufferFromRemote.write;
-				log(DEBUG, "available bytes to write in bufferFromRemote: %zu", nbytes)
+				print_log(DEBUG, "available bytes to write in bufferFromRemote: %zu", nbytes)
 				//Check if it was for closing , and also read the incoming message
 				if ((valread = read( remoteSocket , clients[i].bufferFromRemote.data , nbytes)) <= 0) //escribe en el buffer
 				{
 					//Somebody disconnected , get his details and print
 					getpeername(remoteSocket , (struct sockaddr*)&address , (socklen_t*)&addrlen);
-					log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+					print_log(INFO, "Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
 
 					removeClient(clients[i]);
 					FD_CLR(remoteSocket, &writefds);
 				} 
 				else {
-					log(DEBUG, "Received %zu bytes from (remote) socket %d:\n", valread, remoteSocket);
+					print_log(DEBUG, "Received %zu bytes from (remote) socket %d:\n", valread, remoteSocket);
 					// ya almacena en el buffer de salida la funcion read de arriba
 					buffer_write_adv(&clients[i].bufferFromRemote, valread);
 				}
@@ -202,12 +202,12 @@ int main(int argc , char *argv[])
 
 			//write to client
 			if (FD_ISSET(clientSocket, &writefds)) {
-				log(DEBUG, "remote socket %d wants to write to his client socket %d", remoteSocket, clientSocket);
+				print_log(DEBUG, "remote socket %d wants to write to his client socket %d", remoteSocket, clientSocket);
 				handleWrite(clientSocket, &clients[i].bufferFromRemote, &writefds);
 			}
 			//write to remote
 			if (FD_ISSET(remoteSocket, &writefds)) {
-				log(DEBUG, "trying to send client content to his remote socket");
+				print_log(DEBUG, "trying to send client content to his remote socket");
 				handleWrite(remoteSocket, &clients[i].bufferFromClient, &writefds);
 			}
 		}
@@ -225,13 +225,13 @@ void masterSocketHandler(int master_socket_size, int * master_socket, fd_set rea
 			{
 				if ((new_socket = acceptTCPConnection(mSock)) < 0) //open new client socket
 				{
-					log(ERROR, "Accept error on master socket %d", mSock);
+					print_log(ERROR, "Accept error on master socket %d", mSock);
 					continue;
 				}
 
 				if ((new_remote_socket = handleProxyAddr()) < 0) //open new remote socket
 				{
-					log(ERROR, "Accept error on creating new remote socket %d", new_remote_socket);
+					print_log(ERROR, "Accept error on creating new remote socket %d", new_remote_socket);
 					continue;
 				}
 
@@ -245,8 +245,8 @@ void masterSocketHandler(int master_socket_size, int * master_socket, fd_set rea
 						new_client(&clients[i], new_socket, BUFFSIZE);
 						set_client_remote(&clients[i], new_remote_socket, BUFFSIZE);
 
-						log(DEBUG, "Adding client %d in socket %d\n" , i, new_socket);
-						log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
+						print_log(DEBUG, "Adding client %d in socket %d\n" , i, new_socket);
+						print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
 
 						break;
 					}
