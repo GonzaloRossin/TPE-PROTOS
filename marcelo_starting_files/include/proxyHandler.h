@@ -43,4 +43,6 @@ void hello_read(struct selector_key *key);
 void hello_write(struct selector_key *key);
 void request_read(struct selector_key *key);
 
+void write_connected_state(struct selector_key *key);
+void read_connected_state(struct selector_key *key);
 void change_state(struct socks5 * currClient, enum client_state state);
