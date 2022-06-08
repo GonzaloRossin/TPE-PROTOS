@@ -16,6 +16,7 @@
 #include "client.h"
 #include "selector.h"
 
+
 #define BUFFSIZE 4096
 
 //Se encarga de devolver el socket a quien el proxy debe mandar
@@ -38,11 +39,5 @@ void socks5_read(struct selector_key *key);
 void socks5_write(struct selector_key *key);
 void socks5_close(struct selector_key *key);
 
-//read y write handlers del client (si éste quiere leer o escribir)
-void socks5_active_read_client(struct selector_key *key);
-void socks5_active_write_client(struct selector_key *key);
-
-//read y write handlers del remote (si éste quiere leer o escribir)
-void socks5_active_read_remote(struct selector_key *key);
-void socks5_active_write_remote(struct selector_key *key);
-
+void hello_read(struct selector_key *key);
+void change_state(struct socks5 * currClient, enum client_state state);

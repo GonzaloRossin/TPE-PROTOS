@@ -3,6 +3,8 @@
 
 long valread;
 
+
+
 struct proxyBuffer {
 	char * buffer;
 	size_t len;     // longitud del buffer
@@ -97,12 +99,11 @@ void socks5_read(struct selector_key *key) {
 	int fd_read, fd_write;
 	buffer * buff;
 	//esto es temporal:
-	currState.client_state = connected_state;
 
 	switch (currState.client_state)
 	{
-		case socks_hello_state:
-			// do socks5 hello read
+		case hello_read_state:
+				hello_read(key);
 			break;
 		
 		case socks_request_state:
@@ -162,7 +163,7 @@ void socks5_write(struct selector_key *key) {
 	currState.client_state = connected_state;
 
 	switch (currState.client_state) {
-		case socks_hello_state:
+		case hello_read_state:
 			// do socks5 hello read
 			break;
 		
@@ -224,4 +225,55 @@ void socks5_close(struct selector_key *key) {
 		currClient->remote_socket = 0;
 	}
 	close(key->fd);
+}
+
+void change_state(struct socks5 * currClient, enum client_state state) {
+	currClient->connection_state.client_state = state;
+	currClient->connection_state.init = false;
+}
+
+void on_auth(struct hello_parser *parser, uint8_t method) {
+	if (!parser->data) {
+		u_int8_t * aux = (u_int8_t*) parser->data;
+		aux = (uint8_t*)calloc(1, sizeof(uint8_t));
+		*aux = method;
+		parser->data = aux;
+	}
+}
+
+void hello_read(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	hello_parser * pr = currClient->client.st_hello.pr;
+	// Hello initialization
+	if(!currClient->connection_state.init) {
+		pr = (hello_parser *) calloc(1, sizeof(hello_parser));
+		hello_parser_init(pr);
+		pr->on_authentication_method = on_auth;
+		currClient->connection_state.init = true;
+		currClient->client.st_hello.r = currClient->bufferFromClient;
+		currClient->client.st_hello.w = currClient->bufferFromRemote;
+	}
+
+	buffer * buff_r = currClient->client.st_hello.r;
+	buffer * buff_w = currClient->client.st_hello.r;
+	
+	bool errored;
+
+	size_t nbytes = buff_r->limit - buff_r->write;
+	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
+
+	} else {
+		buffer_write_adv(buff_r, valread);
+	}
+
+	enum hello_state st = hello_consume(buff_r, pr, &errored);
+
+	if (st == hello_done) {
+		change_state(currClient, hello_write_state);
+		u_int8_t * aux = (u_int8_t*) pr->data;
+		hello_marshall(buff_w, *aux);
+		selector_set_interest(key->s, key->fd, OP_WRITE);
+	} else if (st == hello_error) {
+
+	}    
 }

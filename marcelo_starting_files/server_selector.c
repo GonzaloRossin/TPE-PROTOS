@@ -10,12 +10,12 @@
 #include <netinet/in.h>
 #include <sys/time.h> 
 #include <signal.h>
-#include "logger.h"
-#include "tcpServerUtil.h"
-#include "tcpClientUtil.h"
-#include "proxyHandler.h"
-#include "buffer.h"
-#include "selector.h"
+#include "./include/logger.h"
+#include "./include/tcpServerUtil.h"
+#include "./include/tcpClientUtil.h"
+#include "./include/proxyHandler.h"
+#include "./include/buffer.h"
+#include "./include/selector.h"
 
 static bool done = false;
 

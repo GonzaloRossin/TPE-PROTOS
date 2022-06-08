@@ -15,7 +15,7 @@
 
 int main (int argc, char * argv[]) {
 
-    uint8_t socks5Hello[] = {VERSION, NMETHODS, NO_AUTHENTICATION_REQUIRED, USERNAME_AND_PASSWORD};
+    uint8_t socks5Hello[] = {VERSION, NMETHODS, USERNAME_AND_PASSWORD, NO_AUTHENTICATION_REQUIRED};
     
     buffer buff;
     uint8_t data[512] = {'d', 'u', 'm', 'm','y'};

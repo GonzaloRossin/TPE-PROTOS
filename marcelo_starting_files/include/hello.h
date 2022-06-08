@@ -2,11 +2,9 @@
 #include "logger.h"
 
 
-static const uint8_t METHOD_NO_AUTHENTICATION_REQUIRED = 0x00;
-static const uint8_t METHOD_NO_ACCEPTABLE_METHODS= 0xFF;
-
-static const uint8_t SOCKS_HELLO_NO_AUTHENTICATION_REQUIRED = 0x00;
-static const uint8_t SOCKS_HELLO_NO_ACCEPTABLE_METHODS = 0xFF;
+// static uint8_t METHOD_NO_AUTHENTICATION_REQUIRED = 0x00;
+// static uint8_t METHOD_NO_ACCEPTABLE_METHODS = 0xFF;
+// static uint8_t METHOD_USERNAME_AND_PASSWORD = 0x02;
 
 
 
@@ -29,7 +27,7 @@ enum hello_state {
 };
 
 //estado interno del parser
-struct hello_parser {
+typedef struct hello_parser {
     //invocado cada vez que se presenta un nuevo método
     void(*on_authentication_method)
         (struct hello_parser *parser, const uint8_t method);
@@ -40,7 +38,7 @@ struct hello_parser {
     enum hello_state state;
 
     uint8_t remaining_methods;
-};
+} hello_parser;
 
 void hello_parser_init (struct hello_parser *parser);
 

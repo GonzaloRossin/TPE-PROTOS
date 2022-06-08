@@ -7,13 +7,15 @@ server has array of clients
 */
 #include "buffer.h"
 #include "logger.h"
+#include "hello.h"
 #include <stdbool.h>
 #include <unistd.h>  // size_t, ssize_t
 #include <stdio.h>
 #include <stdlib.h>
 
 enum client_state {
-    socks_hello_state = 0,
+    hello_read_state = 0,
+    hello_write_state,
     socks_request_state,
     connected_state,
     close_state,
@@ -24,6 +26,15 @@ struct clients_data
 {
     struct socks5 * clients;
     int clients_size;
+};
+
+struct hello
+{
+    hello_parser * pr;
+    buffer * w;
+    buffer * r;
+
+    uint8_t method;
 };
 
 struct connected {
@@ -51,6 +62,7 @@ struct socks5
     struct connection_state connection_state;
 
     union {
+        struct hello st_hello;
         struct connected st_connected;
     } client;
 
