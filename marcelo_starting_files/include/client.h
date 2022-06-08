@@ -8,6 +8,7 @@ server has array of clients
 #include "buffer.h"
 #include "logger.h"
 #include "hello.h"
+#include "request.h"
 #include <stdbool.h>
 #include <unistd.h>  // size_t, ssize_t
 #include <stdio.h>
@@ -37,6 +38,12 @@ struct hello
     uint8_t method;
 };
 
+struct st_request
+{
+    request_parser * pr;
+    buffer * r;
+};
+
 struct connected {
   int write_fd;
   int read_fd;
@@ -63,6 +70,7 @@ struct socks5
 
     union {
         struct hello st_hello;
+        struct st_request st_request;
         struct connected st_connected;
     } client;
 

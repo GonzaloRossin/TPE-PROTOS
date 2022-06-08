@@ -1,5 +1,5 @@
 //parser del request de SOCKS5
-#include "request.h"
+#include "./include/request.h"
 
 static void remaining_set(struct request_parser * p, const int n){
     p->i = 0;

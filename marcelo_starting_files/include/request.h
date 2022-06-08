@@ -47,14 +47,14 @@ enum request_state {
     request_error_unsupported_atyp,
 };
 
-struct request_parser {
+typedef struct request_parser {
     struct request * request;
     enum request_state state;
     //cuantos bytes tenemos que leer
     uint8_t n;
     //cuantos bytes ya leímos
     uint8_t i;
-};
+} request_parser;
 
 //6. replies
 

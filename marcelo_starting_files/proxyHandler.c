@@ -110,7 +110,7 @@ void socks5_read(struct selector_key *key) {
 			break;
 		
 		case request_read_state:
-			// do socks5 request read
+			request_read(key);
 			break;
 
 		case connected_state:
@@ -291,4 +291,17 @@ void hello_write(struct selector_key *key) {
 		selector_set_interest(key->s, key->fd, OP_READ);
 		change_state(currClient, request_read_state);
 	}
+}
+
+void request_read(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	request_parser * pr = currClient->client.st_request.pr;
+	// Hello initialization
+	if(!currClient->connection_state.init) {
+		pr = (request_parser *) calloc(1, sizeof(request_parser)); //Limpiar mas tarde
+		request_parser_init(pr);
+		currClient->connection_state.init = true;
+		currClient->client.st_request.r = currClient->bufferFromClient;
+	}
+
 }
