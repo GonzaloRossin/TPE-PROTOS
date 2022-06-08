@@ -1,6 +1,5 @@
-#include <stdint.h>
-#include "../buffer.h"
-#include "../logger.h"
+#include "buffer.h"
+#include "logger.h"
 
 
 static const uint8_t METHOD_NO_AUTHENTICATION_REQUIRED = 0x00;
@@ -56,7 +55,7 @@ enum hello_state hello_consume(buffer * b, struct hello_parser *parser, bool * e
 bool hello_is_done(const enum hello_state state, bool * errored);
 
 //error handler
-extern const char * hello_error(const struct hello_parser * parser);
+extern const char * hello_error_handler(const struct hello_parser * parser);
 
 //libera recursos internos del parser
 void hello_parser_close(struct hello_parser * parser);

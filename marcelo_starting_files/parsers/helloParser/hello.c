@@ -1,9 +1,10 @@
-#include "hello.h"
+#include <stdint.h>
+#include "../include/hello.h"
 
 
 extern void hello_parser_init(struct hello_parser * parser){
     parser->state = hello_version;
-    parser->remaining = 0;
+    parser->remaining_methods = 0;
 }
 
 extern enum hello_state hello_parser_feed(struct hello_parser * parser, const uint8_t byte){
@@ -26,7 +27,7 @@ extern enum hello_state hello_parser_feed(struct hello_parser * parser, const ui
             break;
 
         case hello_methods:
-            if(NULL != parser->on_authentication_method) {
+            if(parser->on_authentication_method != NULL) {
                 parser->on_authentication_method(parser, byte);
             }
             parser->remaining_methods--;
@@ -41,14 +42,14 @@ extern enum hello_state hello_parser_feed(struct hello_parser * parser, const ui
             break;
         
         default:
-            print_log(ERROR, "unknown state %d", parser->state);
+            //log(ERROR, "unknown state %d", parser->state);
             abort();
             break;
     }
     return parser->state;
 }
 
-extern bool hello_is_done(cosnt enum hello_state state, bool * errored){
+extern bool hello_is_done(const enum hello_state state, bool * errored){
     bool ret;
     switch (state)
         {
@@ -68,7 +69,7 @@ extern bool hello_is_done(cosnt enum hello_state state, bool * errored){
     return ret;
 }
 
-extern const char * hello_error(const struct hello_parser * parser){
+extern const char * hello_error_handler(const struct hello_parser * parser){
     char* ret;
     switch (parser->state)
         {

@@ -4,8 +4,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
-#include "logger.h"
-#include "util.h"
+#include "./include/logger.h"
+#include "./include/util.h"
 #define TRUE   1
 #define FALSE  0
 
