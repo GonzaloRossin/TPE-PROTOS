@@ -361,3 +361,5 @@ marcelo_starting_files/server
 marcelo_starting_files/tests/hello test/helloParserTest
 
 marcelo_starting_files/tests/request test/requestParserTest
+
+*.json
