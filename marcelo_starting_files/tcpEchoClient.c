@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 	// Create a reliable, stream socket using TCP
 	int sock = tcpClientSocket(server, port);
 	if (sock < 0) {
-		print_log(FATAL, "socket() failed")
+		print_log(FATAL, "socket() failed");
 	}
 
 	size_t echoStringLen = strlen(echoString); // Determine input length

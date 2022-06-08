@@ -11,7 +11,4 @@ int setupTCPServerSocket(const char *service, const int family);
 // Accept a new TCP connection on a server socket
 int acceptTCPConnection(int servSock);
 
-// Handle new TCP client
-void handleTCPEchoClient(int clntSocket);
-
 #endif 

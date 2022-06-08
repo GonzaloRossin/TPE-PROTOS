@@ -19,7 +19,7 @@ void masterSocketHandler(struct selector_key *key) {
 	const int new_client_socket = acceptTCPConnection(key->fd);
 	selector_fd_set_nio(new_client_socket);
 
-	const int new_remote_socket = handleProxyAddr();
+	const int new_remote_socket = handleProxyAddr(key);
 	selector_fd_set_nio(new_remote_socket);
 
 	if ((new_remote_socket < 0)) {//open new remote socket
@@ -50,7 +50,7 @@ void masterSocketHandler(struct selector_key *key) {
 	}
 }
 
-int handleProxyAddr() {
+int handleProxyAddr(struct selector_key * key) {
 	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
 	//char *echoString = "hola"; //argv[2]; // Second arg: string to echo
 
@@ -58,11 +58,10 @@ int handleProxyAddr() {
 	char * port = "80";//argv[3];
 
 	// Create a reliable, stream socket using TCP
-	int sock = tcpClientSocket(server, port);
+	int sock = tcpClientSocket(server, port, key, &socksv5);
 	if (sock < 0) {
 		print_log(FATAL, "socket() failed");
 	}
-	//print_log(DEBUG, "new (remote) socket is %d", sock);
 	return sock;
 }
 

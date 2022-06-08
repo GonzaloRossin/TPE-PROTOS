@@ -6,10 +6,13 @@
 #include <netdb.h>
 #include "logger.h" 
 #include "util.h"
+#include "tcpClientUtil.h"
+
+
 #define MAX_ADDR_BUFFER 128
 
 
-int tcpClientSocket(const char *host, const char *service) {
+int tcpClientSocket(const char *host, const char *service, struct selector_key * key, const fd_handler * socksv5) {
 	char addrBuffer[MAX_ADDR_BUFFER];
 	struct addrinfo addrCriteria;                   // Criteria for address match
 	memset(&addrCriteria, 0, sizeof(addrCriteria)); // Zero out structure
@@ -19,7 +22,7 @@ int tcpClientSocket(const char *host, const char *service) {
 
 	// Get address(es)
 	struct addrinfo *servAddr; // Holder for returned list of server addrs
-	int rtnVal = getaddrinfo(host, service, &addrCriteria, &servAddr); //es bloqueante, ojo, hacerlo en un hijo/thread
+	int rtnVal = getaddrinfo(host, service, &addrCriteria, &servAddr); //es bloqueante, ojo, hacerlo en un hijo
 	if (rtnVal != 0) {
 		print_log(ERROR, "getaddrinfo() failed %s", gai_strerror(rtnVal));
 		return -1;
@@ -33,10 +36,28 @@ int tcpClientSocket(const char *host, const char *service) {
 		if (sock >= 0) {
 			errno = 0;
 			// Establish the connection to the server
-			if ( connect(sock, addr->ai_addr, addr->ai_addrlen) != 0) { //se bloquea hasta que se conecte
-				print_log(INFO, "can't connectto %s: %s", printAddressPort(addr, addrBuffer), strerror(errno));
-				close(sock); 	// Socket connection failed; try next address
-				sock = -1;
+			if(selector_fd_set_nio(sock) == -1){
+				print_log(DEBUG, "Can't set sock %d as unblocking",sock);
+			} else if ( connect(sock, addr->ai_addr, addr->ai_addrlen) == -1) { //se bloquea hasta que se conecte
+				if(errno == EINPROGRESS){
+					print_log(DEBUG, "holña");
+					//es esperable, tenemos que esperar a la conexión
+
+					selector_status st = selector_set_interest_key(key, OP_NOOP);
+					if(SELECTOR_SUCCESS != st) {
+						print_log(INFO, "Socket %d couldn't connect to %s: %s", sock, printAddressPort(addr, addrBuffer), strerror(errno));
+						return -1;
+					} else {
+						st = selector_register(key->s, sock, socksv5, OP_WRITE, key->data);
+						//return REQUEST_CONNECTING status for stm
+						request_connecting(key);
+					}
+
+				} else {
+					print_log(INFO, "Can't connect to %s: %s", printAddressPort(addr, addrBuffer), strerror(errno));
+					close(sock); 	// Socket connection failed; try next address
+					sock = -1;
+				}
 			}
 		} else {
 			print_log(DEBUG, "Can't create client socket on %s",printAddressPort(addr, addrBuffer));
@@ -45,4 +66,10 @@ int tcpClientSocket(const char *host, const char *service) {
 
 	freeaddrinfo(servAddr); 
 	return sock;
+}
+
+static unsigned request_connecting(struct selector_key * key){
+	int error;
+	socklen_t len = sizeof(error);
+	struct connecting * d =
 }

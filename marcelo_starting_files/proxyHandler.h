@@ -20,7 +20,7 @@
 
 //Se encarga de devolver el socket a quien el proxy debe mandar
 //crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
-int handleProxyAddr();
+int handleProxyAddr(struct selector_key * key);
 
 /**
   Maneja la actividad del master socket.
