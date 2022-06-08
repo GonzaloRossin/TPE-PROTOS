@@ -16,7 +16,7 @@ server has array of clients
 enum client_state {
     hello_read_state = 0,
     hello_write_state,
-    socks_request_state,
+    request_read_state,
     connected_state,
     close_state,
     error_state,

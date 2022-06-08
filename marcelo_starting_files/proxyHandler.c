@@ -103,10 +103,13 @@ void socks5_read(struct selector_key *key) {
 	switch (currState.client_state)
 	{
 		case hello_read_state:
-				hello_read(key);
+			hello_read(key);
+			break;
+		//Nunca entra aca porque estamos en lectura
+		case hello_write_state:
 			break;
 		
-		case socks_request_state:
+		case request_read_state:
 			// do socks5 request read
 			break;
 
@@ -160,14 +163,17 @@ void socks5_write(struct selector_key *key) {
 	int fd_read, fd_write;
 	buffer * buff;
 	//esto es temporal:
-	currState.client_state = connected_state;
 
 	switch (currState.client_state) {
+		//Nunca entra aca porque estamos en escritura
 		case hello_read_state:
-			// do socks5 hello read
 			break;
-		
-		case socks_request_state:
+
+		case hello_write_state:
+			hello_write(key);
+		break;
+
+		case request_read_state:
 			// do socks5 request read
 			break;
 
@@ -255,7 +261,7 @@ void hello_read(struct selector_key *key) {
 	}
 
 	buffer * buff_r = currClient->client.st_hello.r;
-	buffer * buff_w = currClient->client.st_hello.r;
+	buffer * buff_w = currClient->client.st_hello.w;
 	
 	bool errored;
 
@@ -276,4 +282,13 @@ void hello_read(struct selector_key *key) {
 	} else if (st == hello_error) {
 
 	}    
+}
+
+void hello_write(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+
+	if(handleWrite(key->fd, currClient->client.st_hello.w) == 0){
+		selector_set_interest(key->s, key->fd, OP_READ);
+		change_state(currClient, request_read_state);
+	}
 }
