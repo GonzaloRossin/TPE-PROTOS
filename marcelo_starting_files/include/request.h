@@ -91,7 +91,7 @@ void request_close(struct request_parser * parser);
 
 //serializa en buff la/una respuesta al request
 //Retorna la cantidad de bytes ocupados del buffer, o -1 si no había espacio suficiente.
-int request_marshall(buffer * buffer, const enum socks_response_status status);
+int request_marshall(buffer * buffer, const enum socks_response_status status, struct request* clientRequest);
 
 //convierte a errno en socks_response_status
 enum socks_response_status errno_to_socks(int e);

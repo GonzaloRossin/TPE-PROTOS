@@ -3,14 +3,6 @@
 
 long valread;
 
-
-
-struct proxyBuffer {
-	char * buffer;
-	size_t len;     // longitud del buffer
-	size_t from;    // desde donde falta escribir
-};
-
 static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
 	.handle_write      = socks5_write,
@@ -114,41 +106,7 @@ void socks5_read(struct selector_key *key) {
 			break;
 
 		case connected_state:
-			if (!currClient->client.st_connected.init) {
-				init_client_copy(currClient);
-			}
-			if (!currClient->remote.st_connected.init) {
-				init_remote_copy(currClient);
-			}
-			if(key->fd == clientSocket) {
-				fd_read = currClient->client.st_connected.read_fd;
-				fd_write = currClient->remote.st_connected.read_fd;
-				buff = currClient->client.st_connected.w;
-			} else {
-				fd_read = currClient->remote.st_connected.read_fd;
-				fd_write = currClient->client.st_connected.read_fd;
-				buff = currClient->remote.st_connected.w;
-			}
-			print_log(DEBUG, "reading on socket %d", fd_read);
-			//Check if it was for closing , and also read the incoming message
-			size_t nbytes = buff->limit - buff->write;
-			print_log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
-			if ((valread = read( fd_read , buff->data, nbytes)) <= 0) //hace write en el buffer
-			{
-				print_log(INFO, "Host disconnected\n");
-				// if (fd_write != 0) {
-				// 	selector_set_interest(key->s, fd_write, OP_WRITE);	
-				// }
-				selector_unregister_fd(key->s, fd_read);
-				selector_unregister_fd(key->s, fd_write);
-			} 
-			else {
-				print_log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
-				print_log(DEBUG, "%s", buff->data);
-				// ya se almacena en el buffer con la funcion read de arriba
-				buffer_write_adv(buff, valread);
-				selector_set_interest(key->s, fd_write, OP_WRITE);
-			}
+			read_connected_state(key);
 			break;
 		default:
 			break;
@@ -162,7 +120,6 @@ void socks5_write(struct selector_key *key) {
 	//int remoteSocket = currClient->remote_socket; //unused variable
 	int fd_read, fd_write;
 	buffer * buff;
-	//esto es temporal:
 
 	switch (currState.client_state) {
 		//Nunca entra aca porque estamos en escritura
@@ -178,26 +135,7 @@ void socks5_write(struct selector_key *key) {
 			break;
 
 		case connected_state:
-			if (!currClient->client.st_connected.init) {
-				init_client_copy(currClient);
-			}
-			if (!currClient->remote.st_connected.init) {
-				init_remote_copy(currClient);
-			}
-			if(key->fd == clientSocket) {
-				fd_read = currClient->client.st_connected.write_fd;
-				fd_write = currClient->remote.st_connected.write_fd;
-				buff = currClient->client.st_connected.r;
-			} else {
-				fd_read = currClient->remote.st_connected.write_fd;
-				fd_write = currClient->client.st_connected.write_fd;
-				buff = currClient->remote.st_connected.r;
-			}
-			print_log(DEBUG, "trying to send content recieved from socket %d to socket %d", fd_read, fd_write);
-			if(handleWrite(fd_write, buff) == 0){
-				//ya se mandaron todos los bytes, solo queda leer
-				selector_set_interest(key->s, fd_write, OP_READ);
-			}
+			write_connected_state(key);
 			break;
 		
 		default:
@@ -231,6 +169,76 @@ void socks5_close(struct selector_key *key) {
 		currClient->remote_socket = 0;
 	}
 	close(key->fd);
+}
+
+void write_connected_state(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	int clientSocket = currClient->client_socket;
+	int fd_read, fd_write;
+	buffer * buff;
+	if (!currClient->client.st_connected.init) {
+		init_client_copy(currClient);
+	}
+	if (!currClient->remote.st_connected.init) {
+		init_remote_copy(currClient);
+	}
+	if(key->fd == clientSocket) {
+		fd_read = currClient->client.st_connected.write_fd;
+		fd_write = currClient->remote.st_connected.write_fd;
+		buff = currClient->client.st_connected.r;
+	} else {
+		fd_read = currClient->remote.st_connected.write_fd;
+		fd_write = currClient->client.st_connected.write_fd;
+		buff = currClient->remote.st_connected.r;
+	}
+	print_log(DEBUG, "trying to send content recieved from socket %d to socket %d", fd_read, fd_write);
+	if(handleWrite(fd_write, buff) == 0){
+		//ya se mandaron todos los bytes, solo queda leer
+		selector_set_interest(key->s, fd_write, OP_READ);
+	}
+}
+
+void read_connected_state(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	int clientSocket = currClient->client_socket;
+	int fd_read, fd_write;
+	buffer * buff;
+
+	if (!currClient->client.st_connected.init) {
+		init_client_copy(currClient);
+	}
+	if (!currClient->remote.st_connected.init) {
+		init_remote_copy(currClient);
+	}
+	if(key->fd == clientSocket) {
+		fd_read = currClient->client.st_connected.read_fd;
+		fd_write = currClient->remote.st_connected.read_fd;
+		buff = currClient->client.st_connected.w;
+	} else {
+		fd_read = currClient->remote.st_connected.read_fd;
+		fd_write = currClient->client.st_connected.read_fd;
+		buff = currClient->remote.st_connected.w;
+	}
+	print_log(DEBUG, "reading on socket %d", fd_read);
+	//Check if it was for closing , and also read the incoming message
+	size_t nbytes = buff->limit - buff->write;
+	print_log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
+	if ((valread = read( fd_read , buff->data, nbytes)) <= 0) //hace write en el buffer
+	{
+		print_log(INFO, "Host disconnected\n");
+		// if (fd_write != 0) {
+		// 	selector_set_interest(key->s, fd_write, OP_WRITE);	
+		// }
+		selector_unregister_fd(key->s, fd_read);
+		selector_unregister_fd(key->s, fd_write);
+	} 
+	else {
+		print_log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
+		print_log(DEBUG, "%s", buff->data);
+		// ya se almacena en el buffer con la funcion read de arriba
+		buffer_write_adv(buff, valread);
+		selector_set_interest(key->s, fd_write, OP_WRITE);
+	}
 }
 
 void change_state(struct socks5 * currClient, enum client_state state) {
@@ -267,7 +275,7 @@ void hello_read(struct selector_key *key) {
 
 	size_t nbytes = buff_r->limit - buff_r->write;
 	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
-
+		
 	} else {
 		buffer_write_adv(buff_r, valread);
 	}
@@ -276,8 +284,8 @@ void hello_read(struct selector_key *key) {
 
 	if (st == hello_done) {
 		change_state(currClient, hello_write_state);
-		u_int8_t * aux = (u_int8_t*) pr->data;
-		hello_marshall(buff_w, *aux);
+		u_int8_t * method = (u_int8_t*) pr->data;
+		hello_marshall(buff_w, *method);
 		selector_set_interest(key->s, key->fd, OP_WRITE);
 	} else if (st == hello_error) {
 
@@ -304,4 +312,39 @@ void request_read(struct selector_key *key) {
 		currClient->client.st_request.r = currClient->bufferFromClient;
 	}
 
+	buffer * buff_r = currClient->client.st_request.r;
+	bool errored;
+
+	size_t nbytes = buff_r->limit - buff_r->write;
+	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
+
+	} else {
+		buffer_write_adv(buff_r, valread);
+	}
+
+	enum request_state st = request_consume(buff_r, pr, &errored);
+	if(st == request_done){
+		change_state(currClient, connected_state);
+		// aca hay que conectarse
+		/*if(request_marshall(buff_w, status_succeeded) < 0){
+			//no hay espacio en el buffer
+		}
+		selector_set_interest(key->s, key->fd, OP_WRITE);*/
+	}
+}
+enum socks_response_status process_request(struct request* request){//procesamiento del request
+	switch (request->cmd)
+	{
+	case socks_req_cmd_connect:
+		bool error = false;
+        status = cmd_resolve(request, &originaddr, &origin_addr_len, &origin_domain);//a chequear
+		break;
+	case socks_req_cmd_bind:
+
+		break;
+	case socks_req_cmd_associate:
+    default:
+    	status = status_command_not_supported;
+        break;
+    }
 }
