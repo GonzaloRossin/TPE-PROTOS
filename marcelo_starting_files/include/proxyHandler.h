@@ -1,3 +1,6 @@
+#ifndef PROXY_HANDLER_H
+#define PROXY_HANDLER_H
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -15,6 +18,9 @@
 #include "buffer.h"
 #include "client.h"
 #include "selector.h"
+#include "helloState.h"
+#include "requestState.h"
+#include "connectedState.h"
 
 
 #define BUFFSIZE 4096
@@ -28,21 +34,18 @@ int handleProxyAddr();
   */
 void masterSocketHandler(struct selector_key *key);
 
-void readFromProxy(int remoteSocket, int clientSocket, fd_set * writefds);
 
 /**
   Se encarga de escribir la respuesta faltante en forma no bloqueante, retorna bytesLeft To Send
   */
 int handleWrite(int socket, struct buffer * buffer);
 
+//
 void socks5_read(struct selector_key *key);
 void socks5_write(struct selector_key *key);
 void socks5_close(struct selector_key *key);
 
-void hello_read(struct selector_key *key);
-void hello_write(struct selector_key *key);
-void request_read(struct selector_key *key);
 
-void write_connected_state(struct selector_key *key);
-void read_connected_state(struct selector_key *key);
 void change_state(struct socks5 * currClient, enum client_state state);
+
+#endif

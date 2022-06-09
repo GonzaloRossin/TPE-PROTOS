@@ -1,3 +1,6 @@
+
+#ifndef CLIENT_H
+#define CLIENT_H
 /* Client.h
 
 to manage clients and their important data
@@ -5,15 +8,15 @@ to manage clients and their important data
 server has array of clients
 
 */
-#include "buffer.h"
-#include "logger.h"
+// #include "buffer.h"
+// #include "logger.h"
 #include "hello.h"
 #include "request.h"
-#include <stdbool.h>
-#include <unistd.h>  // size_t, ssize_t
-#include <stdio.h>
-#include <stdlib.h>
-
+// #include <stdbool.h>
+// #include <unistd.h>  // size_t, ssize_t
+// #include <stdio.h>
+// #include <stdlib.h>
+#include "proxyHandler.h"
 enum client_state {
     hello_read_state = 0,
     hello_write_state,
@@ -98,3 +101,4 @@ void
 set_client_remote(struct socks5 * client, int remote_socket, int BUFFSIZE);
 
 
+#endif
