@@ -18,6 +18,9 @@ enum client_state {
     hello_read_state = 0,
     hello_write_state,
     request_read_state,
+    request_resolve,
+    request_write,
+    connecting_state,
     connected_state,
     close_state,
     error_state,
@@ -42,6 +45,7 @@ struct st_request
 {
     request_parser * pr;
     buffer * r;
+    enum socks_response_status state;
 };
 
 struct connected {
@@ -58,10 +62,19 @@ struct connection_state {
     enum client_state client_state;
 };
 
+struct connecting {
+    buffer *r;
+    
+};
+
 struct socks5
 {
     int client_socket;
     int remote_socket;
+
+    struct addrinfo *origin_resolution;
+
+    struct addrinfo *origin_resolution_current;
 
     buffer * bufferFromClient;
     buffer * bufferFromRemote;

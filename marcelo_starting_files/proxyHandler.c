@@ -309,6 +309,7 @@ void request_read(struct selector_key *key) {
 		pr = (request_parser *) calloc(1, sizeof(request_parser)); //Limpiar mas tarde
 		request_parser_init(pr);
 		currClient->connection_state.init = true;
+		currClient->client.st_request.pr = pr;
 		currClient->client.st_request.r = currClient->bufferFromClient;
 	}
 
@@ -323,28 +324,95 @@ void request_read(struct selector_key *key) {
 	}
 
 	enum request_state st = request_consume(buff_r, pr, &errored);
-	if(st == request_done){
-		change_state(currClient, connected_state);
-		// aca hay que conectarse
-		/*if(request_marshall(buff_w, status_succeeded) < 0){
-			//no hay espacio en el buffer
-		}
-		selector_set_interest(key->s, key->fd, OP_WRITE);*/
+	if(st == request_done) {
+		enum client_state state = process_request(key);
+		change_state(currClient, state);
 	}
+
 }
-enum socks_response_status process_request(struct request* request){//procesamiento del request
+enum client_state process_request(struct selector_key *key){ //procesamiento del request
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	struct request* request = currClient->client.st_request.pr->request;
+	enum client_state ret;
+	enum socks_response_status status = status_general_SOCKLS_server_failure;
+
 	switch (request->cmd)
 	{
 	case socks_req_cmd_connect:
-		bool error = false;
-        status = cmd_resolve(request, &originaddr, &origin_addr_len, &origin_domain);//a chequear
+		switch (request->dest_addr_type)
+		{
+		case socks_req_addrtype_ipv4:
+			/* code */
+			break;
+
+		case socks_req_addrtype_ipv6:
+			/* code */
+			break;
+
+		case socks_req_addrtype_domain: {
+			struct selector_key *k = (struct selector_key*) malloc(sizeof(*key));
+			if (k == NULL) {
+				ret = request_write;
+				status = status_general_SOCKLS_server_failure;
+				selector_set_interest_key(key, OP_WRITE);
+			} else {
+				memcpy(k, key, sizeof(*key));
+				pthread_t tid;
+				if (-1 == pthread_create(&tid, 0, request_resolv_blocking, k)) {
+					ret = request_write;
+					status = status_general_SOCKLS_server_failure;
+					selector_set_interest_key(key, OP_WRITE);
+				} else {
+					status = request_resolve;
+					selector_set_interest_key(key, OP_NOOP);
+				}
+			}
+			break;
+		
+		}	default:
+			status = status_address_type_not_supported;
+			ret = request_write;
+			break;
+		}
+
+        // status = cmd_resolve(request, &originaddr, &origin_addr_len, &origin_domain);//a chequear
 		break;
 	case socks_req_cmd_bind:
-
 		break;
 	case socks_req_cmd_associate:
     default:
     	status = status_command_not_supported;
         break;
     }
+	currClient->client.st_request.state = status;
+	return ret;
+}
+
+void * request_resolv_blocking(void *data) {
+	struct selector_key *key = (struct selector_key *) data;
+	struct socks5 * currClient = (struct socks5 *)key->data;
+
+	pthread_detach(pthread_self());
+	currClient->origin_resolution = 0;
+	struct addrinfo hints = {
+		.ai_family = AF_UNSPEC,
+		.ai_socktype = SOCK_STREAM,
+		.ai_flags = AI_PASSIVE,
+		.ai_protocol = 0,
+		.ai_canonname = NULL,
+		.ai_addr = NULL,
+		.ai_next = NULL,
+	};
+
+	char buff[7];
+
+	snprintf(buff, sizeof(buff), "%d", ntohs(currClient->client.st_request.pr->request->dest_port));
+
+	getaddrinfo(currClient->client.st_request.pr->request->dest_addr.fqdn, buff, &hints, &currClient->origin_resolution);
+
+	selector_notify_block(key->s, key->fd);
+
+	free(data);
+
+	return 0;
 }

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <errno.h>
+#include <pthread.h>
 #include <unistd.h>   
 #include <arpa/inet.h>    
 #include <sys/types.h>
@@ -46,3 +47,5 @@ void request_read(struct selector_key *key);
 void write_connected_state(struct selector_key *key);
 void read_connected_state(struct selector_key *key);
 void change_state(struct socks5 * currClient, enum client_state state);
+void * request_resolv_blocking(void *data);
+enum client_state process_request(struct selector_key *key);
