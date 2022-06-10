@@ -39,10 +39,14 @@ int handleWrite(int socket, struct buffer * buffer);
 void socks5_read(struct selector_key *key);
 void socks5_write(struct selector_key *key);
 void socks5_close(struct selector_key *key);
+void socks5_block(struct selector_key *key);
 
 void hello_read(struct selector_key *key);
 void hello_write(struct selector_key *key);
+
 void request_read(struct selector_key *key);
+enum client_state request_connect(struct selector_key *key);
+void request_connecting(struct selector_key *key);
 
 void write_connected_state(struct selector_key *key);
 void read_connected_state(struct selector_key *key);

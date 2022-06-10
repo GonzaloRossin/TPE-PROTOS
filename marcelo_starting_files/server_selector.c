@@ -46,7 +46,7 @@ int main(int argc , char *argv[])
 	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
 	int max_clients = MAX_SOCKETS/2 , i;
-	struct socks5 clients[max_clients];
+	struct socks5 * clients;
 
 	const char       *err_msg = NULL;
 	selector_status   ss      = SELECTOR_SUCCESS;
@@ -55,7 +55,8 @@ int main(int argc , char *argv[])
 	//char buffer[BUFFSIZE + 1];  //data buffer of 1K
 
 	//initialise all clients to 0
-	memset(clients, 0, sizeof(clients));
+	// memset(clients, 0, sizeof(clients));
+    clients = (struct socks5 *)calloc(max_clients, sizeof(struct socks5));
 	for(i=0; i<max_clients; i++){
 		clients[i].isAvailable = true;
 	}

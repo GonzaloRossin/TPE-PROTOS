@@ -216,7 +216,9 @@ int request_marshall(buffer * buffer, const enum socks_response_status status, s
     buff[1] = status;
     buff[2] = 0x00;
     buff[3] = clientRequest->dest_addr_type;
-    buffer_write_adv(buffer, 4);
+    // buff[4] = 
+    buff[5] = clientRequest->dest_port;
+    buffer_write_adv(buffer, 5);
     return 2;
 }
 //hay mas acá abajo que se ve en el video (tipo 2:50:00) pero no doy más bro

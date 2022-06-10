@@ -25,12 +25,12 @@ union socks_addr{
     struct sockaddr_in6 ipv6;
 };
 
-struct request{
+typedef struct request{
     enum socks_req_cmd      cmd;
     enum socks_addr_type    dest_addr_type;
     union socks_addr        dest_addr;
     in_port_t               dest_port;
-};
+} request;
 
 enum request_state {
     request_version,

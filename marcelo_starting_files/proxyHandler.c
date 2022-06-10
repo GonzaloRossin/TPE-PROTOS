@@ -7,18 +7,19 @@ static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
 	.handle_write      = socks5_write,
 	.handle_close      = socks5_close, // nada que liberar
+	// .handle_block	   = socks5_block,
 };
 
 void masterSocketHandler(struct selector_key *key) {
 	const int new_client_socket = acceptTCPConnection(key->fd);
 	selector_fd_set_nio(new_client_socket);
 
-	const int new_remote_socket = handleProxyAddr();
-	selector_fd_set_nio(new_remote_socket);
+	// const int new_remote_socket = handleProxyAddr();
+	// selector_fd_set_nio(new_remote_socket);
 
-	if ((new_remote_socket < 0)) {//open new remote socket
-		print_log(ERROR, "Accept error on creating new remote socket %d", new_remote_socket);
-	}
+	// if ((new_remote_socket < 0)) {//open new remote socket
+	// 	print_log(ERROR, "Accept error on creating new remote socket %d", new_remote_socket);
+	// }
 
 	// add new socket to array of sockets
 	int i;
@@ -28,36 +29,36 @@ void masterSocketHandler(struct selector_key *key) {
 	for (i = 0; i < cli_data->clients_size; i++) 
 	{
 		// if position is empty
-		if(clis[i].isAvailable )
+		if(clis[i].isAvailable)
 		{
 			new_client(&clis[i], new_client_socket, BUFFSIZE);
-			set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
+			// set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
 			
 			selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
-			selector_register(key->s, new_remote_socket, &socksv5, OP_READ, &clis[i]);
+			// selector_register(key->s, new_remote_socket, &socksv5, OP_READ, &clis[i]);
 
 			print_log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
-			print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
+			// print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
 
 			break;
 		}
 	}
 }
 
-int handleProxyAddr() {
-	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
+// int handleProxyAddr() {
+// 	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
 
-	// Third arg server port
-	char * port = "80";//argv[3];
+// 	// Third arg server port
+// 	char * port = "80";//argv[3];
 
-	// Create a reliable, stream socket using TCP
-	int sock = tcpClientSocket(server, port);
-	if (sock < 0) {
-		print_log(FATAL, "socket() failed");
-	}
-	//print_log(DEBUG, "new (remote) socket is %d", sock);
-	return sock;
-}
+// 	// Create a reliable, stream socket using TCP
+// 	int sock = tcpClientSocket(server, port);
+// 	if (sock < 0) {
+// 		print_log(FATAL, "socket() failed");
+// 	}
+// 	//print_log(DEBUG, "new (remote) socket is %d", sock);
+// 	return sock;
+// }
 
 // Escribo buffer en el socket
 int handleWrite(int socket, struct buffer * buffer) {
@@ -130,6 +131,8 @@ void socks5_write(struct selector_key *key) {
 			hello_write(key);
 		break;
 
+		case request_connecting_state:
+			request_connecting(key);
 		case request_read_state:
 			// do socks5 request read
 			break;
@@ -325,6 +328,7 @@ void request_read(struct selector_key *key) {
 
 	enum request_state st = request_consume(buff_r, pr, &errored);
 	if(st == request_done) {
+		currClient->client.st_request.request = pr->request;
 		enum client_state state = process_request(key);
 		change_state(currClient, state);
 	}
@@ -332,7 +336,7 @@ void request_read(struct selector_key *key) {
 }
 enum client_state process_request(struct selector_key *key){ //procesamiento del request
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	struct request* request = currClient->client.st_request.pr->request;
+	struct request* request = currClient->client.st_request.request;
 	enum client_state ret;
 	enum socks_response_status status = status_general_SOCKLS_server_failure;
 
@@ -341,10 +345,15 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 	case socks_req_cmd_connect:
 		switch (request->dest_addr_type)
 		{
-		case socks_req_addrtype_ipv4:
-			/* code */
+		case socks_req_addrtype_ipv4:{
+			currClient->origin_domain = AF_INET;
+			currClient->origin_addr_len = sizeof(request->dest_addr.ipv4);
+			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv4));
+			request->dest_addr.ipv4.sin_port = request->dest_port;
+			ret = request_connect(key);
 			break;
-
+		}
+	
 		case socks_req_addrtype_ipv6:
 			/* code */
 			break;
@@ -388,6 +397,72 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 	return ret;
 }
 
+enum client_state request_connect(struct selector_key *key) {
+	bool error = false;
+
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	struct st_request request = currClient->client.st_request;
+	enum socks_response_status status = request.state;
+
+	request.origin_fd = socket(currClient->origin_domain, SOCK_STREAM, 0);
+	if (request.origin_fd == -1) {
+		error = true;
+		goto finally;
+	}
+	if (selector_fd_set_nio(request.origin_fd) == -1) {
+		error = true;
+		goto finally;
+	}
+	if (-1 == connect(request.origin_fd, (const struct sockaddr *)&currClient->origin_addr, currClient->origin_addr_len)) {
+		if (errno == EINPROGRESS) {
+			selector_status st = selector_set_interest_key(key, OP_NOOP);
+			if(SELECTOR_SUCCESS != st) {
+				error = true;
+				goto finally;
+			}
+			
+			st = selector_register(key->s, request.origin_fd, &socksv5, OP_WRITE, key->data);
+			if (SELECTOR_SUCCESS != st) {
+				close(request.origin_fd);
+			}
+		}
+	} else {
+		error = true;
+		goto finally;
+	}
+finally:
+	if (error) {
+		if (request.origin_fd != -1) {
+			close(request.origin_fd);
+			request.origin_fd = -1;
+		}
+	}
+	request.state = status;
+	return request_connecting_state;
+}
+
+void request_connecting(struct selector_key *key) {
+	int error;
+	socklen_t len = sizeof(error);
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	struct connecting conn = currClient->remote.conn;
+
+	if (getsockopt(key->fd, SOL_SOCKET, SO_ERROR, &error, &len)) {
+		conn.client_state = status_general_SOCKLS_server_failure;
+	} else {
+		if (error == 0) {
+			conn.client_state = status_succeeded;
+			conn.origin_fd = key->fd;
+		} else {
+
+		}
+	}
+
+	if (-1 == request_marshall()) {
+
+	}
+}
+
 void * request_resolv_blocking(void *data) {
 	struct selector_key *key = (struct selector_key *) data;
 	struct socks5 * currClient = (struct socks5 *)key->data;
@@ -416,3 +491,5 @@ void * request_resolv_blocking(void *data) {
 
 	return 0;
 }
+
+

@@ -5,13 +5,20 @@ void
 new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE){
     newClient->client_socket = clientSocket;
 
-    buffer * newBuffer = (buffer*)malloc(sizeof(buffer));
+    buffer * newClientBuffer = (buffer*)malloc(sizeof(buffer));
 
-    uint8_t * data = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
-    memset(data, 0, sizeof(uint8_t) * BUFFSIZE);
-    buffer_init(newBuffer, BUFFSIZE, data);
+    uint8_t * dataClient = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
+    memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
+    buffer_init(newClientBuffer, BUFFSIZE, dataClient);
 
-    newClient->bufferFromClient = newBuffer;
+    newClient->bufferFromClient = newClientBuffer;
+
+    buffer * newOriginBuffer = (buffer*)malloc(sizeof(buffer));
+    uint8_t * dataOrigin = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
+    memset(dataOrigin, 0, sizeof(uint8_t) * BUFFSIZE);
+    buffer_init(newOriginBuffer, BUFFSIZE, dataOrigin);
+
+    newClient->bufferFromRemote = newOriginBuffer;
 
     newClient->isAvailable = false;
 
