@@ -45,20 +45,20 @@ void masterSocketHandler(struct selector_key *key) {
 	}
 }
 
-// int handleProxyAddr() {
-// 	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
+int handleProxyAddr() {
+	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
 
-// 	// Third arg server port
-// 	char * port = "80";//argv[3];
+	// Third arg server port
+	char * port = "80";//argv[3];
 
-// 	// Create a reliable, stream socket using TCP
-// 	int sock = tcpClientSocket(server, port);
-// 	if (sock < 0) {
-// 		print_log(FATAL, "socket() failed");
-// 	}
-// 	//print_log(DEBUG, "new (remote) socket is %d", sock);
-// 	return sock;
-// }
+	// Create a reliable, stream socket using TCP
+	int sock = tcpClientSocket(server, port);
+	if (sock < 0) {
+		print_log(FATAL, "socket() failed");
+	}
+	//print_log(DEBUG, "new (remote) socket is %d", sock);
+	return sock;
+}
 
 // Escribo buffer en el socket
 int handleWrite(int socket, struct buffer * buffer) {
@@ -347,9 +347,9 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 		{
 		case socks_req_addrtype_ipv4:{
 			currClient->origin_domain = AF_INET;
+			request->dest_addr.ipv4.sin_port = request->dest_port;
 			currClient->origin_addr_len = sizeof(request->dest_addr.ipv4);
 			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv4));
-			request->dest_addr.ipv4.sin_port = request->dest_port;
 			ret = request_connect(key);
 			break;
 		}
@@ -404,6 +404,7 @@ enum client_state request_connect(struct selector_key *key) {
 	struct st_request request = currClient->client.st_request;
 	enum socks_response_status status = request.state;
 
+	// request.origin_fd = handleProxyAddr();
 	request.origin_fd = socket(currClient->origin_domain, SOCK_STREAM, 0);
 	if (request.origin_fd == -1) {
 		error = true;
@@ -413,6 +414,9 @@ enum client_state request_connect(struct selector_key *key) {
 		error = true;
 		goto finally;
 	}
+	const struct sockaddr * addr = (const struct sockaddr *)&currClient->origin_addr;
+	
+
 	if (-1 == connect(request.origin_fd, (const struct sockaddr *)&currClient->origin_addr, currClient->origin_addr_len)) {
 		if (errno == EINPROGRESS) {
 			selector_status st = selector_set_interest_key(key, OP_NOOP);
@@ -458,9 +462,9 @@ void request_connecting(struct selector_key *key) {
 		}
 	}
 
-	if (-1 == request_marshall()) {
+	// if (-1 == request_marshall()) {
 
-	}
+	// }
 }
 
 void * request_resolv_blocking(void *data) {
