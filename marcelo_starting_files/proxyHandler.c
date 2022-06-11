@@ -45,21 +45,6 @@ void masterSocketHandler(struct selector_key *key) {
 	}
 }
 
-int handleProxyAddr() {
-	char *server = "142.250.79.110"; //argv[1];     // First arg: server name IP address 
-
-	// Third arg server port
-	char * port = "80";//argv[3];
-
-	// Create a reliable, stream socket using TCP
-	int sock = tcpClientSocket(server, port);
-	if (sock < 0) {
-		print_log(FATAL, "socket() failed");
-	}
-	//print_log(DEBUG, "new (remote) socket is %d", sock);
-	return sock;
-}
-
 // Escribo buffer en el socket
 int handleWrite(int socket, struct buffer * buffer) {
 	size_t bytesToSend = buffer->write - buffer->read;
@@ -96,18 +81,18 @@ void socks5_read(struct selector_key *key) {
 
 	switch (currState.client_state)
 	{
-		case hello_read_state:
+		case HELLO_READ_STATE:
 			hello_read(key);
 			break;
 		//Nunca entra aca porque estamos en lectura
-		case hello_write_state:
+		case HELLO_WRITE_STATE:
 			break;
 		
-		case request_read_state:
+		case REQUEST_READ_STATE:
 			request_read(key);
 			break;
 
-		case connected_state:
+		case CONNECTED_STATE:
 			read_connected_state(key);
 			break;
 		default:
@@ -125,24 +110,24 @@ void socks5_write(struct selector_key *key) {
 
 	switch (currState.client_state) {
 		//Nunca entra aca porque estamos en escritura
-		case hello_read_state:
+		case HELLO_READ_STATE:
 			break;
 
-		case hello_write_state:
+		case HELLO_WRITE_STATE:
 			hello_write(key);
 		break;
 
-		case request_connecting_state:
+		case REQUEST_CONNECTING_STATE:
 			request_connecting(key);
 
-		case request_write_state:
+		case REQUEST_WRITE_STATE:
 			request_write(key);
 
-		case request_read_state:
+		case REQUEST_READ_STATE:
 			// do socks5 request read
 			break;
 
-		case connected_state:
+		case CONNECTED_STATE:
 			write_connected_state(key);
 			break;
 		
@@ -165,7 +150,7 @@ void socks5_close(struct selector_key *key) {
 		free(currClient->bufferFromRemote);
 
 		memset(currClient, 0, sizeof(currClient));
-		currClient->connection_state.client_state = hello_read_state;
+		currClient->connection_state.client_state = HELLO_READ_STATE;
 		currClient->isAvailable = true;
 
 		// close(currClient->client_socket);
@@ -244,7 +229,7 @@ void read_connected_state(struct selector_key *key) {
 	} 
 	else {
 		print_log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
-		print_log(DEBUG, "%s", buff->data);
+		// print_log(DEBUG, "%s", buff->data);
 		// ya se almacena en el buffer con la funcion read de arriba
 		buffer_write_adv(buff, valread);
 		selector_set_interest(key->s, fd_write, OP_WRITE);
@@ -293,7 +278,7 @@ void hello_read(struct selector_key *key) {
 	enum hello_state st = hello_consume(buff_r, pr, &errored);
 
 	if (st == hello_done) {
-		change_state(currClient, hello_write_state);
+		change_state(currClient, HELLO_WRITE_STATE);
 		u_int8_t * method = (u_int8_t*) pr->data;
 		hello_marshall(buff_w, *method);
 		selector_set_interest(key->s, key->fd, OP_WRITE);
@@ -307,7 +292,7 @@ void hello_write(struct selector_key *key) {
 
 	if(handleWrite(key->fd, currClient->client.st_hello.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
-		change_state(currClient, request_read_state);
+		change_state(currClient, REQUEST_READ_STATE);
 	}
 }
 
@@ -363,24 +348,28 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 		}
 	
 		case socks_req_addrtype_ipv6:
-			/* code */
+			currClient->origin_domain = AF_INET6;
+			request->dest_addr.ipv6.sin6_port = request->dest_port;
+			currClient->origin_addr_len = sizeof(request->dest_addr.ipv6);
+			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv6));
+			ret = request_connect(key);
 			break;
 
 		case socks_req_addrtype_domain: {
 			struct selector_key *k = (struct selector_key*) malloc(sizeof(*key));
 			if (k == NULL) {
-				ret = request_write_state;
+				ret = REQUEST_WRITE_STATE;
 				status = status_general_SOCKLS_server_failure;
 				selector_set_interest_key(key, OP_WRITE);
 			} else {
 				memcpy(k, key, sizeof(*key));
 				pthread_t tid;
 				if (-1 == pthread_create(&tid, 0, request_resolv_blocking, k)) {
-					ret = request_write_state;
+					ret = REQUEST_WRITE_STATE;
 					status = status_general_SOCKLS_server_failure;
 					selector_set_interest_key(key, OP_WRITE);
 				} else {
-					ret = request_resolve_state;
+					ret = REQUEST_RESOLVE_STATE;
 					selector_set_interest_key(key, OP_NOOP);
 				}
 			}
@@ -388,7 +377,7 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 		
 		}	default:
 			status = status_address_type_not_supported;
-			ret = request_write_state;
+			ret = REQUEST_WRITE_STATE;
 			break;
 		}
 
@@ -446,7 +435,7 @@ finally:
 		}
 	}
 	request.state = status;
-	return request_connecting_state;
+	return REQUEST_CONNECTING_STATE;
 }
 
 void request_connecting(struct selector_key *key) {
@@ -472,7 +461,7 @@ void request_connecting(struct selector_key *key) {
 	if (-1 == request_marshall(currClient)) {
 		
 	} else {
-		change_state(currClient, request_write_state);
+		change_state(currClient, REQUEST_WRITE_STATE);
 		selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
 	}
 }
@@ -520,7 +509,7 @@ int request_marshall(struct socks5 * currClient){
 		memcpy(buff + 4, (void *)&(((struct sockaddr_in6*)sin)->sin6_addr), IP_V6_ADDR_SIZE);
 		memcpy(buff + 4 + IP_V6_ADDR_SIZE, (void *)&(((struct sockaddr_in6*)sin)->sin6_port), 2);
 		break;
-	
+
 	default:
 		break;
 	}
@@ -533,7 +522,7 @@ void request_write(struct selector_key *key) {
 
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
-		change_state(currClient, connected_state);
+		change_state(currClient, CONNECTED_STATE);
 	}
 }
 
@@ -560,17 +549,17 @@ void socks5_block(struct selector_key *key) {
 
 	switch (currState.client_state)
 	{
-		case hello_read_state:
+		case HELLO_READ_STATE:
 			break;
 		//Nunca entra aca porque estamos en lectura
-		case hello_write_state:
+		case HELLO_WRITE_STATE:
 			break;
-		case request_resolve_state:
+		case REQUEST_RESOLVE_STATE:
 			request_resolve(key);
-		case request_read_state:
+		case REQUEST_READ_STATE:
 			break;
 
-		case connected_state:
+		case CONNECTED_STATE:
 			break;
 		default:
 			break;

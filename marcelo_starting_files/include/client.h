@@ -18,15 +18,15 @@ server has array of clients
 #define IP_V6_ADDR_SIZE 16
 
 enum client_state {
-    hello_read_state = 0,
-    hello_write_state,
-    request_read_state,
-    request_resolve_state,
-    request_connecting_state,
-    request_write_state,
-    connected_state,
-    close_state,
-    error_state,
+    HELLO_READ_STATE = 0,
+    HELLO_WRITE_STATE,
+    REQUEST_READ_STATE,
+    REQUEST_RESOLVE_STATE,
+    REQUEST_CONNECTING_STATE,
+    REQUEST_WRITE_STATE,
+    CONNECTED_STATE,
+    CLOSE_STATE,
+    ERROR_STATE,
 };
 
 struct clients_data

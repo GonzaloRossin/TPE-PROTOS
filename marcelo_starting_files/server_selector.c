@@ -30,8 +30,8 @@ sigterm_handler(const int signal) {
 #define TRUE   1
 #define FALSE  0
 #define PORT "8888"
-#define MAX_SOCKETS 30
-#define MAX_PENDING_CONNECTIONS   3    // un valor bajo, para realizar pruebas
+#define MAX_SOCKETS 1000
+#define MAX_PENDING_CONNECTIONS   10   // un valor bajo, para realizar pruebas
 
 
 
