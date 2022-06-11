@@ -5,6 +5,10 @@ to manage clients and their important data
 server has array of clients
 
 */
+
+#ifndef CLIENT_H_
+#define CLIENT_H_
+
 #include "buffer.h"
 #include "logger.h"
 #include "hello.h"
@@ -128,3 +132,4 @@ void
 set_client_remote(struct socks5 * client, int remote_socket, int BUFFSIZE);
 
 
+#endif

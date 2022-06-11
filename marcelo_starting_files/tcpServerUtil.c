@@ -102,37 +102,3 @@ int acceptTCPConnection(int servSock) {
 
 	return clntSock;
 }
-
-int handleTCPEchoClient(int clntSocket) {
-	char buffer[BUFSIZE]; // Buffer for echo string
-	// Receive message from client
-	ssize_t numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
-	if (numBytesRcvd < 0) {
-		print_log(ERROR, "recv() failed");
-		return -1;   // TODO definir codigos de error
-	}
-
-	// Send received string and receive again until end of stream
-	while (numBytesRcvd > 0) { // 0 indicates end of stream
-		// Echo message back to client
-		ssize_t numBytesSent = send(clntSocket, buffer, numBytesRcvd, 0);
-		if (numBytesSent < 0) {
-			print_log(ERROR, "send() failed");
-			return -1;   // TODO definir codigos de error
-		}
-		else if (numBytesSent != numBytesRcvd) {
-			print_log(ERROR, "send() sent unexpected number of bytes ");
-			return -1;   // TODO definir codigos de error
-		}
-
-		// See if there is more data to receive
-		numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
-		if (numBytesRcvd < 0) {
-			print_log(ERROR, "recv() failed");
-			return -1;   // TODO definir codigos de error
-		}
-	}
-
-	close(clntSocket);
-	return 0;
-}
