@@ -6,7 +6,7 @@ clean:
 	- rm -f *.o server_selector
 
 COMMON =  logger.o util.o 
-SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o tcpClientUtil.o proxyHandler.o buffer.o client.o hello.o request.o helloState.o requestState.o
+SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o tcpClientUtil.o proxyHandler.o buffer.o client.o hello.o request.o helloState.o requestState.o connectedState.o
 buffer.o: ./include/buffer.h
 selector.o: ./include/selector.h
 tcpServerUtil.o: ./include/tcpServerUtil.h
@@ -17,6 +17,7 @@ hello.o: ./include/hello.h
 request.o : ./include/request.h
 helloState.o : ./include/helloState.h
 requestState.o : ./include/requestState.h
+connectedState.o : ./include/connectedState.h
 
 
 server_selector: $(COMMON) $(SERVER_SOURCES)

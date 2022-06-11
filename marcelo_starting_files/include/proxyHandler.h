@@ -21,6 +21,7 @@
 #include "client.h"
 #include "selector.h"
 #include "requestState.h"
+#include "connectedState.h"
 
 
 #define BUFFSIZE 4096
@@ -47,8 +48,6 @@ void socks5_write(struct selector_key *key);
 void socks5_close(struct selector_key *key);
 void socks5_block(struct selector_key *key);
 
-void write_connected_state(struct selector_key *key);
-void read_connected_state(struct selector_key *key);
 void change_state(struct socks5 * currClient, enum client_state state);
 void * request_resolv_blocking(void *data);
 enum client_state process_request(struct selector_key *key);
