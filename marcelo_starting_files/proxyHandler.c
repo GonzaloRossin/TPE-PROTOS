@@ -163,6 +163,8 @@ void socks5_close(struct selector_key *key) {
 		free(currClient->bufferFromClient);
 		free(currClient->bufferFromRemote);
 
+		memset(currClient, 0, sizeof(currClient));
+		currClient->connection_state.client_state = hello_read_state;
 		currClient->isAvailable = true;
 
 		// close(currClient->client_socket);
@@ -458,6 +460,7 @@ void request_connecting(struct selector_key *key) {
 		if (error == 0) {
 			conn.client_state = status_succeeded;
 			conn.origin_fd = key->fd;
+			currClient->remote_socket = key->fd;
 			currClient->client.st_request.state = status_succeeded;
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
 		} else {
@@ -529,7 +532,7 @@ void request_write(struct selector_key *key) {
 
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
-		change_state(currClient, request_read_state);
+		change_state(currClient, connected_state);
 	}
 }
 
