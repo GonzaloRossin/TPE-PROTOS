@@ -6,14 +6,14 @@ clean:
 	- rm -f *.o server_selector
 
 COMMON =  logger.o util.o 
-SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o tcpClientUtil.o proxyHandler.o buffer.o client.o hello.o request.o helloState.o requestState.o connectedState.o
+SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o tcpClientUtil.o socks5Handler.o buffer.o client.o hello.o request.o helloState.o requestState.o connectedState.o
 CLIENT_SOURCES = tcpClientUtil.o tcpEchoClient.o
 
 buffer.o: ./include/buffer.h
 selector.o: ./include/selector.h
 tcpServerUtil.o: ./include/tcpServerUtil.h
 tcpClientUtil.o: ./include/tcpClientUtil.h
-proxyHandler.o: ./include/proxyHandler.h
+socks5Handler.o: ./include/socks5Handler.h
 client.o: ./include/client.h
 hello.o: ./include/hello.h
 request.o : ./include/request.h

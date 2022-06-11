@@ -13,7 +13,7 @@
 #include "./include/logger.h"
 #include "./include/tcpServerUtil.h"
 #include "./include/tcpClientUtil.h"
-#include "./include/proxyHandler.h"
+#include "./include/socks5Handler.h"
 #include "./include/buffer.h"
 #include "./include/selector.h"
 

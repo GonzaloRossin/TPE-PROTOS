@@ -66,6 +66,7 @@ void read_connected_state(struct selector_key *key) {
 		selector_unregister_fd(key->s, fd_write);
 	} 
 	else {
+		//Meter acá el parser POP3 
 		print_log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
 		// ya se almacena en el buffer con la funcion read de arriba
 		buffer_write_adv(buff, valread);

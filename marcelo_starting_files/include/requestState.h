@@ -3,7 +3,7 @@
 
 #include "client.h"
 #include "selector.h"
-#include "proxyHandler.h"
+#include "socks5Handler.h"
     
 void request_read(struct selector_key *key);
 enum client_state request_connect(struct selector_key *key);
