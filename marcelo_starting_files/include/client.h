@@ -21,7 +21,7 @@ enum client_state {
     hello_read_state = 0,
     hello_write_state,
     request_read_state,
-    request_resolve,
+    request_resolve_state,
     request_connecting_state,
     request_write_state,
     connected_state,
@@ -81,15 +81,15 @@ struct socks5
 
     int origin_domain;
     
+    struct addrinfo *origin_resolution;
+    struct addrinfo *origin_resolution_current;
+
     int origin_adrr_type;
     int origin_addr_len;
     uint8_t origin_ipv4_addr[IP_V4_ADDR_SIZE];
     uint8_t origin_port[2];
 
     struct sockaddr_storage origin_addr;
-
-    struct addrinfo *origin_resolution;
-    struct addrinfo *origin_resolution_current;
 
     buffer * bufferFromClient;
     buffer * bufferFromRemote;

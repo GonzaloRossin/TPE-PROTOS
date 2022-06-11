@@ -52,6 +52,7 @@ void request_connecting(struct selector_key *key);
 //Retorna la cantidad de bytes ocupados del buffer, o -1 si no había espacio suficiente.
 int request_marshall(struct socks5 * currClient);
 void request_write(struct selector_key *key);
+void request_resolve(struct selector_key *key);
 
 void write_connected_state(struct selector_key *key);
 void read_connected_state(struct selector_key *key);

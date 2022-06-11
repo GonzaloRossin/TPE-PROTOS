@@ -7,7 +7,7 @@ static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
 	.handle_write      = socks5_write,
 	.handle_close      = socks5_close, // nada que liberar
-	// .handle_block	   = socks5_block,
+	.handle_block	   = socks5_block,
 };
 
 void masterSocketHandler(struct selector_key *key) {
@@ -83,6 +83,7 @@ int handleWrite(int socket, struct buffer * buffer) {
 	}
 	return 0;
 }
+
 
 void socks5_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
@@ -379,7 +380,7 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 					status = status_general_SOCKLS_server_failure;
 					selector_set_interest_key(key, OP_WRITE);
 				} else {
-					status = request_resolve;
+					ret = request_resolve_state;
 					selector_set_interest_key(key, OP_NOOP);
 				}
 			}
@@ -536,7 +537,45 @@ void request_write(struct selector_key *key) {
 	}
 }
 
+void request_resolve(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
 
+	if (currClient->origin_resolution == 0) {
+		currClient->client.st_request.state = status_general_SOCKLS_server_failure;
+	} else {
+		currClient->origin_domain = currClient->origin_resolution->ai_family;
+		currClient->origin_addr_len = currClient->origin_resolution->ai_addrlen;
+		memcpy(&currClient->origin_addr, currClient->origin_resolution->ai_addr, currClient->origin_resolution->ai_addrlen);
+		freeaddrinfo(currClient->origin_resolution);
+		currClient->origin_resolution = 0;
+	}
+
+	enum client_state state =  request_connect(key);
+	change_state(currClient, state);
+}
+
+void socks5_block(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+	struct connection_state currState = currClient->connection_state;
+
+	switch (currState.client_state)
+	{
+		case hello_read_state:
+			break;
+		//Nunca entra aca porque estamos en lectura
+		case hello_write_state:
+			break;
+		case request_resolve_state:
+			request_resolve(key);
+		case request_read_state:
+			break;
+
+		case connected_state:
+			break;
+		default:
+			break;
+	}
+}
 
 void * request_resolv_blocking(void *data) {
 	struct selector_key *key = (struct selector_key *) data;
