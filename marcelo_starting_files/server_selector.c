@@ -43,7 +43,7 @@ void handleAddrInfo(int socket);
 
 int main(int argc , char *argv[])
 {
-	int master_socket[2];  // IPv4 e IPv6 (si estan habilitados)
+	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
 	int max_clients = MAX_SOCKETS/2 , i;
 	struct socks5 * clients;
@@ -61,8 +61,8 @@ int main(int argc , char *argv[])
 		clients[i].isAvailable = true;
 	}
 
-	// socket para IPv4 y para IPv6 (si estan disponibles)
-	///////////////////////////////////////////////////////////// IPv4
+	// master sockets para IPv4 y para IPv6 (si estan disponibles)
+	/////////////////////////////////////////////////////////////
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET)) < 0) {
 		print_log(ERROR, "socket IPv4 failed");
 	} else {
@@ -71,6 +71,22 @@ int main(int argc , char *argv[])
 	}
 
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET6)) < 0) {
+		print_log(ERROR, "socket IPv6 failed");
+	} else {
+		print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
+		master_socket_size++;
+	}
+
+    // Master sockets para atender admins IPv4 y para IPv6 (si estan disponibles)
+	/////////////////////////////////////////////////////////////
+    if ((master_socket[master_socket_size] = setupTCPServerSocket("8889", AF_INET)) < 0) {
+		print_log(ERROR, "socket IPv4 failed");
+	} else {
+		print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
+		master_socket_size++;
+	}
+
+	if ((master_socket[master_socket_size] = setupTCPServerSocket("8889", AF_INET6)) < 0) {
 		print_log(ERROR, "socket IPv6 failed");
 	} else {
 		print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
