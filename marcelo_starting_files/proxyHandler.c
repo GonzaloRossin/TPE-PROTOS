@@ -270,7 +270,8 @@ void hello_read(struct selector_key *key) {
 
 	size_t nbytes = buff_r->limit - buff_r->write;
 	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
-		
+		print_log(INFO, "Host disconnected\n");
+		selector_unregister_fd(key->s, key->fd);
 	} else {
 		buffer_write_adv(buff_r, valread);
 	}
@@ -320,18 +321,17 @@ void request_read(struct selector_key *key) {
 
 	size_t nbytes = buff_r->limit - buff_r->write;
 	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
-
+		print_log(INFO, "Host disconnected\n");
+		selector_unregister_fd(key->s, key->fd);
 	} else {
 		buffer_write_adv(buff_r, valread);
+		enum request_state st = request_consume(buff_r, pr, &errored);
+		if(st == request_done) {
+			currClient->client.st_request.request = pr->request;
+			enum client_state state = process_request(key);
+			change_state(currClient, state);
+		}
 	}
-
-	enum request_state st = request_consume(buff_r, pr, &errored);
-	if(st == request_done) {
-		currClient->client.st_request.request = pr->request;
-		enum client_state state = process_request(key);
-		change_state(currClient, state);
-	}
-
 }
 enum client_state process_request(struct selector_key *key){ //procesamiento del request
 	struct socks5 * currClient = (struct socks5 *)key->data;
