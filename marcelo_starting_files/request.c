@@ -107,7 +107,7 @@ static enum request_state dstport(const uint8_t c, struct request_parser * p){ /
 
 extern void request_parser_init (struct request_parser * p) {
     p->state = request_version;
-    p->request = calloc(1,sizeof(struct request));
+    p->request = calloc(1, sizeof(struct request));
     //memset(p->request,0,sizeof(struct request));
 }
 

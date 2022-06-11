@@ -73,12 +73,6 @@ int handleWrite(int socket, struct buffer * buffer) {
 void socks5_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	struct connection_state currState = currClient->connection_state;
-	int clientSocket = currClient->client_socket;
-	//int remoteSocket = currClient->remote_socket; //unused variable
-	int fd_read, fd_write;
-	buffer * buff;
-	//esto es temporal:
-
 	switch (currState.client_state)
 	{
 		case HELLO_READ_STATE:
@@ -103,11 +97,6 @@ void socks5_read(struct selector_key *key) {
 void socks5_write(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	struct connection_state currState = currClient->connection_state;
-	int clientSocket = currClient->client_socket;
-	//int remoteSocket = currClient->remote_socket; //unused variable
-	int fd_read, fd_write;
-	buffer * buff;
-
 	switch (currState.client_state) {
 		//Nunca entra aca porque estamos en escritura
 		case HELLO_READ_STATE:
@@ -149,12 +138,10 @@ void socks5_close(struct selector_key *key) {
 		free(currClient->bufferFromClient);
 		free(currClient->bufferFromRemote);
 
-		memset(currClient, 0, sizeof(currClient));
+		memset(currClient, 0, sizeof(struct socks5));
 		currClient->connection_state.client_state = HELLO_READ_STATE;
 		currClient->isAvailable = true;
 
-		// close(currClient->client_socket);
-		// close(currClient->remote_socket);
 	}
 	
 	if (key->fd == currClient->client_socket) {
@@ -169,6 +156,7 @@ void socks5_close(struct selector_key *key) {
 void write_connected_state(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	int clientSocket = currClient->client_socket;
+	int remoteSocket = currClient->remote_socket;
 	int fd_read, fd_write;
 	buffer * buff;
 	if (!currClient->client.st_connected.init) {
@@ -181,10 +169,12 @@ void write_connected_state(struct selector_key *key) {
 		fd_read = currClient->client.st_connected.write_fd;
 		fd_write = currClient->remote.st_connected.write_fd;
 		buff = currClient->client.st_connected.r;
-	} else {
+	} else if (key->fd == remoteSocket) {
 		fd_read = currClient->remote.st_connected.write_fd;
 		fd_write = currClient->client.st_connected.write_fd;
 		buff = currClient->remote.st_connected.r;
+	} else {
+		// Morir tambien
 	}
 	print_log(DEBUG, "trying to send content recieved from socket %d to socket %d", fd_read, fd_write);
 	if(handleWrite(fd_write, buff) == 0){
@@ -196,6 +186,7 @@ void write_connected_state(struct selector_key *key) {
 void read_connected_state(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	int clientSocket = currClient->client_socket;
+	int remoteSocket = currClient->remote_socket;
 	int fd_read, fd_write;
 	buffer * buff;
 
@@ -209,27 +200,25 @@ void read_connected_state(struct selector_key *key) {
 		fd_read = currClient->client.st_connected.read_fd;
 		fd_write = currClient->remote.st_connected.read_fd;
 		buff = currClient->client.st_connected.w;
-	} else {
+	} else if (key->fd == remoteSocket) {
 		fd_read = currClient->remote.st_connected.read_fd;
 		fd_write = currClient->client.st_connected.read_fd;
 		buff = currClient->remote.st_connected.w;
+	} else {
+		// Morir
 	}
+
 	print_log(DEBUG, "reading on socket %d", fd_read);
-	//Check if it was for closing , and also read the incoming message
 	size_t nbytes = buff->limit - buff->write;
 	print_log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
 	if ((valread = read( fd_read , buff->data, nbytes)) <= 0) //hace write en el buffer
 	{
 		print_log(INFO, "Host disconnected\n");
-		// if (fd_write != 0) {
-		// 	selector_set_interest(key->s, fd_write, OP_WRITE);	
-		// }
 		selector_unregister_fd(key->s, fd_read);
 		selector_unregister_fd(key->s, fd_write);
 	} 
 	else {
 		print_log(DEBUG, "Received %zu bytes from socket %d\n", valread, clientSocket);
-		// print_log(DEBUG, "%s", buff->data);
 		// ya se almacena en el buffer con la funcion read de arriba
 		buffer_write_adv(buff, valread);
 		selector_set_interest(key->s, fd_write, OP_WRITE);
@@ -239,6 +228,10 @@ void read_connected_state(struct selector_key *key) {
 void change_state(struct socks5 * currClient, enum client_state state) {
 	currClient->connection_state.client_state = state;
 	currClient->connection_state.init = false;
+	if (currClient->connection_state.on_departure != 0){
+		currClient->connection_state.on_departure(currClient);
+		currClient->connection_state.on_departure = NULL;
+	}
 }
 
 void on_auth(struct hello_parser *parser, uint8_t method) {
@@ -250,6 +243,11 @@ void on_auth(struct hello_parser *parser, uint8_t method) {
 	}
 }
 
+void hello_departure(struct socks5 * currClient) {
+	free(currClient->client.st_hello.pr->data);
+	free(currClient->client.st_hello.pr);
+}
+
 void hello_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	hello_parser * pr = currClient->client.st_hello.pr;
@@ -258,9 +256,11 @@ void hello_read(struct selector_key *key) {
 		pr = (hello_parser *) calloc(1, sizeof(hello_parser));
 		hello_parser_init(pr);
 		pr->on_authentication_method = on_auth;
+		currClient->connection_state.on_departure = hello_departure;
 		currClient->connection_state.init = true;
 		currClient->client.st_hello.r = currClient->bufferFromClient;
 		currClient->client.st_hello.w = currClient->bufferFromRemote;
+		currClient->client.st_hello.pr = pr;
 	}
 
 	buffer * buff_r = currClient->client.st_hello.r;
@@ -278,9 +278,9 @@ void hello_read(struct selector_key *key) {
 	enum hello_state st = hello_consume(buff_r, pr, &errored);
 
 	if (st == hello_done) {
-		change_state(currClient, HELLO_WRITE_STATE);
 		u_int8_t * method = (u_int8_t*) pr->data;
 		hello_marshall(buff_w, *method);
+		change_state(currClient, HELLO_WRITE_STATE);
 		selector_set_interest(key->s, key->fd, OP_WRITE);
 	} else if (st == hello_error) {
 
@@ -296,6 +296,11 @@ void hello_write(struct selector_key *key) {
 	}
 }
 
+void request_departure(struct socks5 * currClient) {
+	free(currClient->client.st_request.pr->request);
+	free(currClient->client.st_request.pr);
+}
+
 void request_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	request_parser * pr = currClient->client.st_request.pr;
@@ -304,6 +309,7 @@ void request_read(struct selector_key *key) {
 		pr = (request_parser *) calloc(1, sizeof(request_parser)); //Limpiar mas tarde
 		request_parser_init(pr);
 		currClient->connection_state.init = true;
+		currClient->connection_state.on_departure = request_departure;
 		currClient->client.st_request.pr = pr;
 		currClient->client.st_request.r = currClient->bufferFromClient;
 		currClient->client.st_request.w = currClient->bufferFromRemote;
@@ -442,14 +448,14 @@ void request_connecting(struct selector_key *key) {
 	int error;
 	socklen_t len = sizeof(error);
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	struct connecting conn = currClient->remote.conn;
+	struct connecting * conn = &currClient->remote.conn;
 
 	if (getsockopt(key->fd, SOL_SOCKET, SO_ERROR, &error, &len)) {
-		conn.client_state = status_general_SOCKLS_server_failure;
+		conn->client_state = status_general_SOCKLS_server_failure;
 	} else {
 		if (error == 0) {
-			conn.client_state = status_succeeded;
-			conn.origin_fd = key->fd;
+			conn->client_state = status_succeeded;
+			conn->origin_fd = key->fd;
 			currClient->remote_socket = key->fd;
 			currClient->client.st_request.state = status_succeeded;
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);

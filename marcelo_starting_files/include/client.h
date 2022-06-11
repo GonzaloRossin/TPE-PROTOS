@@ -66,6 +66,7 @@ struct connected {
 struct connection_state {
     int init;
     enum client_state client_state;
+    void (*on_departure) (struct socks5 * currClient);
 };
 
 struct connecting {

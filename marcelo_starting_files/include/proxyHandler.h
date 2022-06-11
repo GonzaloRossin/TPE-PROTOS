@@ -44,8 +44,10 @@ void socks5_block(struct selector_key *key);
 
 void hello_read(struct selector_key *key);
 void hello_write(struct selector_key *key);
+void hello_departure(struct socks5 * currClient);
 
 void request_read(struct selector_key *key);
+
 enum client_state request_connect(struct selector_key *key);
 void request_connecting(struct selector_key *key);
 //serializa en buff la/una respuesta al request
@@ -53,6 +55,7 @@ void request_connecting(struct selector_key *key);
 int request_marshall(struct socks5 * currClient);
 void request_write(struct selector_key *key);
 void request_resolve(struct selector_key *key);
+void request_departure(struct socks5 * currClient);
 
 void write_connected_state(struct selector_key *key);
 void read_connected_state(struct selector_key *key);

@@ -153,8 +153,7 @@ finally:
     }
     selector_close();
 
-    //socksv5_pool_destroy();
-
+    free(clients);
 	for (int i = 0; i < master_socket_size; i++) {
 		if(master_socket[i] >= 0) {
         	close(master_socket[i]);
@@ -163,3 +162,4 @@ finally:
     
     return ret;
 }
+
