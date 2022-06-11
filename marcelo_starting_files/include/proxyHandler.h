@@ -20,6 +20,7 @@
 
 #define BUFFSIZE 4096
 
+
 //Se encarga de devolver el socket a quien el proxy debe mandar
 //crea un nuevo socket para una nueva página, o devuelve el socket existente para una conexión ya establecida)
 int handleProxyAddr();
@@ -47,9 +48,15 @@ void hello_write(struct selector_key *key);
 void request_read(struct selector_key *key);
 enum client_state request_connect(struct selector_key *key);
 void request_connecting(struct selector_key *key);
+//serializa en buff la/una respuesta al request
+//Retorna la cantidad de bytes ocupados del buffer, o -1 si no había espacio suficiente.
+int request_marshall(struct socks5 * currClient);
+void request_write(struct selector_key *key);
 
 void write_connected_state(struct selector_key *key);
 void read_connected_state(struct selector_key *key);
 void change_state(struct socks5 * currClient, enum client_state state);
 void * request_resolv_blocking(void *data);
 enum client_state process_request(struct selector_key *key);
+
+enum socks_addr_type family_to_socks_addr_type(int family);

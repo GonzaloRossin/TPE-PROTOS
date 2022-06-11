@@ -133,6 +133,10 @@ void socks5_write(struct selector_key *key) {
 
 		case request_connecting_state:
 			request_connecting(key);
+
+		case request_write_state:
+			request_write(key);
+
 		case request_read_state:
 			// do socks5 request read
 			break;
@@ -314,6 +318,7 @@ void request_read(struct selector_key *key) {
 		currClient->connection_state.init = true;
 		currClient->client.st_request.pr = pr;
 		currClient->client.st_request.r = currClient->bufferFromClient;
+		currClient->client.st_request.w = currClient->bufferFromRemote;
 	}
 
 	buffer * buff_r = currClient->client.st_request.r;
@@ -361,14 +366,14 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 		case socks_req_addrtype_domain: {
 			struct selector_key *k = (struct selector_key*) malloc(sizeof(*key));
 			if (k == NULL) {
-				ret = request_write;
+				ret = request_write_state;
 				status = status_general_SOCKLS_server_failure;
 				selector_set_interest_key(key, OP_WRITE);
 			} else {
 				memcpy(k, key, sizeof(*key));
 				pthread_t tid;
 				if (-1 == pthread_create(&tid, 0, request_resolv_blocking, k)) {
-					ret = request_write;
+					ret = request_write_state;
 					status = status_general_SOCKLS_server_failure;
 					selector_set_interest_key(key, OP_WRITE);
 				} else {
@@ -380,7 +385,7 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 		
 		}	default:
 			status = status_address_type_not_supported;
-			ret = request_write;
+			ret = request_write_state;
 			break;
 		}
 
@@ -404,7 +409,6 @@ enum client_state request_connect(struct selector_key *key) {
 	struct st_request request = currClient->client.st_request;
 	enum socks_response_status status = request.state;
 
-	// request.origin_fd = handleProxyAddr();
 	request.origin_fd = socket(currClient->origin_domain, SOCK_STREAM, 0);
 	if (request.origin_fd == -1) {
 		error = true;
@@ -414,9 +418,6 @@ enum client_state request_connect(struct selector_key *key) {
 		error = true;
 		goto finally;
 	}
-	const struct sockaddr * addr = (const struct sockaddr *)&currClient->origin_addr;
-	
-
 	if (-1 == connect(request.origin_fd, (const struct sockaddr *)&currClient->origin_addr, currClient->origin_addr_len)) {
 		if (errno == EINPROGRESS) {
 			selector_status st = selector_set_interest_key(key, OP_NOOP);
@@ -457,15 +458,82 @@ void request_connecting(struct selector_key *key) {
 		if (error == 0) {
 			conn.client_state = status_succeeded;
 			conn.origin_fd = key->fd;
+			currClient->client.st_request.state = status_succeeded;
+			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
 		} else {
-
+			
 		}
 	}
 
-	// if (-1 == request_marshall()) {
-
-	// }
+	if (-1 == request_marshall(currClient)) {
+		
+	} else {
+		change_state(currClient, request_write_state);
+		selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
+	}
 }
+
+enum socks_addr_type family_to_socks_addr_type(int family) {
+	switch (family)
+	{
+	case AF_INET:
+		return socks_req_addrtype_ipv4;
+		break;
+	case AF_INET6:
+		return socks_req_addrtype_ipv6;
+		break;
+	default:
+		break;	
+	}
+	// Aca no llega no se que devolver
+	return status_general_SOCKLS_server_failure;
+}
+
+int request_marshall(struct socks5 * currClient){
+    size_t n;
+    uint8_t * buff = buffer_write_ptr(currClient->client.st_request.w, &n);
+	int addr_size = 0;
+
+	struct sockaddr_storage *sin = (struct sockaddr_storage *)&currClient->origin_addr;
+    if(n<2){
+        return -1;
+    }
+    buff[0] = 0x05;
+    buff[1] = currClient->client.st_request.state;
+    buff[2] = 0x00;
+	buff[3] = currClient->origin_adrr_type;
+	switch (currClient->origin_adrr_type)
+	{
+	case socks_req_addrtype_ipv4:{
+		addr_size += IP_V4_ADDR_SIZE;
+		memcpy(buff + 4, (void *)&(((struct sockaddr_in*)sin)->sin_addr), IP_V4_ADDR_SIZE);
+		memcpy(buff + 4 + IP_V4_ADDR_SIZE, (void *)&(((struct sockaddr_in*)sin)->sin_port), 2);
+		break;
+	}
+		
+	case socks_req_addrtype_ipv6:
+		addr_size += IP_V6_ADDR_SIZE;
+		memcpy(buff + 4, (void *)&(((struct sockaddr_in6*)sin)->sin6_addr), IP_V6_ADDR_SIZE);
+		memcpy(buff + 4 + IP_V6_ADDR_SIZE, (void *)&(((struct sockaddr_in6*)sin)->sin6_port), 2);
+		break;
+	
+	default:
+		break;
+	}
+    buffer_write_adv(currClient->client.st_request.w, 4 + addr_size + 2);
+    return 2;
+}
+
+void request_write(struct selector_key *key) {
+	struct socks5 * currClient = (struct socks5 *)key->data;
+
+	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0){
+		selector_set_interest(key->s, key->fd, OP_READ);
+		change_state(currClient, request_read_state);
+	}
+}
+
+
 
 void * request_resolv_blocking(void *data) {
 	struct selector_key *key = (struct selector_key *) data;

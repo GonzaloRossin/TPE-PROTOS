@@ -206,19 +206,5 @@ enum socks_response_status errno_to_socks(const int e){
     }
     return ret;
 }
-int request_marshall(buffer * buffer, const enum socks_response_status status, struct request* clientRequest){
-    size_t n;
-    uint8_t * buff = buffer_write_ptr(buffer, &n);
-    if(n<2){
-        return -1;
-    }
-    buff[0] = 0x05;
-    buff[1] = status;
-    buff[2] = 0x00;
-    buff[3] = clientRequest->dest_addr_type;
-    // buff[4] = 
-    buff[5] = clientRequest->dest_port;
-    buffer_write_adv(buffer, 5);
-    return 2;
-}
+
 //hay mas acá abajo que se ve en el video (tipo 2:50:00) pero no doy más bro

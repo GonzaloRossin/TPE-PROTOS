@@ -14,13 +14,16 @@ server has array of clients
 #include <stdio.h>
 #include <stdlib.h>
 
+#define IP_V4_ADDR_SIZE 4
+#define IP_V6_ADDR_SIZE 16
+
 enum client_state {
     hello_read_state = 0,
     hello_write_state,
     request_read_state,
     request_resolve,
-    request_write,
     request_connecting_state,
+    request_write_state,
     connected_state,
     close_state,
     error_state,
@@ -45,6 +48,7 @@ struct st_request
 {
     request_parser * pr;
     buffer * r;
+    buffer * w;
     enum socks_response_status state;
     struct request * request;
     int origin_fd;
@@ -76,9 +80,14 @@ struct socks5
     int remote_socket;
 
     int origin_domain;
+    
+    int origin_adrr_type;
     int origin_addr_len;
+    uint8_t origin_ipv4_addr[IP_V4_ADDR_SIZE];
+    uint8_t origin_port[2];
 
     struct sockaddr_storage origin_addr;
+
     struct addrinfo *origin_resolution;
     struct addrinfo *origin_resolution_current;
 
