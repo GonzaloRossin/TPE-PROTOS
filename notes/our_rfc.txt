@@ -1,0 +1,163 @@
+Rfc 69420, nuestro protocolo
+
+	Intro
+This document describes a Client-Server protocol to edit the sock5 proxy Server implemented on de "Protocolos de Comunicación" class of 2022-1Q, which stores different statistics of usage and works as a POP3 password dissector.
+It is NOT session based and uses TCP connection between the Client and the Server.
+Note: when clarifying a [format]', [] will be used to encompass the expected format, but they do not form part of the expected format.
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Initial negotiation
+The Client and the Server negotiate how will they connect.
+(Same as SOCKSv5)
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Connected state
+After the initial negotiation is complete, the Client is expected to send a message with the following format:
+
+	Base connected-state package structure: for Client requests
+	+--------+-------+--------+---------+
+	|  TYPE  |  CMD  |  SIZE  |  DATA   |
+	+--------+-------+--------+---------+
+	|   1    |   1   |  0-2   | 0-65535 |
+	+-- -----+-------+--------+---------+
+
+	Base connected-state package structure: for Server responses
+	+--------+-------+--------+---------+
+	|  TYPE  |  CODE |  SIZE  |  DATA   |
+	+--------+-------+--------+---------+
+	|   1    |   1   |  0-2   | 0-65535 |
+	+-- -----+-------+--------+---------+
+
+The TYPE field is to identify which TYPE of command is requested.
+The values currently defined for TYPE are:
+	- X'01' : GET. The current Client Tequest corresponds to a 'GET' command type. The Client will ignore these messages.
+	- X'02' : EDIT. The current Client Request corresponds to an 'EDIT' command type. The Client will ignore these messages.
+	- X'AA' : RESPONSE. The current package corresponds to a Server response. The Server will ignore these messages.
+	- X'FF' : ERROR. The current package corresponds to a Server ERROR response. The Server will ignore these messages.
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Client Request
+
+Once knowing which TYPE of command is being requested, the Server must know which command is being executed by the Client.
+The CMD field is to identify which COMMAND is being requested by the Client.
+The values currently defined for CMD for GET TYPE are:
+	- X'01' : Get historic amount of connections; Information provided: Date, Username, type of register, origin IP:port, destination IP:port, status SOCKSv5 code.
+		Returns LIST status if OK, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'02' : Get quantity of current connections
+		Returns INT status if OK, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'03' : Get quantity of bytes transferred
+		Returns LONG status if OK, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'04' : Get list of Users
+		Returns LIST status if OK, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'05' : Get current password dissector status
+		Returns BOOL status if OK, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'06' : Get Server authentication status
+		Returns BOOL status if OK, ERROR status otherwise.
+		SIZE must be X'00'
+
+The values currently defined for CMD for EDIT TYPE are:
+	- X'01' : Edit Client buffer size
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'00' to X'FF'.
+		Data must contain an unsigned number representing new desired buffer size.
+
+	- X'02' : Edit Client timeout
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'00' to X'FF'.
+		Data must contain an unsigned number representing new desired timeout.
+
+	- X'03' : Turn ON password dissector
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'04' : Turn OFF password dissector
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'05' : Add a User
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'00' to X'FF'.
+		Data must contain a series of UTF-8 chars representing the new desired user, with format: [user:password\r\n]
+
+	- X'06' : Remove a User
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'00' to X'FF'.
+		Data must contain a series of UTF-8 chars representing desired user to be removed, with format: [user\r\n]
+
+	- X'07' : Set new User password
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'00' to X'FF'.
+		Data must contain a series of UTF-8 chars representing the new desired user, with format: [user:newPassword\r\n]
+
+	- X'08' : Set User as Admin
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'00' to X'FF'.
+		Data must contain a series of UTF-8 chars representing desired user to be set as Admin, with format: [user\r\n]
+
+	- X'09' : Turn ON password authentication
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'00'
+
+	- X'09' : Turn OFF password authentication
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'00'
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Server Response
+
+After recieving the command, the Server is expected to process the request and respond with a RESPONSE TYPE message.
+Each TYPE has its own SIZE field value that is being expected by the Client. This size corresponds to the amount of bytes being transferred in the DATA field.
+The values currently defined for CODE for RESPONSE TYPE are:
+	- X'01' : OK status 	: The requested command was processed succesfully.
+		SIZE must be X'00'
+
+	- X'02' : LIST status	: The response is a list of UTF-8 chars.
+		SIZE can range from X'00' to X'FF'
+
+	- X'03' : INT status	: The response is an unsigned int
+		SIZE must be X'04'
+
+	- X'04' : LONG status	: The response is an unsigned long
+		SIZE must be X'08'
+
+	- X'05' : BOOL status	: The response is a boolean
+		SIZE must be X'01'
+ 		DATA can be either X'00' (false) or X'FF' (true)
+
+The Server can also respond with a ERROR TYPE if an error was encountered processing the client's request.
+All ERROR TYPEs can have a SIZE between X'00' and X'FF' if the Server wants to send additional information to the Client. This information must be SIZE amount of UTF-8 chars.
+The values currently defined for CODE for ERROR TYPE are:
+	- X'01' : 
+	- X'02' : 
+	- X'03' : 
+	- X'04' : 
+	- X'05' : 
+	- X'06' : 
+	- X'07' : 
+	- X'08' : 
+	- X'09' : 
+	- X'FF' : Unknown error
+
+
+
+
+
+
