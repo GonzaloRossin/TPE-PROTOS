@@ -13,7 +13,6 @@ void request_read(struct selector_key *key) {
 		pr = (request_parser *) calloc(1, sizeof(request_parser)); //Limpiar mas tarde
 		request_parser_init(pr);
 		currClient->connection_state.init = true;
-		currClient->connection_state.on_departure = request_departure;
 		currClient->client.st_request.pr = pr;
 		currClient->client.st_request.r = currClient->bufferFromClient;
 		currClient->client.st_request.w = currClient->bufferFromRemote;
@@ -236,6 +235,7 @@ void request_write(struct selector_key *key) {
 
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
+        currClient->connection_state.on_departure = request_departure;
 		change_state(currClient, CONNECTED_STATE);
 	}
 }
