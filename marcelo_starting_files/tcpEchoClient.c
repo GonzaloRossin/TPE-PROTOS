@@ -9,7 +9,7 @@
 #include "./include/logger.h"
 #include "./include/tcpClientUtil.h"
 
-#define BUFSIZE 512
+#define BUFFSIZE 512
 
 int main(int argc, char *argv[]) {
 
@@ -31,38 +31,65 @@ int main(int argc, char *argv[]) {
 
 	size_t echoStringLen = strlen(echoString); // Determine input length
 
-	// Send the string to the server
-	uint8_t manualSend[4];
-    manualSend[0] = 0x05;
-	manualSend[1] = 0x02;
-	manualSend[2] = 0x00;
-	manualSend[3] = 0x01;
-	ssize_t numBytes = send(sock, manualSend, sizeof(manualSend), 0);
-	if (numBytes < 0 || numBytes != echoStringLen)
+	uint8_t * buffer = (uint8_t *)calloc(1, sizeof(uint8_t) * BUFFSIZE);
+
+	// Send the HELLO to the server
+	uint8_t manualSend_Hello[4];
+    manualSend_Hello[0] = 0x05;
+	manualSend_Hello[1] = 0x02;
+	manualSend_Hello[2] = 0x00;
+	manualSend_Hello[3] = 0x01;
+	ssize_t numBytes = send(sock, manualSend_Hello, sizeof(manualSend_Hello), 0);
+	if (numBytes < 0 || numBytes != 4)
 		print_log(DEBUG, "send() failed expected %zu sent %zu", echoStringLen, numBytes);
 
-	// Receive the same string back from the server
+
 	unsigned int totalBytesRcvd = 0; // Count of total bytes received
 	print_log(INFO, "Received: ");     // Setup to print the echoed string
-	while (totalBytesRcvd < echoStringLen && numBytes >=0) {
-
-		print_log(DEBUG, "in while");
-		
-		char buffer[BUFSIZE]; 
-		/* Receive up to the buffer size (minus 1 to leave space for a null terminator) bytes from the sender */
-		numBytes = recv(sock, buffer, BUFSIZE - 1, 0);
+	while (totalBytesRcvd < 2 && numBytes >=0) { //HELLO
+		numBytes = recv(sock, buffer, BUFFSIZE, 0);
 		if (numBytes < 0) {
 			print_log(ERROR, "recv() failed");
-		}  
+		}
 		else if (numBytes == 0)
 			print_log(ERROR, "recv() connection closed prematurely");
 		else {
 			totalBytesRcvd += numBytes; // Keep tally of total bytes
-			buffer[numBytes] = '\0';    // Terminate the string!
-			print_log(INFO, "%x", buffer);      // Print the echo buffer
+			for(int i=0; i<2; i++){
+				print_log(INFO, "%02x ", buffer[i]);      // Print the echo buffer
+			}
+		}
+	}
+	print_log(INFO, "done with hello handshake, starting to send a basic GET X'01'");
+
+
+	memset(buffer, 0, sizeof(sizeof(uint8_t) * BUFFSIZE));
+	uint8_t manualSend_Request[3];
+    manualSend_Request[0] = 0x01; //GET
+	manualSend_Request[1] = 0x01; //Historic amount of connections
+	manualSend_Request[2] = 0x00; //Must be 00
+	numBytes = send(sock, manualSend_Request, sizeof(manualSend_Request), 0);
+	if (numBytes < 0 || numBytes != 3)
+		print_log(DEBUG, "send() failed expected %zu sent %zu", echoStringLen, numBytes);
+
+	totalBytesRcvd = 0; // Count of total bytes received
+	print_log(INFO, "Received: ");     // Setup to print the echoed string
+	while (totalBytesRcvd < 5 && numBytes >=0) { //HELLO
+		numBytes = recv(sock, buffer, BUFFSIZE, 0);
+		if (numBytes < 0) {
+			print_log(ERROR, "recv() failed");
+		}
+		else if (numBytes == 0)
+			print_log(ERROR, "recv() connection closed prematurely");
+		else {
+			totalBytesRcvd += numBytes; // Keep tally of total bytes
+			for(int i=0; i<5; i++){
+				print_log(INFO, "%02x ", buffer[i]);      // Print the echo buffer
+			}
 		}
 	}
 
 	close(sock);
+	free(buffer);
 	return 0;
 }
