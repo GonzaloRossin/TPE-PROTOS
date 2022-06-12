@@ -226,10 +226,10 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
                 }
                 break;
             case '1':
-                args->code = 0x01;
+                handleRepeatedCMD(args, 0x01);
                 break;
             case '2':
-                args->code = 0x02;
+                handleRepeatedCMD(args, 0x02);
                 break;
             default:
                 fprintf(stderr, "unknown argument %d.\n", c);
@@ -249,4 +249,13 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         fprintf(stderr, "wrong usage, example: -G1\n");
         exit(1);
     }
+}
+
+void handleRepeatedCMD(struct ssemd_args *args, char newCode){
+    if(args->code == 0){
+        args->code = newCode;
+    } else {
+        fprintf(stderr, "argument not accepted: %x, usage example: -G1\n", newCode);
+        exit(1);
+    }          
 }

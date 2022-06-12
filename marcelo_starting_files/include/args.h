@@ -52,5 +52,9 @@ parse_args(const int argc, char **argv, struct socks5args *args);
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args);
 
+//helper for parse_ssemd_args
+void
+handleRepeatedCMD(struct ssemd_args *args, char newCode);
+
 #endif
 
