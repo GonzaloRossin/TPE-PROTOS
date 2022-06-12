@@ -121,7 +121,7 @@ int main(int argc , char *argv[])
         goto finally;
     }
     const struct fd_handler socksv5 = {
-        .handle_read       = masterSocketHandler,
+        .handle_read       = masterSocks5Handler,
         .handle_write      = NULL,
         .handle_close      = NULL, // nada que liberar
     };

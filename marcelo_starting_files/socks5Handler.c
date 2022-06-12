@@ -10,7 +10,7 @@ static const struct fd_handler socksv5 = {
 	.handle_block	   = socks5_block,
 };
 
-void masterSocketHandler(struct selector_key *key) {
+void masterSocks5Handler(struct selector_key *key) {
 	const int new_client_socket = acceptTCPConnection(key->fd);
 	selector_fd_set_nio(new_client_socket);
 	

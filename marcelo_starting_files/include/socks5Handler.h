@@ -1,5 +1,5 @@
-#ifndef PROXY_HANDLER_H_
-#define PROXY_HANDLER_H_
+#ifndef SOCKS5_HANDLER_H_
+#define SOCKS5_HANDLER_H_
 
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +34,7 @@ int handleProxyAddr();
 /**
   Maneja la actividad del master socket.
   */
-void masterSocketHandler(struct selector_key *key);
+void masterSocks5Handler(struct selector_key *key);
 
 void readFromProxy(int remoteSocket, int clientSocket, fd_set * writefds);
 
