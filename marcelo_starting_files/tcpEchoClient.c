@@ -1,15 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include "./include/logger.h"
 #include "./include/tcpClientUtil.h"
 
-#define BUFFSIZE 512
+#define BUFFSIZE 4096
 
 void handleSend(struct ssemd_args *args, int sock);
 
@@ -25,66 +16,55 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	uint8_t * buffer = (uint8_t *)calloc(1, sizeof(uint8_t) * BUFFSIZE);
+	//start buffer, only 1 because it sends and then recieves and then frees. no need for 2 buffers
+    buffer * Buffer = (buffer*)malloc(sizeof(buffer));
+    uint8_t * dataClient = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
+    memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
+    buffer_init(Buffer, BUFFSIZE, dataClient);
+
 
 	// Send the HELLO to the server
-	uint8_t manualSend_Hello[4];
-    manualSend_Hello[0] = 0x05;
-	manualSend_Hello[1] = 0x02;
-	manualSend_Hello[2] = 0x00;
-	manualSend_Hello[3] = 0x01;
-	ssize_t numBytes = send(sock, manualSend_Hello, sizeof(manualSend_Hello), 0);
+	buffer_write(Buffer, 0x05);
+	buffer_write(Buffer, 0x02);
+	buffer_write(Buffer, 0x00);
+	buffer_write(Buffer, 0x01);
 
 
-	unsigned int totalBytesRcvd = 0; // Count of total bytes received
-	print_log(INFO, "Received: ");     // Setup to print the echoed string
-	while (totalBytesRcvd < 2 && numBytes >=0) { //HELLO
-		numBytes = recv(sock, buffer, BUFFSIZE, 0);
-		if (numBytes < 0) {
+	size_t bytesToSend = Buffer->write - Buffer->read;
+	print_log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, sock);
+	ssize_t bytesSent = send(sock, Buffer->data, bytesToSend, 0); //write HELLO
+	buffer_read_adv(Buffer, bytesSent);
+	print_log(INFO, "Sent %zu bytes: ", bytesSent);
+
+
+	ssize_t bytesRecieved = 0;;
+	print_log(INFO, "Received: ");
+	while (true) { //read HELLO
+		bytesRecieved = recv(sock, Buffer->data, BUFFSIZE, 0);
+		if (bytesRecieved < 0) {
 			print_log(ERROR, "recv() failed");
 		}
-		else if (numBytes == 0)
+		else if (bytesRecieved == 0)
 			print_log(ERROR, "recv() connection closed prematurely");
 		else {
-			totalBytesRcvd += numBytes; // Keep tally of total bytes
-			for(int i=0; i<2; i++){
-				print_log(INFO, "%02x ", buffer[i]);      // Print the echo buffer
+			for(int i=0; i<bytesRecieved; i++){
+				print_log(INFO, "%02x ", Buffer->data[i]);
 			}
+		}
+		if(bytesRecieved == 2){
+			break;
 		}
 	}
 	print_log(INFO, "done with hello handshake, starting to send a basic GET X'01'");
 
 	handleSend(args, sock);
 
-/*
-	memset(buffer, 0, sizeof(sizeof(uint8_t) * BUFFSIZE));
-	uint8_t manualSend_Request[3];
-    manualSend_Request[0] = 0x01; //GET
-	manualSend_Request[1] = 0x01; //Historic amount of connections
-	manualSend_Request[2] = 0x00; //Must be 00
-	numBytes = send(sock, manualSend_Request, sizeof(manualSend_Request), 0);
-	if (numBytes < 0 || numBytes != 3)
-		print_log(DEBUG, "send() failed expected %zu sent %zu", echoStringLen, numBytes);
+	//handleRecv(args, sock, );
 
-	totalBytesRcvd = 0; // Count of total bytes received
-	print_log(INFO, "Received: ");     // Setup to print the echoed string
-	while (totalBytesRcvd < 5 && numBytes >=0) { //HELLO
-		numBytes = recv(sock, buffer, BUFFSIZE, 0);
-		if (numBytes < 0) {
-			print_log(ERROR, "recv() failed");
-		}
-		else if (numBytes == 0)
-			print_log(ERROR, "recv() connection closed prematurely");
-		else {
-			totalBytesRcvd += numBytes; // Keep tally of total bytes
-			for(int i=0; i<5; i++){
-				print_log(INFO, "%02x ", buffer[i]);      // Print the echo buffer
-			}
-		}
-	}
-*/
 	close(sock);
-	free(buffer);
+	free(Buffer->data);
+	free(Buffer);
+	free(args);
 	return 0;
 }
 
@@ -95,5 +75,5 @@ void handleSend(struct ssemd_args *args, int sock){
 	manualSend_Request[2] = args->size; //Must be 00
 	//manualSend_Request[3] = args->data; //Must be 00
 
-	int numBytes = send(sock, manualSend_Request, sizeof(manualSend_Request), 0);
+	int bytesSent = send(sock, manualSend_Request, sizeof(manualSend_Request), 0);
 }
