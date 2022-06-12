@@ -170,8 +170,11 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
 
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
-    if(argc > 3){
-        fprintf(stderr, "Too many arguments, usage: \n");
+    if(argc > 2){
+        fprintf(stderr, "Too many arguments, usage example: -G1\n");
+        exit(1);
+    } else if(argc < 2){
+        fprintf(stderr, "Too few arguments, usage example: -G1 \n");
         exit(1);
     }
     memset(args, 0, sizeof(*args)); // sobre todo para setear en null los punteros de users
@@ -195,7 +198,7 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         // };
         // c = getopt_long(argc, argv, "hl:L:Np:P:u:v", long_options, &option_index);
 
-        c = getopt (argc, argv, "GE123456789");
+        c = getopt (argc, argv, "GE12");
 
 
         if (c == -1)
@@ -206,10 +209,21 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
                 usage(argv[0]);
                 break;
             case 'G':
-                args->type = 0x01;
+                if(args->type == 0){
+                    args->type = 0x01;
+                } else {
+                    fprintf(stderr, "argument not accepted: %c, usage example: -G1\n", c);
+                    exit(1);
+                }
+ 
                 break;
             case 'E':
-                args->type = 0x02;
+                if(args->type == 0){
+                    args->type = 0x02;
+                } else {
+                    fprintf(stderr, "argument not accepted: %c, usage example: -G1\n", c);
+                    exit(1);
+                }
                 break;
             case '1':
                 args->code = 0x01;
@@ -229,6 +243,10 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
             fprintf(stderr, "%s ", argv[optind++]);
         }
         fprintf(stderr, "\n");
+        exit(1);
+    }
+    if(args->type == 0 || args->code == 0){
+        fprintf(stderr, "wrong usage, example: -G1\n");
         exit(1);
     }
 }
