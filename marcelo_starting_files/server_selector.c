@@ -16,6 +16,7 @@
 #include "./include/socks5Handler.h"
 #include "./include/buffer.h"
 #include "./include/selector.h"
+#include "./include/args.h"
 
 static bool done = false;
 
@@ -29,7 +30,8 @@ sigterm_handler(const int signal) {
 
 #define TRUE   1
 #define FALSE  0
-#define PORT "8888"
+//#define PORT "8888"
+//#define ADMIN_PORT "8889"
 #define MAX_SOCKETS 1000
 #define MAX_PENDING_CONNECTIONS   10   // un valor bajo, para realizar pruebas
 
@@ -43,6 +45,10 @@ void handleAddrInfo(int socket);
 
 int main(int argc , char *argv[])
 {
+    //pongo esto primero así no corre nada de más si pone mal los args
+    struct socks5args * args = (struct socks5args *)malloc(sizeof(struct socks5args));
+	parse_args(argc, argv, args);
+
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
 	int max_clients = MAX_SOCKETS/2 , i;
@@ -61,12 +67,16 @@ int main(int argc , char *argv[])
 		clients[i].isAvailable = true;
 	}
 
+    char PORT[6];
+    char ADMIN_PORT[6];
+    sprintf(PORT, "%d", args->socks_port);
+    sprintf(ADMIN_PORT, "%d", args->mng_port);
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET)) < 0) {
 		print_log(ERROR, "socket IPv4 failed");
 	} else {
-		print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
+		print_log(DEBUG, "\nWaiting for TCP IPv4 connections on socket %d", master_socket[master_socket_size]);
 		master_socket_size++;
 	}
 
@@ -79,17 +89,17 @@ int main(int argc , char *argv[])
 
     // Master sockets para atender admins IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
-    if ((master_socket[master_socket_size] = setupTCPServerSocket("8889", AF_INET)) < 0) {
+    if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET)) < 0) {
 		print_log(ERROR, "socket IPv4 failed");
 	} else {
-		print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d\n", master_socket[master_socket_size]);
+		print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d FOR ADMIN ONLY", master_socket[master_socket_size]);
 		master_socket_size++;
 	}
 
-	if ((master_socket[master_socket_size] = setupTCPServerSocket("8889", AF_INET6)) < 0) {
+	if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET6)) < 0) {
 		print_log(ERROR, "socket IPv6 failed");
 	} else {
-		print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
+		print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d FOR ADMIN ONLY\n", master_socket[master_socket_size]);
 		master_socket_size++;
 	}
 
@@ -175,6 +185,7 @@ finally:
         	close(master_socket[i]);
     	}
 	}
+    free(args);
     
     return ret;
 }

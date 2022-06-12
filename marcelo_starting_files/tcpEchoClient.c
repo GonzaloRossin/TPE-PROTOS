@@ -30,14 +30,11 @@ int main(int argc, char *argv[]) {
 
 	// Send the HELLO to the server
 	handleHello(Buffer, sock);
-
 	readHello(Buffer, sock);
-
 	print_log(INFO, "\ndone with hello handshake\n");
 
+	//send command to server
 	handleSend(args, sock, Buffer);
-
-
 	handleRecv(sock, Buffer);
 
 	close(sock);
