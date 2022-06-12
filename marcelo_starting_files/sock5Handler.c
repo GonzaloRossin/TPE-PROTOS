@@ -1,4 +1,4 @@
-#include "./include/proxyHandler.h"
+#include "./include/socks5Handler.h"
 
 
 long valread;
@@ -32,7 +32,6 @@ void masterSocketHandler(struct selector_key *key) {
 
 			print_log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
 			// print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
-
 			break;
 		}
 	}
