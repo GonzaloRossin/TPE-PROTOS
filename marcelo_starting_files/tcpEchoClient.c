@@ -11,25 +11,19 @@
 
 #define BUFFSIZE 512
 
+void handleSend(struct ssemd_args *args, int sock);
+
 int main(int argc, char *argv[]) {
 
-	if (argc != 4) {
-		print_log(FATAL, "usage: %s <Server Name/Address> <Echo Word> <Server Port/Name>", argv[0]);
-	}
-
-	char *server = argv[1];     // First arg: server name IP address 
-	char *echoString = argv[2]; // Second arg: string to echo
-
-	// Third arg server port
-	char * port = argv[3];
+	struct ssemd_args * args = (struct ssemd_args *)malloc(sizeof(struct ssemd_args));
+	parse_ssemd_args(argc, argv, args);
 
 	// Create a reliable, stream socket using TCP
-	int sock = tcpClientSocket(server, port);
+	int sock = tcpClientSocket(args->mng_addr,  args->mng_port); //esta funcion la usa otra persona?
 	if (sock < 0) {
 		print_log(FATAL, "socket() failed");
+		exit(1);
 	}
-
-	size_t echoStringLen = strlen(echoString); // Determine input length
 
 	uint8_t * buffer = (uint8_t *)calloc(1, sizeof(uint8_t) * BUFFSIZE);
 
@@ -40,8 +34,6 @@ int main(int argc, char *argv[]) {
 	manualSend_Hello[2] = 0x00;
 	manualSend_Hello[3] = 0x01;
 	ssize_t numBytes = send(sock, manualSend_Hello, sizeof(manualSend_Hello), 0);
-	if (numBytes < 0 || numBytes != 4)
-		print_log(DEBUG, "send() failed expected %zu sent %zu", echoStringLen, numBytes);
 
 
 	unsigned int totalBytesRcvd = 0; // Count of total bytes received
@@ -62,7 +54,9 @@ int main(int argc, char *argv[]) {
 	}
 	print_log(INFO, "done with hello handshake, starting to send a basic GET X'01'");
 
+	handleSend(args, sock);
 
+/*
 	memset(buffer, 0, sizeof(sizeof(uint8_t) * BUFFSIZE));
 	uint8_t manualSend_Request[3];
     manualSend_Request[0] = 0x01; //GET
@@ -88,8 +82,18 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
-
+*/
 	close(sock);
 	free(buffer);
 	return 0;
+}
+
+void handleSend(struct ssemd_args *args, int sock){
+	uint8_t manualSend_Request[3];
+    manualSend_Request[0] = args->type; //GET
+	manualSend_Request[1] = args->code; //Historic amount of connections
+	manualSend_Request[2] = args->size; //Must be 00
+	//manualSend_Request[3] = args->data; //Must be 00
+
+	int numBytes = send(sock, manualSend_Request, sizeof(manualSend_Request), 0);
 }

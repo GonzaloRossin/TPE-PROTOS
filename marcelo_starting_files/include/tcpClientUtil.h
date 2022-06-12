@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/socket.h>
+#include "args.h"
 
 // Create and connect a new TCP client socket
 int tcpClientSocket(const char *server, const char *service);

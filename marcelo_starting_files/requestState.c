@@ -33,6 +33,7 @@ void request_read(struct selector_key *key) {
 		print_log(INFO, "Host disconnected\n");
 		selector_unregister_fd(key->s, key->fd);
 	} else {
+		print_log(INFO, "Recieved %ld bytes from socket = %d\n", valread, key->fd);
 		buffer_write_adv(buff_r, valread);
 		enum request_state st = request_consume(buff_r, pr, &errored);
 		if(st == request_done) {

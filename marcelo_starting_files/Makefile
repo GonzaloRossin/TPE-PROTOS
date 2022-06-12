@@ -7,7 +7,7 @@ clean:
 
 COMMON =  logger.o util.o 
 SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o tcpClientUtil.o socks5Handler.o buffer.o client.o hello.o request.o helloState.o requestState.o connectedState.o
-CLIENT_SOURCES = server_client.o tcpClientUtil.o ssemdHandler.o
+CLIENT_SOURCES = tcpEchoClient.o tcpClientUtil.o ssemdHandler.o args.o
 
 buffer.o: ./include/buffer.h
 selector.o: ./include/selector.h
@@ -22,6 +22,7 @@ connectedState.o : ./include/connectedState.h
 
 tcpClientUtil.o: ./include/tcpClientUtil.h
 ssemdHandler.o : ./include/ssemdHandler.h
+args.o : ./include/args.h
 
 
 server_selector: $(COMMON) $(SERVER_SOURCES)
