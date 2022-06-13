@@ -367,3 +367,11 @@ marcelo_starting_files/tests/hello test/helloParserTest
 marcelo_starting_files/tests/request test/requestParserTest
 
 *.json
+
+marcelo_starting_files/.idea/marcelo_starting_files.iml
+
+marcelo_starting_files/.idea/modules.xml
+
+marcelo_starting_files/.idea/vcs.xml
+
+marcelo_starting_files/.idea/workspace.xml
