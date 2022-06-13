@@ -13,9 +13,9 @@ void hello_read(struct selector_key *key) {
 		pr = (hello_parser *) calloc(1, sizeof(hello_parser));
 		hello_parser_init(pr);
 		pr->on_authentication_method = on_auth;
-		currClient->connection_state.on_departure = hello_departure;
 		currClient->connection_state.init = true;
 		currClient->client.st_hello.r = currClient->bufferFromClient;
+		currClient->connection_state.on_departure = hello_departure;
 		currClient->client.st_hello.w = currClient->bufferFromRemote;
 		currClient->client.st_hello.pr = pr;
 	}
@@ -28,9 +28,11 @@ void hello_read(struct selector_key *key) {
 	size_t nbytes = buff_r->limit - buff_r->write;
 	long valread = 0;
 	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
-		print_log(INFO, "Host disconnected\n");
+		print_log(INFO, "Host disconnected socket = %d \n", key->fd);
 		selector_unregister_fd(key->s, key->fd);
+		return ;
 	} else {
+		print_log(INFO, "Recieved %ld bytes from socket = %d\n", valread, key->fd);
 		buffer_write_adv(buff_r, valread);
 	}
 

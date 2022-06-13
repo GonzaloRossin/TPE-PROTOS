@@ -1,5 +1,12 @@
 #include "./include/helloState.h"
 
+static const struct fd_handler socksv5 = {
+	.handle_read       = socks5_read,
+	.handle_write      = socks5_write,
+	.handle_close      = socks5_close, // nada que liberar
+	.handle_block	   = socks5_block,
+};
+
 void request_departure(struct socks5 * currClient) {
 	free(currClient->client.st_request.pr->request);
 	free(currClient->client.st_request.pr);
@@ -26,6 +33,7 @@ void request_read(struct selector_key *key) {
 		print_log(INFO, "Host disconnected\n");
 		selector_unregister_fd(key->s, key->fd);
 	} else {
+		print_log(INFO, "Recieved %ld bytes from socket = %d\n", valread, key->fd);
 		buffer_write_adv(buff_r, valread);
 		enum request_state st = request_consume(buff_r, pr, &errored);
 		if(st == request_done) {
@@ -125,13 +133,8 @@ enum client_state request_connect(struct selector_key *key) {
 				error = true;
 				goto finally;
 			}
-			struct fd_handler * socksv5 = malloc(sizeof(struct fd_handler));
-            socksv5->handle_read = socks5_read;
-            socksv5->handle_write = socks5_write;
-            socksv5->handle_close = socks5_close;
-            socksv5->handle_block = socks5_block;
 
-			st = selector_register(key->s, request.origin_fd, socksv5, OP_WRITE, key->data);
+			st = selector_register(key->s, request.origin_fd, &socksv5, OP_WRITE, key->data);
 			if (SELECTOR_SUCCESS != st) {
 				close(request.origin_fd);
 			}
@@ -167,7 +170,13 @@ void request_connecting(struct selector_key *key) {
 			currClient->client.st_request.state = status_succeeded;
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
 		} else {
-			
+            if (currClient->origin_resolution_current->ai_next) {
+                currClient->origin_resolution_current = currClient->origin_resolution_current->ai_next;
+                set_next_ip(currClient, currClient->origin_resolution_current);
+                enum client_state state =  request_connect(key);
+	            change_state(currClient, state);
+                return ;
+            }			
 		}
 	}
 
@@ -246,13 +255,18 @@ void request_resolve(struct selector_key *key) {
 	if (currClient->origin_resolution == 0) {
 		currClient->client.st_request.state = status_general_SOCKLS_server_failure;
 	} else {
-		currClient->origin_domain = currClient->origin_resolution->ai_family;
-		currClient->origin_addr_len = currClient->origin_resolution->ai_addrlen;
-		memcpy(&currClient->origin_addr, currClient->origin_resolution->ai_addr, currClient->origin_resolution->ai_addrlen);
+		currClient->origin_resolution_current = currClient->origin_resolution;
+        set_next_ip(currClient, currClient->origin_resolution_current);
 		freeaddrinfo(currClient->origin_resolution);
 		currClient->origin_resolution = 0;
 	}
 
 	enum client_state state =  request_connect(key);
 	change_state(currClient, state);
+}
+
+void set_next_ip(struct socks5 * currClient, struct addrinfo * addr) {
+    currClient->origin_domain = addr->ai_family;
+	currClient->origin_addr_len = addr->ai_addrlen;
+	memcpy(&currClient->origin_addr, addr->ai_addr, addr->ai_addrlen);
 }
