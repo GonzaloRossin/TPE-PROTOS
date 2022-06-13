@@ -377,3 +377,17 @@ marcelo_starting_files/.idea/vcs.xml
 marcelo_starting_files/.idea/workspace.xml
 
 marcelo_starting_files/server_client
+
+marcelo_starting_files/include/protocolParser.h
+
+marcelo_starting_files/protocolParser.c
+
+marcelo_starting_files/tests/protocol test/makefile
+
+marcelo_starting_files/tests/protocol test/protocolParserTester
+
+.idea/modules.xml
+
+.idea/TPE-PROTOS.iml
+
+.idea/vcs.xml

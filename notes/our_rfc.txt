@@ -114,7 +114,7 @@ The values currently defined for CMD for EDIT TYPE are:
 		Returns OK status if ok, ERROR status otherwise.
 		SIZE must be X'00'
 
-	- X'09' : Turn OFF password authentication
+	- X'10' : Turn OFF password authentication
 		Returns OK status if ok, ERROR status otherwise.
 		SIZE must be X'00'
 
