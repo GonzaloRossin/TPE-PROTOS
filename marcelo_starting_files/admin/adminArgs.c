@@ -16,11 +16,11 @@ usage(const char *progname) {
 
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
-    if(argc > 2){
-        fprintf(stderr, "Too many arguments, usage example: -G1\n");
+    if(argc > 99){
+        fprintf(stderr, "Too many arguments, usage example: -G1 -t qwertyuiop\n");
         exit(1);
-    } else if(argc < 2){
-        fprintf(stderr, "Too few arguments, usage example: -G1 \n");
+    } else if(argc < 3){
+        fprintf(stderr, "Too few arguments, usage example: -G1 -t qwertyuiop\n");
         exit(1);
     }
     memset(args, 0, sizeof(*args)); // sobre todo para setear en null los punteros de users
@@ -33,7 +33,7 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     int c;
 
     while (true) {
-        c = getopt (argc, argv, "GE12");
+        c = getopt (argc, argv, "G:E:t:");
 
         if (c == -1)
             break;
@@ -45,6 +45,7 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
             case 'G':
                 if(args->type == 0){
                     args->type = 0x01;
+                    args->code = *optarg;
                 } else {
                     fprintf(stderr, "argument not accepted: %c, usage example: -G1\n", c);
                     exit(1);
@@ -54,16 +55,13 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
             case 'E':
                 if(args->type == 0){
                     args->type = 0x02;
+                    args->code = *optarg;
                 } else {
                     fprintf(stderr, "argument not accepted: %c, usage example: -G1\n", c);
                     exit(1);
                 }
                 break;
-            case '1':
-                handleRepeatedCMD(args, 0x01);
-                break;
-            case '2':
-                handleRepeatedCMD(args, 0x02);
+            case 't':
                 break;
             default:
                 fprintf(stderr, "unknown argument %d.\n", c);

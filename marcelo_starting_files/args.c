@@ -82,11 +82,6 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
     while (true) {
         int option_index = 0;
         static struct option long_options[] = {
-            // { "doh-ip",    required_argument, 0, 0xD001 },
-            // { "doh-port",  required_argument, 0, 0xD002 },
-            // { "doh-host",  required_argument, 0, 0xD003 },
-            // { "doh-path",  required_argument, 0, 0xD004 },
-            // { "doh-query", required_argument, 0, 0xD005 },
             { 0,           0,                 0, 0 }
         };
 
