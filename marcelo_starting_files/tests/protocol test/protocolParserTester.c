@@ -7,7 +7,7 @@
 
 #define TYPE 0x02
 #define WRONG_TYPE 0x03
-#define CMD 0x11
+#define CMD 0x10
 #define SIZE 0x04
 
 #define N(x) (sizeof(x)/sizeof((x)[0]))
