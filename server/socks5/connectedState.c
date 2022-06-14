@@ -1,4 +1,4 @@
-#include "./include/connectedState.h"
+#include "./../../include/connectedState.h"
 
 void connected_init(struct socks5 * currClient) {
 

@@ -1,7 +1,7 @@
 #ifndef SSEMD_HELLO_STATE_H_
 #define SSEMD_HELLO_STATE_H_
 
-#include "client.h"
+#include "socks5.h"
 #include "selector.h"
 #include "ssemdHandler.h"
 

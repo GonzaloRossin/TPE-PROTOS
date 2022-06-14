@@ -17,7 +17,7 @@
 #include "tcpServerUtil.h"
 #include "buffer.h"
 #include "helloState.h"
-#include "client.h"
+#include "socks5.h"
 #include "selector.h"
 #include "requestState.h"
 #include "connectedState.h"

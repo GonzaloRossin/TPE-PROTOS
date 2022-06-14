@@ -1,3 +1,12 @@
 {
-    "makefile.extensionOutputFolder": "./.vscode"
+    "makefile.extensionOutputFolder": "./.vscode",
+    "files.associations": {
+        "hello.h": "c",
+        "connectedstate.h": "c",
+        "socks5handler.h": "c",
+        "hellostate.h": "c",
+        "requeststate.h": "c",
+        "ssemdhellostate.h": "c",
+        "ssemdhandler.h": "c"
+    }
 }

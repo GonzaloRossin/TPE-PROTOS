@@ -1,4 +1,4 @@
-#include "./include/helloState.h"
+#include "./../../include/helloState.h"
 
 void hello_departure(struct socks5 * currClient) {
 	free(currClient->client.st_hello.pr->data);

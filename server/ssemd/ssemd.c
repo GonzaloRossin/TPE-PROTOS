@@ -1,4 +1,4 @@
-#include "./include/ssemd.h"
+#include "./../../include/ssemd.h"
 
 void
 new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE){

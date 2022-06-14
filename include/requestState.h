@@ -1,7 +1,7 @@
 #ifndef REQUEST_STATE_H_
 #define REQUEST_STATE_H_
 
-#include "client.h"
+#include "socks5.h"
 #include "selector.h"
 #include "socks5Handler.h"
     
