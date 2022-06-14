@@ -368,4 +368,24 @@ marcelo_starting_files/tests/request test/requestParserTest
 
 *.json
 
+marcelo_starting_files/.idea/marcelo_starting_files.iml
+
+marcelo_starting_files/.idea/modules.xml
+
+marcelo_starting_files/.idea/vcs.xml
+
+marcelo_starting_files/.idea/workspace.xml
+
 marcelo_starting_files/server_client
+
+marcelo_starting_files/tests/protocol test/protocolParserTester
+
+.idea/modules.xml
+
+.idea/TPE-PROTOS.iml
+
+.idea/vcs.xml
+
+.idea/workspace.xml
+
+marcelo_starting_files/tests/protocol test/requestParserTest

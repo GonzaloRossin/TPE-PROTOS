@@ -1,4 +1,4 @@
-Rfc 69420, nuestro protocolo
+Rfc 69420, nuestro protocolo SSEMD, Socks Server Editor Monitor & Dissector
 
 	Intro
 This document describes a Client-Server protocol to edit the sock5 proxy Server implemented on de "Protocolos de Comunicación" class of 2022-1Q, which stores different statistics of usage and works as a POP3 password dissector.
@@ -22,14 +22,14 @@ After the initial negotiation is complete, the Client is expected to send a mess
 	+--------+-------+--------+---------+
 	|  TYPE  |  CMD  |  SIZE  |  DATA   |
 	+--------+-------+--------+---------+
-	|   1    |   1   |  0-2   | 0-65535 |
+	|   1    |   1   |   1    | 0-65535 |
 	+-- -----+-------+--------+---------+
 
 	Base connected-state package structure: for Server responses
 	+--------+-------+--------+---------+
 	|  TYPE  |  CODE |  SIZE  |  DATA   |
 	+--------+-------+--------+---------+
-	|   1    |   1   |  0-2   | 0-65535 |
+	|   1    |   1   |   1    | 0-65535 |
 	+-- -----+-------+--------+---------+
 
 The TYPE field is to identify which TYPE of command is requested.
@@ -45,6 +45,7 @@ The values currently defined for TYPE are:
 	Client Request
 
 Once knowing which TYPE of command is being requested, the Server must know which command is being executed by the Client.
+
 The CMD field is to identify which COMMAND is being requested by the Client.
 The values currently defined for CMD for GET TYPE are:
 	- X'01' : Get historic amount of connections; Information provided: Date, Username, type of register, origin IP:port, destination IP:port, status SOCKSv5 code.
@@ -61,7 +62,15 @@ The values currently defined for CMD for GET TYPE are:
 
 	- X'04' : Get list of Users
 		Returns LIST status if OK, ERROR status otherwise.
-		SIZE must be X'00'
+		SIZE must be X''
+		For this CMD, as the client expects an extra byte AFTER the DATA, this is called PAGE:
+
+	Connected-state package for Client requests GET TYPE, CMD:
+	+--------+-------+--------+---------+--------+
+	|  TYPE  |  CMD  |  SIZE  |  DATA   |  PAGE  |
+	+--------+-------+--------+---------+--------+
+	|   1    |   1   |   1    | 0-65535 |   1    |
+	+-- -----+-------+--------+---------+--------+
 
 	- X'05' : Get current password dissector status
 		Returns BOOL status if OK, ERROR status otherwise.
@@ -114,7 +123,7 @@ The values currently defined for CMD for EDIT TYPE are:
 		Returns OK status if ok, ERROR status otherwise.
 		SIZE must be X'00'
 
-	- X'09' : Turn OFF password authentication
+	- X'10' : Turn OFF password authentication
 		Returns OK status if ok, ERROR status otherwise.
 		SIZE must be X'00'
 
@@ -124,13 +133,27 @@ The values currently defined for CMD for EDIT TYPE are:
 	Server Response
 
 After recieving the command, the Server is expected to process the request and respond with a RESPONSE TYPE message.
-Each TYPE has its own SIZE field value that is being expected by the Client. This size corresponds to the amount of bytes being transferred in the DATA field.
+
+The CMD field is to identify which COMMAND is being requested by the Client.
+The CODE field is so that the Client can identify what status CODE has the Server responded.
+Each CODE has its own SIZE field value that is being expected by the Client. This size corresponds to the amount of bytes being transferred in the DATA field.
+
 The values currently defined for CODE for RESPONSE TYPE are:
 	- X'01' : OK status 	: The requested command was processed succesfully.
 		SIZE must be X'00'
 
 	- X'02' : LIST status	: The response is a list of UTF-8 chars.
 		SIZE can range from X'00' to X'FF'
+		For this CODE, the client expects an extra byte AFTER the DATA, this is called PAGE:
+
+	Connected-state package for Server responses of RESPONSE TYPE, LIST status CODE:
+	+--------+-------+--------+---------+--------+
+	|  TYPE  |  CODE |  SIZE  |  DATA   |  PAGE  |
+	+--------+-------+--------+---------+--------+
+	|   1    |   1   |   1    | 0-65535 |   1    |
+	+-- -----+-------+--------+---------+--------+
+	This extra byte represents the page of answers given to the Client.
+
 
 	- X'03' : INT status	: The response is an unsigned int
 		SIZE must be X'04'
@@ -141,6 +164,7 @@ The values currently defined for CODE for RESPONSE TYPE are:
 	- X'05' : BOOL status	: The response is a boolean
 		SIZE must be X'01'
  		DATA can be either X'00' (false) or X'FF' (true)
+
 
 The Server can also respond with a ERROR TYPE if an error was encountered processing the client's request.
 All ERROR TYPEs can have a SIZE between X'00' and X'FF' if the Server wants to send additional information to the Client. This information must be SIZE amount of UTF-8 chars.
