@@ -1,3 +1,6 @@
+#ifndef HELLO_H
+#define HELLO_H
+
 #include "buffer.h"
 #include "logger.h"
 
@@ -63,3 +66,4 @@ void hello_parser_close(struct hello_parser * parser);
 int hello_marshall(buffer * buffer, const uint8_t method);
 
 
+#endif
