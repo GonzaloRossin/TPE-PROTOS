@@ -1,13 +1,6 @@
 #include "./include/protocolParser.h"
 
 
-extern void protocol_parser_init(struct protocol_parser * parser){
-    parser->state = protocol_type;
-    parser->data =(payload*) calloc(1,sizeof (struct payload));
-    parser->on_size_authentication_method = &(on_size_authentication_method);
-    parser->data->data_len=0;
-}
-
 bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
     switch(p->data->type){
         case 0x01:{
@@ -36,6 +29,13 @@ bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
         }
     }
     return false;
+}
+
+extern void protocol_parser_init(struct protocol_parser * parser){
+    parser->state = protocol_type;
+    parser->data =(payload*) calloc(1,sizeof (struct payload));
+    parser->on_size_authentication_method = &(on_size_authentication_method);
+    parser->data->data_len=0;
 }
 
 extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser, const uint8_t byte){
