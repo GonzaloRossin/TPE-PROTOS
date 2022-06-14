@@ -15,7 +15,6 @@
 #include <sys/time.h> 
 #include "logger.h"
 #include "tcpServerUtil.h"
-#include "tcpClientUtil.h"
 #include "buffer.h"
 #include "helloState.h"
 #include "client.h"

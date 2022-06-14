@@ -3,11 +3,12 @@ CFLAGS = -fsanitize=address -fno-omit-frame-pointer -g --std=c11 -pedantic -peda
 LDFLAGS = -lpthread
 all: server_selector server_client
 clean:	
-	- rm -f *.o server_selector
+	- rm -f *.o server_selector server_client
 
 COMMON =  logger.o util.o buffer.o args.o
-SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o ssemdHandler.o socks5Handler.o client.o hello.o request.o helloState.o requestState.o connectedState.o
-CLIENT_SOURCES = Admin.o tcpClientUtil.o ssemdHandler.o
+
+SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o  socks5Handler.o client.o hello.o request.o helloState.o requestState.o connectedState.o
+CLIENT_SOURCES = ./admin/Admin.o ./admin/adminUtil.o ./admin/adminArgs.o
 
 buffer.o: ./include/buffer.h
 selector.o: ./include/selector.h
@@ -20,10 +21,10 @@ helloState.o : ./include/helloState.h
 requestState.o : ./include/requestState.h
 connectedState.o : ./include/connectedState.h
 
-tcpClientUtil.o: ./include/tcpClientUtil.h
+adminUtil.o: ./admin/include/adminUtil.h
 ssemdHandler.o : ./include/ssemdHandler.h
 args.o : ./include/args.h
-
+clientArgs.o: ./admin/include/adminArgs.h
 
 server_selector: $(COMMON) $(SERVER_SOURCES)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o server_selector $(SERVER_SOURCES) $(COMMON)

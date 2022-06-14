@@ -27,18 +27,10 @@ struct socks5args {
 
     bool            disectors_enabled;
 
+    char *          admin_token;
+
     //struct doh      doh;
     struct users    users[MAX_USERS];
-};
-
-struct ssemd_args {
-    char           *mng_addr;
-    char           *mng_port;
-
-    char            type;
-    char            code;
-    char            size;
-    char           *data;
 };
 
 /**
@@ -48,13 +40,6 @@ struct ssemd_args {
  */
 void 
 parse_args(const int argc, char **argv, struct socks5args *args);
-
-void 
-parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args);
-
-//helper for parse_ssemd_args
-void
-handleRepeatedCMD(struct ssemd_args *args, char newCode);
 
 #endif
 

@@ -48,6 +48,7 @@ int main(int argc , char *argv[])
     //pongo esto primero así no corre nada de más si pone mal los args
     struct socks5args * args = (struct socks5args *)malloc(sizeof(struct socks5args));
 	parse_args(argc, argv, args);
+    char * ADMIN_TOKEN = args->admin_token;
 
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
@@ -144,14 +145,14 @@ int main(int argc , char *argv[])
 	};
     
     const struct fd_handler ssemd = {
-        .handle_read       = masterssemdHandler, //falta el master socket read ssemd
+        .handle_read       = NULL,//masterssemdHandler,
         .handle_write      = NULL,
         .handle_close      = NULL, // nada que liberar
     };
     
 
 	for (int i = 0; i < master_socket_size; i++) {
-        if(i<2){ //1080 socks
+        if(i<5){ //1080 socks debe ser <2
 		    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, &clients_struct);
         } else{ //8889 ssemd
             ss = selector_register(selector, master_socket[i], &ssemd, OP_READ, admin);
@@ -192,6 +193,7 @@ finally:
     }
     selector_close();
 
+    free(admin);
     free(clients);
 	for (int i = 0; i < master_socket_size; i++) {
 		if(master_socket[i] >= 0) {
