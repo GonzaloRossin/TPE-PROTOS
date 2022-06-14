@@ -45,8 +45,6 @@ struct hello
     hello_parser * pr;
     buffer * w;
     buffer * r;
-
-    uint8_t method;
 };
 
 struct st_request

@@ -1,62 +1,57 @@
 #include "./include/ssemdHandler.h"
 
+#define BUFFSIZE 4096
+
 long valread;
 
-// static const struct fd_handler ssemd = {
-// 	.handle_read       = ssemd_read,
-// 	.handle_write      = ssemd_write,
-// 	.handle_close      = ssemd_close, // nada que liberar
-// 	.handle_block	   = NULL,
-// };
+static const struct fd_handler ssemd = {
+	.handle_read       = ssemd_read,
+	.handle_write      = ssemd_write,
+	.handle_close      = ssemd_close, // nada que liberar
+	.handle_block	   = NULL,
+};
 
-// void masterssemdHandler(struct selector_key *key) {
-// 	const int new_client_socket = acceptTCPConnection(key->fd);
-// 	selector_fd_set_nio(new_client_socket);
-	
-// 	// add new socket to array of sockets
-// 	int i;
-// 	struct clients_data * cli_data = (struct clients_data *)key->data;
-// 	struct ssemd * clis = cli_data->clients;
+void masterssemdHandler(struct selector_key *key) {
+	const int new_admin_socket = acceptTCPConnection(key->fd);
+	selector_fd_set_nio(new_admin_socket);
 
-// 	for (i = 0; i < cli_data->clients_size; i++) 
-// 	{
-// 		// if position is empty
-// 		if(clis[i].isAvailable)
-// 		{
-// 			new_client(&clis[i], new_client_socket, BUFFSIZE);
-			
-// 			selector_register(key->s, new_client_socket, &ssemd, OP_READ, &clis[i]);
+    struct ssemd * admin = (struct ssemd *)key->data;
 
-// 			print_log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
-// 			// print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
-// 			break;
-// 		}
-// 	}
-// }
+    if(admin->isAvailable){
+        new_admin(admin, new_admin_socket, BUFFSIZE);
 
-// void ssemd_read(struct selector_key *key) {
-// 	struct ssemd * currClient = (struct ssemd *)key->data;
-// 	struct connection_state currState = currClient->connection_state;
-// 	switch (currState.client_state)
-// 	{
-// 		case HELLO_READ_STATE:
-// 			hello_read(key);
-// 			break;
-// 		//Nunca entra aca porque estamos en lectura
-// 		case HELLO_WRITE_STATE:
-// 			break;
+        selector_register(key->s, new_admin_socket, &ssemd, OP_READ, admin);
+			print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
+
+    } else {
+        print_log(DEBUG, "error adminn\n");
+    }
+
+}
+
+void ssemd_read(struct selector_key *key) {
+	struct ssemd * currAdmin = (struct ssemd *)key->data;
+	struct ssemd_connection_state currState = currAdmin->connection_state;
+	switch (currState.ssemd_state)
+	{
+		case SSEMD_HELLO_READ_STATE:
+			ssemd_hello_read(key);
+			break;
+		//Nunca entra aca porque estamos en lectura
+		case SSEMD_HELLO_WRITE_STATE:
+			break;
 		
-// 		case REQUEST_READ_STATE:
-// 			request_read(key);
-// 			break;
+		case REQUEST_READ_STATE:
+			ssemd_request_read(key);
+			break;
 
-// 		case CONNECTED_STATE:
-// 			read_connected_state(key);
-// 			break;
-// 		default:
-// 			break;
-// 	}
-// }
+		case CONNECTED_STATE:
+			ssemd_read_connected_state(key);
+			break;
+		default:
+			break;
+	}
+}
 
 // void ssemd_write(struct selector_key *key) {
 // 	struct ssemd * currClient = (struct ssemd *)key->data;

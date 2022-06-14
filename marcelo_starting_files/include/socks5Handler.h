@@ -22,6 +22,7 @@
 #include "selector.h"
 #include "requestState.h"
 #include "connectedState.h"
+#include "ssemd.h"
 
 
 #define BUFFSIZE 16384

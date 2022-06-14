@@ -12,8 +12,8 @@
 #include <signal.h>
 #include "./include/logger.h"
 #include "./include/tcpServerUtil.h"
-#include "./include/tcpClientUtil.h"
 #include "./include/socks5Handler.h"
+#include "./include/ssemdHandler.h"
 #include "./include/buffer.h"
 #include "./include/selector.h"
 #include "./include/args.h"
@@ -53,12 +53,11 @@ int main(int argc , char *argv[])
 	int master_socket_size=0;
 	int max_clients = MAX_SOCKETS/2 , i;
 	struct socks5 * clients;
+    struct ssemd * admin;
 
 	const char       *err_msg = NULL;
 	selector_status   ss      = SELECTOR_SUCCESS;
     fd_selector selector      = NULL;
-
-	//char buffer[BUFFSIZE + 1];  //data buffer of 1K
 
 	//initialise all clients to 0
 	// memset(clients, 0, sizeof(clients));
@@ -66,6 +65,9 @@ int main(int argc , char *argv[])
 	for(i=0; i<max_clients; i++){
 		clients[i].isAvailable = true;
 	}
+
+    //initialise Admin
+    admin = (struct ssemd*)calloc(1, sizeof(struct ssemd));
 
     char PORT[6];
     char ADMIN_PORT[6];
@@ -140,9 +142,20 @@ int main(int argc , char *argv[])
 		.clients = clients,
 		.clients_size = max_clients
 	};
+    
+    const struct fd_handler ssemd = {
+        .handle_read       = masterssemdHandler, //falta el master socket read ssemd
+        .handle_write      = NULL,
+        .handle_close      = NULL, // nada que liberar
+    };
+    
 
 	for (int i = 0; i < master_socket_size; i++) {
-		ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, &clients_struct);
+        if(i<2){ //1080 socks
+		    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, &clients_struct);
+        } else{ //8889 ssemd
+            ss = selector_register(selector, master_socket[i], &ssemd, OP_READ, admin);
+        }
 
 		if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";

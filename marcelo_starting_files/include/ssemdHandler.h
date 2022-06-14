@@ -22,6 +22,7 @@
 #include "selector.h"
 #include "requestState.h"
 #include "connectedState.h"
+#include "ssemd.h"
 
 void masterssemdHandler(struct selector_key *key);
 

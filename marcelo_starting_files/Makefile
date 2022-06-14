@@ -6,7 +6,7 @@ clean:
 	- rm -f *.o server_selector
 
 COMMON =  logger.o util.o buffer.o args.o
-SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o tcpClientUtil.o socks5Handler.o client.o hello.o request.o helloState.o requestState.o connectedState.o
+SERVER_SOURCES = server_selector.o selector.o tcpServerUtil.o ssemdHandler.o socks5Handler.o client.o hello.o request.o helloState.o requestState.o connectedState.o
 CLIENT_SOURCES = tcpEchoClient.o tcpClientUtil.o ssemdHandler.o
 
 buffer.o: ./include/buffer.h
