@@ -17,6 +17,7 @@ server has array of clients
 #include <unistd.h>  // size_t, ssize_t
 #include <stdio.h>
 #include <stdlib.h>
+#include "selector.h"
 
 #define IP_V4_ADDR_SIZE 4
 #define IP_V6_ADDR_SIZE 16
@@ -58,19 +59,22 @@ struct st_request
     int origin_fd;
 };
 
-struct connected {
-  int write_fd;
-  int read_fd;
+typedef struct connected {
+  int fd;
+
+  fd_interest interest;
+
+  struct connected * other_connected;
 
   buffer * w;
   buffer * r;
-  int init;
-};
+} connected;
 
 struct connection_state {
     int init;
     enum client_state client_state;
     void (*on_departure) (struct socks5 * currClient);
+    void (*on_arrival) (struct socks5 * currClient);
 };
 
 struct connecting {
@@ -109,7 +113,7 @@ struct socks5
 
     union {
         struct connecting conn;
-        struct connected st_connected;
+        connected st_connected;
     } remote;
 
     bool isAvailable;
@@ -118,9 +122,6 @@ struct socks5
 //creates new client
 void
 new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE);
-
-void init_client_copy(struct socks5 * client);
-void init_remote_copy(struct socks5 * client);
 
 //frees client resources
 void removeClient(struct socks5 * client);

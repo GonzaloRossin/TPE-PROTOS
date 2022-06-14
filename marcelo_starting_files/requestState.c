@@ -1,4 +1,4 @@
-#include "./include/helloState.h"
+#include "./include/requestState.h"
 
 static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
@@ -245,6 +245,7 @@ void request_write(struct selector_key *key) {
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
         currClient->connection_state.on_departure = request_departure;
+		currClient->connection_state.on_arrival = connected_init;
 		change_state(currClient, CONNECTED_STATE);
 	}
 }

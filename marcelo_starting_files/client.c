@@ -37,26 +37,6 @@ set_client_remote(struct socks5 * client, int remote_socket, int BUFFSIZE){
     client->bufferFromRemote = newBuffer;
 }
 
-void init_client_copy(struct socks5 * client) {
-
-    client->client.st_connected.write_fd = client->remote_socket;
-    client->client.st_connected.read_fd = client->client_socket;
-    client->client.st_connected.w = client->bufferFromClient;
-    client->client.st_connected.r = client->bufferFromRemote;
-    client->client.st_connected.init = 1;
-}
-
-void init_remote_copy(struct socks5 * client) {
-
-    client->remote.st_connected.write_fd = client->client_socket;
-    client->remote.st_connected.read_fd = client->remote_socket;
-    client->remote.st_connected.w = client->bufferFromRemote;
-    client->remote.st_connected.r = client->bufferFromClient;
-    client->remote.st_connected.init = 1;
-}
-
-
-
 void removeClient(struct socks5 * client) {
     close( client->client_socket );
 
