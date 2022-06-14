@@ -1,60 +1,33 @@
+little endian or big endian
+
 Rfc of SSEMD, Socks Server Editor Monitor & Dissector
 
 	Intro
 This document describes a Client-Server protocol to edit the sock5 proxy Server implemented on de "Protocolos de Comunicación" class of 2022-1Q, which stores different statistics of usage and works as a POP3 password dissector.
 It is NOT session based and uses TCP connection between the Client and the Server.
+It is has a Request-Response dynamic.
 Note: when clarifying a [format]', [] will be used to encompass the expected format, but they do not form part of the expected format.
 
+Different data types used in this protocol:
+INT	-> a 4 byte little endian unsigned int.
+LONG	-> a 8 byte little endian unsigned long.
+BOOL	-> 1 byte, either X'00' (false), or X'11' (true).
+LIST	-> a list of UTF-8 strings, separated by \0.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	Initial negotiation
-The Client and the Server negotiate how will they connect.
-
-The Client starts by sending the following message:
-
-		+----+----------+----------+
-		|VER | NMETHODS | METHODS  |
-		+----+----------+----------+
-		| 1  |    1     | 1 to 255 |
-		+----+----------+----------+
-VER field is the version of the current protocol being used. Currently set to X'01'.
-NMETHODS field contains the number of method identifier bytes that appear in the METHODS field. In current version must be set to X'01'.
-METHODS field contains the METHOD used to authenticate. In current verion only X'01' is available.
-
-
-The server selects from one of the methods given in METHODS, and sends a METHOD selection message:
-
-		+----+--------+------------+
-		|VER | METHOD |  T_LENGTH  |
-		+----+--------+------------+
-		| 1  |   1    |      n     |
-		+----+--------+------------+
-If the selected METHOD is X'FF', none of the methods listed by the client are acceptable, and the client MUST close the connection.
-
-The values currently defined for METHOD are:
-	- X'01' : Authentication by token
-
-T_LENGTH is the length in bytes of the TOKEN for authentication.
-
-
---------------------------------------------------------------------------------------------------------------------------------------------------------
-
-	Request-Response state
-
--------
 	Client Request
-After the initial negotiation is complete, the Client is expected to send the following request message:
+The Client is expected to send the following request message:
 
+	+-------+---------+--------+-------+--------+---------+
+	|  ver	|  TOKEN  |  TYPE  |  CMD  |  SIZE  |  DATA   |
+	+-------+---------+--------+-------+--------+---------+
+	|   1   |    n    |   1    |   1   |   2    | 0-65535 |
+	+-------+---------+--------+-------+--------+---------+
 
-	Base connected-state package structure: for Client requests
-	+---------+--------+-------+--------+---------+
-	|  TOKEN  |  TYPE  |  CMD  |  SIZE  |  DATA   |
-	+---------+--------+-------+--------+---------+
-	|    n    |   1    |   1   |   2    | 0-65535 |
-	+---------+--------+-------+--------+---------+
+The VER field is the version of the current protocol being used. Currently set to X'01'.
 
-The TOKEN field musto be n bytes long and should correspond to a Server authentication token.
+The TOKEN field must be n bytes long and should correspond to a Server authentication token, ending with \0.
 
 The TYPE field is to identify which TYPE of command is requested.
 The values currently defined for TYPE are:
@@ -62,33 +35,33 @@ The values currently defined for TYPE are:
 	- X'02' : EDIT. The current Client Request corresponds to an 'EDIT' command type.
 
 
-Once knowing which TYPE of command is being requested, the Server must know which command is being executed by the Client.
+Knowing which TYPE of command is being requested, the Server must know which command is being executed by the Client.
 
 The CMD field is to identify which COMMAND is being requested by the Client.
 The values currently defined for CMD for GET TYPE are:
 	- X'01' : Get historic amount of connections; Information provided: Date, Username, type of register, origin IP:port, destination IP:port, status SOCKSv5 code.
-		Returns LIST status if OK, ERROR status otherwise.
-		SIZE must be X'00'
+		Returns LIST if OK, ERROR status otherwise.
+		SIZE must be X'00000000'
 
 	- X'02' : Get quantity of current connections
-		Returns INT status if OK, ERROR status otherwise.
-		SIZE must be X'00'
+		Returns INT if OK, ERROR status otherwise.
+		SIZE must be X'00000000'
 
 	- X'03' : Get quantity of bytes transferred
-		Returns LONG status if OK, ERROR status otherwise.
-		SIZE must be X'00'
+		Returns LONG if OK, ERROR status otherwise.
+		SIZE must be X'00000000'
 
 	- X'04' : Get list of Users
-		Returns LIST status if OK, ERROR status otherwise.
-		SIZE must be X'00'
+		Returns LIST if OK, ERROR status otherwise.
+		SIZE must be X'00000000'
 
 	- X'05' : Get current password dissector status
-		Returns BOOL status if OK, ERROR status otherwise.
-		SIZE must be X'00'
+		Returns BOOL if OK, ERROR status otherwise.
+		SIZE must be X'00000000'
 
 	- X'06' : Get Server authentication status
-		Returns BOOL status if OK, ERROR status otherwise.
-		SIZE must be X'00'
+		Returns BOOL if OK, ERROR status otherwise.
+		SIZE must be X'00000000'
 
 The values currently defined for CMD for EDIT TYPE are:
 	- X'01' : Edit Client buffer size
@@ -132,47 +105,46 @@ The values currently defined for CMD for EDIT TYPE are:
 
 	Server Response
 
-After recieving the command, the Server is expected to process the request and respond the following responde message:
+After recieving the command, the Server is expected to process the request and deliver the following respond message:
 
-	Base connected-state package structure: for Server responses
 	+--------+-------+--------+---------+
-	|  TYPE  |  CODE |  SIZE  |  DATA   |
+	| STATUS |  CODE |  SIZE  |  DATA   |
 	+--------+-------+--------+---------+
 	|   1    |   1   |   2    | 0-65535 |
 	+-- -----+-------+--------+---------+
 
-The TYPE field is to identify which TYPE of response is the Server sending.
-The values currently defined for TYPE are:
+The STATUS field is to identify what STATUS of response is the Server sending.
+The values currently defined for STATUS are:
 	- X'AA' : RESPONSE. The current package corresponds to a Server response.
 	- X'FF' : ERROR. The current package corresponds to a Server ERROR response.
 
-The CMD field is to identify which COMMAND is being requested by the Client.
+
 The CODE field is so that the Client can identify what status CODE has the Server responded.
 Each CODE has its own SIZE field value that is being expected by the Client. This size corresponds to the amount of bytes being transferred in the DATA field.
 
-The values currently defined for CODE for RESPONSE TYPE are:
-	- X'01' : OK status 	: The requested command was processed succesfully.
+The values currently defined for CODE for RESPONSE STATUS are:
+	- X'01' : OK, The requested command was processed succesfully.
 		SIZE must be X'00'
 
-	- X'02' : LIST status	: The response is a list of UTF-8 chars.
+	- X'02' : The response is a LIST.
 		SIZE can range from X'00000000' to X'FFFFFFFF'.
 
-	- X'03' : INT status	: The response is an unsigned int
+	- X'03' : The response is an INT.
 		SIZE must be X'04'
 
-	- X'04' : LONG status	: The response is an unsigned long
+	- X'04' : The response is a LONG.
 		SIZE must be X'08'
 
-	- X'05' : BOOL status	: The response is a boolean
+	- X'05' : The response is a BOOL.
 		SIZE must be X'01'
  		DATA can be either X'00' (false) or X'FF' (true)
 
 
-The Server can also respond with a ERROR TYPE if an error was encountered processing the client's request.
-All ERROR TYPEs can have a SIZE between X'00' and X'FF' if the Server wants to send additional information to the Client. This information must be SIZE amount of UTF-8 chars.
+The Server can also respond with a ERROR STATUS if an error was encountered processing the client's request.
+All ERROR STATUS must have a SIZE of X'00'.
 The values currently defined for CODE for ERROR TYPE are:
-	- X'01' : 
-	- X'02' : 
+	- X'01' : Buffer size error
+	- X'02' : Timeout error
 	- X'03' : 
 	- X'04' : 
 	- X'05' : 
