@@ -39,64 +39,64 @@ The CMD field is to identify which COMMAND is being requested by the Client.
 The values currently defined for CMD for GET TYPE are:
 	- X'01' : Get historic amount of connections; Information provided: Date, Username, type of register, origin IP:port, destination IP:port, status SOCKSv5 code.
 		Returns LIST if OK, ERROR status otherwise.
-		SIZE must be X'00000000'
+		SIZE must be X'0000'
 
 	- X'02' : Get quantity of current connections
 		Returns INT if OK, ERROR status otherwise.
-		SIZE must be X'00000000'
+		SIZE must be X'0000'
 
 	- X'03' : Get quantity of bytes transferred
 		Returns LONG if OK, ERROR status otherwise.
-		SIZE must be X'00000000'
+		SIZE must be X'0000'
 
 	- X'04' : Get list of Users
 		Returns LIST if OK, ERROR status otherwise.
-		SIZE must be X'00000000'
+		SIZE must be X'0000'
 
 	- X'05' : Get current password dissector status
 		Returns BOOL if OK, ERROR status otherwise.
-		SIZE must be X'00000000'
+		SIZE must be X'0000'
 
 	- X'06' : Get Server authentication status
 		Returns BOOL if OK, ERROR status otherwise.
-		SIZE must be X'00000000'
+		SIZE must be X'0000'
 
 The values currently defined for CMD for EDIT TYPE are:
 	- X'01' : Edit Client buffer size
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00000000' to X'FFFFFFFF'.
+		SIZE can range from X'0000' to X'FFFF'.
 		Data must contain an unsigned number representing new desired buffer size.
 
 	- X'02' : Edit Client timeout
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00000000' to X'FFFFFFFF'.
+		SIZE can range from X'0000' to X'FFFF'.
 		Data must contain an unsigned number representing new desired timeout.
 
 	- X'03' : Turn ON password dissector
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE must be X'00'
+		SIZE must be X'0000'
 
 	- X'04' : Turn OFF password dissector
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE must be X'00'
+		SIZE must be X'0000'
 
 	- X'05' : Add a User
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00000000' to X'FFFFFFFF'.
+		SIZE can range from X'0000' to X'FFFF'.
 		Data must contain a series of UTF-8 chars representing the new desired user, with format: [user:password\r\n]
 
 	- X'06' : Remove a User
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00000000' to X'FFFFFFFF'.
+		SIZE can range from X'0000' to X'FFFF'.
 		Data must contain a series of UTF-8 chars representing desired user to be removed, with format: [user\r\n]
 
 	- X'07' : Turn ON password authentication
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE must be X'00'
+		SIZE must be X'0000'
 
 	- X'08' : Turn OFF password authentication
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE must be X'00'
+		SIZE must be X'0000'
 
 
 --------
@@ -122,24 +122,24 @@ Each CODE has its own SIZE field value that is being expected by the Client. Thi
 
 The values currently defined for CODE for RESPONSE STATUS are:
 	- X'01' : OK, The requested command was processed succesfully.
-		SIZE must be X'00'
+		SIZE must be X'0000'
 
 	- X'02' : The response is a LIST.
-		SIZE can range from X'00000000' to X'FFFFFFFF'.
+		SIZE can range from X'0000' to X'FFFF'.
 
 	- X'03' : The response is an INT.
-		SIZE must be X'04'
+		SIZE must be X'0004'
 
 	- X'04' : The response is a LONG.
-		SIZE must be X'08'
+		SIZE must be X'0008'
 
 	- X'05' : The response is a BOOL.
-		SIZE must be X'01'
+		SIZE must be X'0001'
  		DATA can be either X'00' (false) or X'11' (true)
 
 
 The Server can also respond with a ERROR STATUS if an error was encountered processing the client's request.
-All ERROR STATUS must have a SIZE of X'00'.
+All ERROR STATUS must have a SIZE of X'0000'.
 The values currently defined for CODE for ERROR TYPE are:
 	- X'01' : Buffer size error
 	- X'02' : Timeout error
