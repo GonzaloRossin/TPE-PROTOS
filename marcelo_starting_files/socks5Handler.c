@@ -121,8 +121,8 @@ void socks5_close(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
 	if (currClient->client_socket == 0 || currClient->remote_socket == 0) {
-		currClient->client.st_connected.init = 0;
-		currClient->remote.st_connected.init = 0;
+		// currClient->client.st_connected.init = 0;
+		// currClient->remote.st_connected.init = 0;
 
 		free(currClient->bufferFromClient->data);
 		free(currClient->bufferFromRemote->data);
@@ -148,9 +148,13 @@ void socks5_close(struct selector_key *key) {
 void change_state(struct socks5 * currClient, enum client_state state) {
 	currClient->connection_state.client_state = state;
 	currClient->connection_state.init = false;
-	if (currClient->connection_state.on_departure != 0){
+	if (currClient->connection_state.on_departure != 0) {
 		currClient->connection_state.on_departure(currClient);
 		currClient->connection_state.on_departure = NULL;
+	}
+	if (currClient->connection_state.on_arrival != 0) {
+		currClient->connection_state.on_arrival(currClient);
+		currClient->connection_state.on_arrival = NULL;
 	}
 }
 
@@ -175,6 +179,24 @@ void socks5_block(struct selector_key *key) {
 		default:
 			break;
 	}
+}
+
+void socks5_done(struct selector_key *key) {
+	const int fds[] = {
+        ((struct socks5 *)key->data)->client_socket,
+        ((struct socks5 *)key->data)->remote_socket
+    };
+    for (unsigned i = 0; i < N(fds); i++)
+    {
+        if (fds[i] != -1)
+        {
+            if (SELECTOR_SUCCESS != selector_unregister_fd(key->s, fds[i]))
+            {
+                printf("Socks is done for %d\n", fds[i]);
+                abort();
+            }
+        }
+    }
 }
 
 void * request_resolv_blocking(void *data) {

@@ -1,75 +1,133 @@
 #include "./include/connectedState.h"
 
-void write_connected_state(struct selector_key *key) {
+void connected_init(struct socks5 * currClient) {
+
+	// Init connected for the client
+	connected *d = &currClient->client.st_connected;
+
+	d->fd = currClient->client_socket;
+	d->r = currClient->bufferFromClient;
+	d->w = currClient->bufferFromRemote;
+	d->interest = OP_READ | OP_WRITE;
+	d->other_connected = &currClient->remote.st_connected;
+
+	// Init connected for origin
+	d = &currClient->remote.st_connected;
+
+	d->fd = currClient->remote_socket;
+	d->r = currClient->bufferFromRemote;
+	d->w = currClient->bufferFromClient;
+	d->interest = OP_READ | OP_WRITE;
+	d->other_connected = &currClient->client.st_connected;
+}
+
+static fd_interest
+connected_determine_interests(fd_selector s, connected *d) {
+	fd_interest interest = OP_NOOP;
+
+	if ((d->interest & OP_READ) && buffer_can_write(d->r))
+    {
+        // Add the interest to read
+        interest |= OP_READ;
+    }
+
+	if ((d->interest & OP_WRITE) && buffer_can_read(d->w))
+    {
+        // Add the interest to write
+        interest |= OP_WRITE;
+    }
+
+	// Set the interests for the selector
+    if (SELECTOR_SUCCESS != selector_set_interest(s, d->fd, interest))
+    {
+        printf("Could not set interest of %d for %d\n", interest, d->fd);
+        abort();
+    }
+    return interest;
+}
+
+static connected * get_connected_ptr(struct selector_key *key)
+{
+    // Getting the connected struct for the client
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	int clientSocket = currClient->client_socket;
-	int remoteSocket = currClient->remote_socket;
-	int fd_read, fd_write;
-	buffer * buff;
-	if (!currClient->client.st_connected.init) {
-		init_client_copy(currClient);
-	}
-	if (!currClient->remote.st_connected.init) {
-		init_remote_copy(currClient);
-	}
-	if(key->fd == clientSocket) {
-		fd_read = currClient->client.st_connected.write_fd;
-		fd_write = currClient->remote.st_connected.write_fd;
-		buff = currClient->client.st_connected.r;
-	} else if (key->fd == remoteSocket) {
-		fd_read = currClient->remote.st_connected.write_fd;
-		fd_write = currClient->client.st_connected.write_fd;
-		buff = currClient->remote.st_connected.r;
+    connected *d = &currClient->client.st_connected;
+
+    // Checking if the selector fired is the client by comparing the fd
+    if (d->fd != key->fd)
+    {
+        d = d->other_connected;
+    }
+    return d;
+}
+
+void write_connected_state(struct selector_key *key) {
+	connected *d = get_connected_ptr(key);
+
+	buffer *b = d->w;
+	uint8_t *ptr;
+    size_t count;
+    ssize_t n;
+
+	// Setting the buffer to read
+    ptr = buffer_read_ptr(b, &count);
+
+	n = send(key->fd, ptr, count, MSG_NOSIGNAL);
+
+	if (n != -1) {
+		buffer_read_adv(b, n);
 	} else {
-		// Morir tambien
+		// Closing the socket for writing
+        shutdown(d->fd, SHUT_WR);
+		// Removing the interest to write from this connected
+        d->interest &= ~OP_WRITE;
+        // If the other fd is still open
+        if (d->other_connected->fd != -1)
+        {
+            // Closing the socket for reading
+            shutdown(d->other_connected->fd, SHUT_RD);
+            // Remove the interest for reading
+            d->other_connected->interest &= ~OP_READ;
+        }
 	}
-	print_log(DEBUG, "trying to send content recieved from socket %d to socket %d", fd_read, fd_write);
-	if(handleWrite(fd_write, buff) == 0){
-		//ya se mandaron todos los bytes, solo queda leer
-		selector_set_interest(key->s, fd_write, OP_READ);
-	}
+
+	// Determining the new interests for the selectors
+    connected_determine_interests(key->s, d);
+    connected_determine_interests(key->s, d->other_connected);
 }
 
 void read_connected_state(struct selector_key *key) {
-	struct socks5 * currClient = (struct socks5 *)key->data;
-	int clientSocket = currClient->client_socket;
-	int remoteSocket = currClient->remote_socket;
-	int fd_read, fd_write;
-	buffer * buff;
+	connected *d = get_connected_ptr(key);
 
-	if (!currClient->client.st_connected.init) {
-		init_client_copy(currClient);
-	}
-	if (!currClient->remote.st_connected.init) {
-		init_remote_copy(currClient);
-	}
-	if(key->fd == clientSocket) {
-		fd_read = currClient->client.st_connected.read_fd;
-		fd_write = currClient->remote.st_connected.read_fd;
-		buff = currClient->client.st_connected.w;
-	} else if (key->fd == remoteSocket) {
-		fd_read = currClient->remote.st_connected.read_fd;
-		fd_write = currClient->client.st_connected.read_fd;
-		buff = currClient->remote.st_connected.w;
+	buffer *b = d->r;
+	uint8_t *ptr;
+	size_t count;
+	ssize_t n;
+
+	ptr = buffer_write_ptr(b, &count);
+
+	n = recv(key->fd, ptr, count, 0);
+	if (n > 0) {
+		buffer_write_adv(b, n);
 	} else {
-		// Morir
+		shutdown(d->fd, SHUT_RD);
+		// Removing the interest to read from this connected
+        d->interest &= ~OP_READ;
+		// If the other fd is still open
+        if (d->other_connected->fd != -1)
+        {
+            // Closing the socket for writing
+            shutdown(d->other_connected->fd, SHUT_WR);
+            // Remove the interest to write
+            d->other_connected->interest &= ~OP_WRITE;
+        }
 	}
 
-	print_log(DEBUG, "reading on socket %d", fd_read);
-	size_t nbytes = buff->limit - buff->write;
-	print_log(DEBUG, "available bytes to write in bufferFromClient: %zu", nbytes);
-	long valread = 0;
-	if ((valread = read( fd_read , buff->data, nbytes)) <= 0) //hace write en el buffer
-	{
-		print_log(INFO, "Host disconnected\n");
-		selector_unregister_fd(key->s, fd_read);
-		selector_unregister_fd(key->s, fd_write);
-	} 
-	else {
-		//Meter acá el parser POP3 
-		print_log(DEBUG, "Recieved %zu bytes from socket %d\n", valread, fd_read);
-		// ya se almacena en el buffer con la funcion read de arriba
-		buffer_write_adv(buff, valread);
-		selector_set_interest(key->s, fd_write, OP_WRITE);
-	}
+	// Determining the new interests for the selectors
+    connected_determine_interests(key->s, d);
+    connected_determine_interests(key->s, d->other_connected);
+
+	if (d->interest == OP_NOOP)
+    {
+        socks5_done(key);
+    }
 }

@@ -24,7 +24,8 @@
 #include "connectedState.h"
 
 
-#define BUFFSIZE 4096
+#define BUFFSIZE 16384
+#define N(x) (sizeof(x) / sizeof((x)[0]))
 
 
 //Se encarga de devolver el socket a quien el proxy debe mandar
@@ -47,6 +48,7 @@ void socks5_read(struct selector_key *key);
 void socks5_write(struct selector_key *key);
 void socks5_close(struct selector_key *key);
 void socks5_block(struct selector_key *key);
+void socks5_done(struct selector_key *key);
 
 void change_state(struct socks5 * currClient, enum client_state state);
 void * request_resolv_blocking(void *data);
