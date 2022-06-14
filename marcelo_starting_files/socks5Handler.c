@@ -100,10 +100,10 @@ void socks5_write(struct selector_key *key) {
 
 		case REQUEST_CONNECTING_STATE:
 			request_connecting(key);
-
+		break;
 		case REQUEST_WRITE_STATE:
 			request_write(key);
-
+		break;
 		case REQUEST_READ_STATE:
 			// do socks5 request read
 			break;
