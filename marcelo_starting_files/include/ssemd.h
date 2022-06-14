@@ -4,11 +4,28 @@
 #include "buffer.h"
 #include "hello.h"
 
+enum ssemd_state {
+    SSEMD_HELLO_READ_STATE = 0,
+    SSEMD_HELLO_WRITE_STATE,
+    SSEMD_REQUEST_READ_STATE,
+    SSEMD_REQUEST_PROCESS_STATE,
+    SSEMD_REQUEST_WRITE_STATE,
+    SSEMD_CLOSE_STATE,
+    SSEMD_ERROR_STATE,
+};
+
 struct ssemd_hello
 {
     hello_parser * pr;
     buffer * w;
     buffer * r;
+};
+
+struct ssemd_connection_state {
+    int init;
+    enum ssemd_state ssemd_state;
+    void (*on_departure) (struct ssemd * currAdmin);
+    void (*on_arrival) (struct ssemd * currAdmin);
 };
 
 struct ssemd
@@ -27,21 +44,9 @@ struct ssemd
     bool isAvailable;
 };
 
-enum ssemd_state {
-    SSEMD_HELLO_READ_STATE = 0,
-    SSEMD_HELLO_WRITE_STATE,
-    SSEMD_REQUEST_READ_STATE,
-    SSEMD_REQUEST_PROCESS_STATE,
-    SSEMD_REQUEST_WRITE_STATE,
-    SSEMD_CLOSE_STATE,
-    SSEMD_ERROR_STATE,
-};
+void
+new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE);
 
-struct ssemd_connection_state {
-    int init;
-    enum ssemd_state ssemd_state;
-    void (*on_departure) (struct ssemd * currAdmin);
-    void (*on_arrival) (struct ssemd * currAdmin);
-};
+void removeAdmin(struct ssemd * admin);
 
 #endif

@@ -1,7 +1,5 @@
 #include "./include/ssemdHandler.h"
 
-#define BUFFSIZE 4096
-
 long valread;
 
 static const struct fd_handler ssemd = {
