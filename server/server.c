@@ -10,13 +10,13 @@
 #include <netinet/in.h>
 #include <sys/time.h> 
 #include <signal.h>
-#include "./include/logger.h"
-#include "./include/tcpServerUtil.h"
-#include "./include/socks5Handler.h"
-#include "./include/ssemdHandler.h"
-#include "./include/buffer.h"
-#include "./include/selector.h"
-#include "./include/args.h"
+#include "../include/logger.h"
+#include "../include/tcpServerUtil.h"
+#include "../include/socks5Handler.h"
+#include "../include/ssemdHandler.h"
+#include "../include/buffer.h"
+#include "../include/selector.h"
+#include "../include/args.h"
 
 static bool done = false;
 

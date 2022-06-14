@@ -3,7 +3,7 @@
  *            mantiene puntero de lectura y de escritura.
  */
 
-#include "./include/buffer.h"
+#include "../include/buffer.h"
 
 inline void
 buffer_reset(buffer *b) {
