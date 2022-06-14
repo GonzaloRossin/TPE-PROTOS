@@ -1,4 +1,4 @@
-Rfc 69420, nuestro protocolo SSEMD, Socks Server Editor Monitor & Dissector
+Rfc of SSEMD, Socks Server Editor Monitor & Dissector
 
 	Intro
 This document describes a Client-Server protocol to edit the sock5 proxy Server implemented on de "Protocolos de Comunicación" class of 2022-1Q, which stores different statistics of usage and works as a POP3 password dissector.
@@ -10,39 +10,57 @@ Note: when clarifying a [format]', [] will be used to encompass the expected for
 
 	Initial negotiation
 The Client and the Server negotiate how will they connect.
-(Same as SOCKSv5)
+
+The Client starts by sending the following message:
+
+		+----+----------+----------+
+		|VER | NMETHODS | METHODS  |
+		+----+----------+----------+
+		| 1  |    1     | 1 to 255 |
+		+----+----------+----------+
+VER field is the version of the current protocol being used. Currently set to X'01'.
+NMETHODS field contains the number of method identifier bytes that appear in the METHODS field. In current version must be set to X'01'.
+METHODS field contains the METHOD used to authenticate. In current verion only X'01' is available.
+
+
+The server selects from one of the methods given in METHODS, and sends a METHOD selection message:
+
+		+----+--------+------------+
+		|VER | METHOD |  T_LENGTH  |
+		+----+--------+------------+
+		| 1  |   1    |      n     |
+		+----+--------+------------+
+If the selected METHOD is X'FF', none of the methods listed by the client are acceptable, and the client MUST close the connection.
+
+The values currently defined for METHOD are:
+	- X'01' : Authentication by token
+
+T_LENGTH is the length in bytes of the TOKEN for authentication.
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	Connected state
-After the initial negotiation is complete, the Client is expected to send a message with the following format:
+	Request-Response state
+
+-------
+	Client Request
+After the initial negotiation is complete, the Client is expected to send the following request message:
+
 
 	Base connected-state package structure: for Client requests
-	+--------+-------+--------+---------+
-	|  TYPE  |  CMD  |  SIZE  |  DATA   |
-	+--------+-------+--------+---------+
-	|   1    |   1   |   1    | 0-65535 |
-	+-- -----+-------+--------+---------+
+	+---------+--------+-------+--------+---------+
+	|  TOKEN  |  TYPE  |  CMD  |  SIZE  |  DATA   |
+	+---------+--------+-------+--------+---------+
+	|    n    |   1    |   1   |   2    | 0-65535 |
+	+---------+--------+-------+--------+---------+
 
-	Base connected-state package structure: for Server responses
-	+--------+-------+--------+---------+
-	|  TYPE  |  CODE |  SIZE  |  DATA   |
-	+--------+-------+--------+---------+
-	|   1    |   1   |   1    | 0-65535 |
-	+-- -----+-------+--------+---------+
+The TOKEN field musto be n bytes long and should correspond to a Server authentication token.
 
 The TYPE field is to identify which TYPE of command is requested.
 The values currently defined for TYPE are:
-	- X'01' : GET. The current Client Tequest corresponds to a 'GET' command type. The Client will ignore these messages.
-	- X'02' : EDIT. The current Client Request corresponds to an 'EDIT' command type. The Client will ignore these messages.
-	- X'AA' : RESPONSE. The current package corresponds to a Server response. The Server will ignore these messages.
-	- X'FF' : ERROR. The current package corresponds to a Server ERROR response. The Server will ignore these messages.
+	- X'01' : GET. The current Client Tequest corresponds to a 'GET' command type.
+	- X'02' : EDIT. The current Client Request corresponds to an 'EDIT' command type.
 
-
---------------------------------------------------------------------------------------------------------------------------------------------------------
-
-	Client Request
 
 Once knowing which TYPE of command is being requested, the Server must know which command is being executed by the Client.
 
@@ -62,15 +80,7 @@ The values currently defined for CMD for GET TYPE are:
 
 	- X'04' : Get list of Users
 		Returns LIST status if OK, ERROR status otherwise.
-		SIZE must be X''
-		For this CMD, as the client expects an extra byte AFTER the DATA, this is called PAGE:
-
-	Connected-state package for Client requests GET TYPE, CMD:
-	+--------+-------+--------+---------+--------+
-	|  TYPE  |  CMD  |  SIZE  |  DATA   |  PAGE  |
-	+--------+-------+--------+---------+--------+
-	|   1    |   1   |   1    | 0-65535 |   1    |
-	+-- -----+-------+--------+---------+--------+
+		SIZE must be X'00'
 
 	- X'05' : Get current password dissector status
 		Returns BOOL status if OK, ERROR status otherwise.
@@ -83,12 +93,12 @@ The values currently defined for CMD for GET TYPE are:
 The values currently defined for CMD for EDIT TYPE are:
 	- X'01' : Edit Client buffer size
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00' to X'FF'.
+		SIZE can range from X'00000000' to X'FFFFFFFF'.
 		Data must contain an unsigned number representing new desired buffer size.
 
 	- X'02' : Edit Client timeout
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00' to X'FF'.
+		SIZE can range from X'00000000' to X'FFFFFFFF'.
 		Data must contain an unsigned number representing new desired timeout.
 
 	- X'03' : Turn ON password dissector
@@ -101,29 +111,19 @@ The values currently defined for CMD for EDIT TYPE are:
 
 	- X'05' : Add a User
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00' to X'FF'.
+		SIZE can range from X'00000000' to X'FFFFFFFF'.
 		Data must contain a series of UTF-8 chars representing the new desired user, with format: [user:password\r\n]
 
 	- X'06' : Remove a User
 		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00' to X'FF'.
+		SIZE can range from X'00000000' to X'FFFFFFFF'.
 		Data must contain a series of UTF-8 chars representing desired user to be removed, with format: [user\r\n]
 
-	- X'07' : Set new User password
-		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00' to X'FF'.
-		Data must contain a series of UTF-8 chars representing the new desired user, with format: [user:newPassword\r\n]
-
-	- X'08' : Set User as Admin
-		Returns OK status if ok, ERROR status otherwise.
-		SIZE can range from X'00' to X'FF'.
-		Data must contain a series of UTF-8 chars representing desired user to be set as Admin, with format: [user\r\n]
-
-	- X'09' : Turn ON password authentication
+	- X'07' : Turn ON password authentication
 		Returns OK status if ok, ERROR status otherwise.
 		SIZE must be X'00'
 
-	- X'10' : Turn OFF password authentication
+	- X'08' : Turn OFF password authentication
 		Returns OK status if ok, ERROR status otherwise.
 		SIZE must be X'00'
 
@@ -132,7 +132,19 @@ The values currently defined for CMD for EDIT TYPE are:
 
 	Server Response
 
-After recieving the command, the Server is expected to process the request and respond with a RESPONSE TYPE message.
+After recieving the command, the Server is expected to process the request and respond the following responde message:
+
+	Base connected-state package structure: for Server responses
+	+--------+-------+--------+---------+
+	|  TYPE  |  CODE |  SIZE  |  DATA   |
+	+--------+-------+--------+---------+
+	|   1    |   1   |   2    | 0-65535 |
+	+-- -----+-------+--------+---------+
+
+The TYPE field is to identify which TYPE of response is the Server sending.
+The values currently defined for TYPE are:
+	- X'AA' : RESPONSE. The current package corresponds to a Server response.
+	- X'FF' : ERROR. The current package corresponds to a Server ERROR response.
 
 The CMD field is to identify which COMMAND is being requested by the Client.
 The CODE field is so that the Client can identify what status CODE has the Server responded.
@@ -143,17 +155,7 @@ The values currently defined for CODE for RESPONSE TYPE are:
 		SIZE must be X'00'
 
 	- X'02' : LIST status	: The response is a list of UTF-8 chars.
-		SIZE can range from X'00' to X'FF'
-		For this CODE, the client expects an extra byte AFTER the DATA, this is called PAGE:
-
-	Connected-state package for Server responses of RESPONSE TYPE, LIST status CODE:
-	+--------+-------+--------+---------+--------+
-	|  TYPE  |  CODE |  SIZE  |  DATA   |  PAGE  |
-	+--------+-------+--------+---------+--------+
-	|   1    |   1   |   1    | 0-65535 |   1    |
-	+-- -----+-------+--------+---------+--------+
-	This extra byte represents the page of answers given to the Client.
-
+		SIZE can range from X'00000000' to X'FFFFFFFF'.
 
 	- X'03' : INT status	: The response is an unsigned int
 		SIZE must be X'04'
