@@ -1,19 +1,19 @@
 /*Connected state
 After the initial negotiation is complete, the Client is expected to send a message with the following format:
 
-Base connected-state package structure: for Client requests
-+--------+-------+--------+---------+
-|  TYPE  |  CMD  |  SIZE  |  DATA   |
-+--------+-------+--------+---------+
-|   1    |   1   |  0-2   | 0-65535 |
-+-- -----+-------+--------+---------+
+	Client Request
+The Client is expected to send the following request message:
 
-Base connected-state package structure: for Server responses
-+--------+-------+--------+---------+
-|  TYPE  |  CODE |  SIZE  |  DATA   |
-+--------+-------+--------+---------+
-|   1    |   1   |  0-2   | 0-65535 |
-+-- -----+-------+--------+---------+
+	+-------+---------+--------+-------+--------+---------+
+	|  VER	|  TOKEN  |  TYPE  |  CMD  |  SIZE  |  DATA   |
+	+-------+---------+--------+-------+--------+---------+
+	|   1   |    n    |   1    |   1   |   2    | 0-65535 |
+	+-------+---------+--------+-------+--------+---------+
+
+The VER field is the version of the current protocol being used. Currently set to X'01'.
+
+The TOKEN field must be n bytes long and should correspond to a Server authentication token, ending with \0.
+
 
 The TYPE field is to identify which TYPE of command is requested.
 The values currently defined for TYPE are:
@@ -32,6 +32,8 @@ The values currently defined for TYPE are:
 #include <stdbool.h>
 
 enum protocol_state {
+    protocol_version,
+    protocol_token,
     protocol_type,
     protocol_cmd,
     protocol_cmd_get,
@@ -43,6 +45,9 @@ enum protocol_state {
     protocol_error,
 };
 typedef struct payload{
+    uint8_t version;
+    uint8_t* token;
+    int token_len;
     uint8_t type;
     uint8_t CMD;
     int data_len;
@@ -58,7 +63,7 @@ typedef struct protocol_parser {
     payload* data;
     uint8_t size;
     uint8_t page;
-    uint8_t i;
+    int token_index;
     enum protocol_state state;
 
     uint8_t remaining_methods;
