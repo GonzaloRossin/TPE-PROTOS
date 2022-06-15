@@ -74,7 +74,8 @@ int main(int argc , char *argv[])
 
     //initialise Admin
     admin = (struct ssemd*)calloc(1, sizeof(struct ssemd));
-    // admin->admin_token = ADMIN_TOKEN;
+    admin->admin_token = ADMIN_TOKEN;
+    admin->isAvailable = true;
 
 
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
