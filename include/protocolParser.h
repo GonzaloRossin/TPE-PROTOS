@@ -46,7 +46,7 @@ enum protocol_state {
 };
 typedef struct payload{
     uint8_t version;
-    uint8_t* token;
+    char* token;
     int token_len;
     uint8_t type;
     uint8_t CMD;

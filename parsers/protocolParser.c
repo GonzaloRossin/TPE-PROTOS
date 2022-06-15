@@ -46,16 +46,15 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
                 parser->data->version = byte;
                 parser->state = protocol_token;
                 parser->data->token = calloc(TOKEN_SIZE, sizeof(uint8_t));
+                parser->token_index = 0;
                 break;
             }
         case protocol_token:
-            parser->token_index = 0;
-            if( byte != 0x00){
-                if(parser->token_index == TOKEN_SIZE){
-                    realloc(parser->data->token,parser->token_index+TOKEN_SIZE);
-                }
-                parser->data->token[parser->token_index++] = byte;
-            }else{
+            if(parser->token_index == TOKEN_SIZE){
+                    realloc(parser->data->token,parser->token_index+1);
+            }
+            parser->data->token[parser->token_index++] = byte;
+            if(byte == 0x00){
                 realloc(parser->data->token,parser->token_index);
                 parser->data->token_len = parser->token_index;
                 parser->state = protocol_type;
