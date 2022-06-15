@@ -155,18 +155,22 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 }
 
 void ssemd_process_get(struct ssemd * currAdmin) {
-	ssemd_response * response = (ssemd_response *) malloc(sizeof(response));
+	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
 	payload * request = currAdmin->pr->data;
 	currAdmin->response = response;
-	long c;
+	unsigned long c = 0;
 	switch(request->CMD) {
-		case SSEMD_HISTORIC_CONNECTIONS: 
+		case SSEMD_HISTORIC_CONNECTIONS:
+			response->data = (uint8_t*) calloc(1, sizeof(long)); 
 			c = get_historic_connections();
-			memcpy(response->data, &c, sizeof(long));
+			c = htonl(c+4294967295+2);
+			memcpy(response->data, &c, sizeof(unsigned long));
+			setResponse(response, SSEMD_RESPONSE_LONG);
             break;
 		case SSEMD_CURRENT_CONNECTIONS: 
 			c = get_current_connections();
 			memcpy(response->data, &c, sizeof(long));
+			setResponse(response, SSEMD_RESPONSE_LONG);
             break;
 		case SSEMD_BYTES_TRANSFERRED: 
 		
@@ -200,6 +204,70 @@ void read_request_init(struct ssemd * currAdmin) {
 		currAdmin->pr = (protocol_parser *)calloc(1, sizeof(protocol_parser));
 		protocol_parser_init(currAdmin->pr);
 		currAdmin->connection_state.init = true;
+	}
+}
+
+int marshall(buffer * buffer, ssemd_response * response){
+	int size = 0; //bytes for data
+	size+=response->size2; 
+	if(response->size1 != 0x00){
+		size+=response->size1 + 255;
+	} 
+
+	size_t max_write;
+    uint8_t * buff = buffer_write_ptr(buffer, &max_write);
+	if(max_write < 4+size){
+		response->status = SSEMD_ERROR;
+        response->code = 0xFF;
+    }
+	int i=0;
+	buff[i++] = response->status; //STATUS
+	buff[i++] = response->code; //CODE
+	buff[i++] = response->size1; //size1
+	buff[i++] = response->size2; //size2
+
+	if(size > 0){ //DATA
+		int n = 0;
+		while(n<size){
+			buff[i++] = response->data[n++];
+		}
+	}
+	buffer_write_adv(buffer, 4+size);
+	return 4+size;
+}
+
+void setResponse(ssemd_response * response, uint8_t code){
+	response->status = SSEMD_RESPONSE;
+	switch (code)
+	{
+	case SSEMD_RESPONSE_OK:
+		response->code=code;
+		response->size1=0x00;
+		response->size2=0x00;
+		break;
+	case SSEMD_RESPONSE_LIST:
+		response->code=code;
+		// response->size1=
+		// response->size2=
+		break;
+	case SSEMD_RESPONSE_INT:
+		response->code=code;
+		response->size1=0x00;
+		response->size2=0x04;
+		break;
+	case SSEMD_RESPONSE_LONG:
+		response->code=code;
+		response->size1=0x00;
+		response->size2=0x08;
+		break;
+	case SSEMD_RESPONSE_BOOL:
+		response->code=code;
+		response->size1=0x00;
+		response->size2=0x01;
+		break;
+	
+	default:
+		break;
 	}
 }
 

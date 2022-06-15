@@ -23,6 +23,7 @@
 #include "connectedState.h"
 #include "protocolParser.h"
 #include "ssemd.h"
+#include "util.h"
 
 void masterssemdHandler(struct selector_key *key);
 
@@ -43,6 +44,11 @@ void ssemd_write(struct selector_key *key);
 void ssemd_close(struct selector_key *key);
 
 void ssemd_change_state(struct ssemd * currAdmin, enum client_state state);
+
+int marshall(buffer * buffer, ssemd_response * response);
+
+void setResponse(ssemd_response * response, uint8_t code);
+
 
 #endif
 

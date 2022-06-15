@@ -6,9 +6,9 @@
 //GET:
 void register_client_connection();
 
-long get_historic_connections();
+unsigned long get_historic_connections();
 
-long get_current_connections();
+unsigned long get_current_connections();
 
 void unregister_current_connection();
 

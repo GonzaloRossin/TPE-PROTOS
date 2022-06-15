@@ -13,9 +13,10 @@ enum ssemd_state {
 
 enum ssmed_type {
     SSEMD_GET = 0x01,
-    SSEMD_EDIT = 0x02
+    SSEMD_EDIT = 0x02,
+    SSEMD_RESPONSE = 0xAA,
+    SSEMD_ERROR = 0xFF,
 };
-
 enum ssmed_cmd_get {
     SSEMD_HISTORIC_CONNECTIONS = 0x01,
     SSEMD_CURRENT_CONNECTIONS = 0x02,
@@ -33,6 +34,13 @@ enum ssmed_cmd_EDIT {
     SSEMD_REMOVE_USER = 0x06,
     SSEMD_AUTH_ON = 0x07,
     SSEMD_AUTH_OFF = 0x08,
+};
+enum ssmed_response_code {
+    SSEMD_RESPONSE_OK = 0x01,
+    SSEMD_RESPONSE_LIST = 0x02,
+    SSEMD_RESPONSE_INT = 0x03,
+    SSEMD_RESPONSE_LONG = 0x04,
+    SSEMD_RESPONSE_BOOL = 0x05,
 };
 
 // struct ssemd_hello

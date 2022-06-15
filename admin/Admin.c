@@ -29,14 +29,11 @@ int main(int argc, char *argv[]) {
     buffer_init(Buffer, BUFFSIZE, dataClient);
 
 
-	// // Send the HELLO to the server
-	// handleHello(Buffer, sock);
-	// readHello(Buffer, sock);
-	// print_log(INFO, "\ndone with hello handshake\n");
-
-	// //send command to server
+	//send command to server
 	handleSend(args, sock, Buffer, bytesToSend);
-	// handleRecv(sock, Buffer);
+
+	//read reply
+	handleRecv(sock, Buffer);
 
 	close(sock);
 	free(Buffer->data);
@@ -150,7 +147,7 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 }
 
 void handleRecv(int sock, struct buffer * Buffer){
-	print_log(INFO, "Reading server reply, in the future this will be server response to admin client request:\n");
+	print_log(INFO, "Reading server reply\n");
 	while (true) { //read REQUEST
 		ssize_t bytesRecieved = recv(sock, Buffer->data, BUFFSIZE, 0);
 		if (bytesRecieved < 0) {
@@ -159,13 +156,18 @@ void handleRecv(int sock, struct buffer * Buffer){
 			print_log(ERROR, "recv() connection closed prematurely");
 			break;
 		} else {
-			for(int i=0; i<bytesRecieved; i++){
-				print_log(INFO, "%s ", Buffer->data);
-				break;
+			print_log(DEBUG, "STATUS\tCODE\tSIZE\tDATA\n", Buffer->data[0]);
+			print_log(DEBUG, "%0X\t%0X\t%0X %0X\t", Buffer->data[0], Buffer->data[1], Buffer->data[2], Buffer->data[3]);
+			// print_log(DEBUG, "%0X\t", Buffer->data[1]);
+			// print_log(DEBUG, "%0X %0X\t", Buffer->data[2], Buffer->data[3]);
+			int size = 0; //bytes for data
+			size+=Buffer->data[3]; 
+			if(Buffer->data[2] != 0x00){
+				size+=Buffer->data[2] + 255;
 			}
-		}
-		if(bytesRecieved == 325){
-			print_log(INFO, "close on point");
+			for(int i=0; i<size; i++){
+				print_log(DEBUG, "DATA %0x\n", Buffer->data[4+i]);
+			}
 			break;
 		}
 	}

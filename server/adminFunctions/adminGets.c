@@ -1,7 +1,7 @@
 #include "../../include/adminFunctions.h"
 
-static long historic_connections = 0;
-static long current_connections = 0;
+static unsigned long historic_connections = 0;
+static unsigned long current_connections = 0;
 
 
 void register_client_connection() {
@@ -9,11 +9,11 @@ void register_client_connection() {
     historic_connections++;
 }
 
-long get_historic_connections() {
+unsigned long get_historic_connections() {
     return historic_connections;
 }
 
-long get_current_connections() {
+unsigned long get_current_connections() {
     return current_connections;
 }
 
