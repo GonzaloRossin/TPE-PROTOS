@@ -22,6 +22,7 @@
 #include "requestState.h"
 #include "connectedState.h"
 #include "ssemd.h"
+#include "adminFunctions.h"
 
 
 #define BUFFSIZE 16384

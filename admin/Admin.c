@@ -115,14 +115,14 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 	for(n=0; n<bytesToSend; n++){
 		print_log(DEBUG, "%x ", message[n]);
 	}
-	exit(1);
+	// exit(1);
 
 	// // size_t bytesSent = 0;
 	// // while (bytesSent < bytesToSend){
 	// // 	/
 	// // }
 
-	// int bytesSent = send(sock, message, sizeof(message), 0);
+	int bytesSent = send(sock, message, sizeof(message), 0);
 	
 	// print_log(INFO, "reading request");
 	// while (true) { //read REQUEST

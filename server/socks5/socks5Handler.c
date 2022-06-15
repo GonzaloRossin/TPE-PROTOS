@@ -25,6 +25,8 @@ void masterSocks5Handler(struct selector_key *key) {
 		if(clis[i].isAvailable)
 		{
 			new_client(&clis[i], new_client_socket, BUFFSIZE);
+
+			register_client_connection();
 			// set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
 			
 			selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
@@ -133,6 +135,8 @@ void socks5_close(struct selector_key *key) {
 		memset(currClient, 0, sizeof(struct socks5));
 		currClient->connection_state.client_state = HELLO_READ_STATE;
 		currClient->isAvailable = true;
+
+		void unregister_current_connection();
 
 	}
 	

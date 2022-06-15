@@ -17,6 +17,7 @@
 #include "../include/buffer.h"
 #include "../include/selector.h"
 #include "../include/args.h"
+#include "../include/ssemdHandler.h"
 
 static bool done = false;
 
@@ -151,16 +152,16 @@ int main(int argc , char *argv[])
 	};
     
     const struct fd_handler ssemd = {
-        .handle_read       = NULL,//masterssemdHandler,
+        .handle_read       = masterssemdHandler,//masterssemdHandler,
         .handle_write      = NULL,
         .handle_close      = NULL, // nada que liberar
     };
     
 
 	for (int i = 0; i < master_socket_size; i++) {
-        if(i<5){ //1080 socks debe ser <2
+        if(i < 2) { //1080 socks debe ser <2
 		    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, &clients_struct);
-        } else{ //8889 ssemd
+        } else { //8889 ssemd
             ss = selector_register(selector, master_socket[i], &ssemd, OP_READ, admin);
         }
 

@@ -21,19 +21,27 @@
 #include "selector.h"
 #include "requestState.h"
 #include "connectedState.h"
+#include "protocolParser.h"
 #include "ssemd.h"
-
-void masterssemdHandler(struct selector_key *key);
 
 void masterssemdHandler(struct selector_key *key);
 
 void ssemd_read(struct selector_key *key);
 
+void ssemd_read_request(struct selector_key *key);
+void read_request_init(struct ssemd * currAdmin);
+
+void ssemd_request_process(struct ssemd * currAdmin);
+int validate_token(struct ssemd * currAdmin);
+void ssemd_process_get(struct ssemd * currAdmin);
+void ssemd_process_edit(struct ssemd * currAdmin);
+
+
 void ssemd_write(struct selector_key *key);
 
 void ssemd_close(struct selector_key *key);
 
-void ssemd_change_state(struct ssemd * currClient, enum client_state state);
+void ssemd_change_state(struct ssemd * currAdmin, enum client_state state);
 
 #endif
 

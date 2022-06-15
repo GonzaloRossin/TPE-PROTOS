@@ -4,12 +4,13 @@
 #include "util.h"
 
 //GET:
+void register_client_connection();
 
-char *
-historic_connections();
+long get_historic_connections();
 
-int
-current_connections();
+long get_current_connections();
+
+void unregister_current_connection();
 
 long
 bytes_transferred();
