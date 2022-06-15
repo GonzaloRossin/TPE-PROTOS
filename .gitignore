@@ -350,35 +350,9 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-marcelo_starting_files/tcpEchoAddrInfo
-
-marcelo_starting_files/tcpEchoClient
-
-marcelo_starting_files/udpEchoClient
-
-marcelo_starting_files/server
-
-marcelo_starting_files/server_selector
-
 *.o
 
-marcelo_starting_files/tests/hello test/helloParserTest
-
-marcelo_starting_files/tests/request test/requestParserTest
-
 *.json
-
-marcelo_starting_files/.idea/marcelo_starting_files.iml
-
-marcelo_starting_files/.idea/modules.xml
-
-marcelo_starting_files/.idea/vcs.xml
-
-marcelo_starting_files/.idea/workspace.xml
-
-marcelo_starting_files/server_client
-
-marcelo_starting_files/tests/protocol test/protocolParserTester
 
 .idea/modules.xml
 
@@ -388,4 +362,6 @@ marcelo_starting_files/tests/protocol test/protocolParserTester
 
 .idea/workspace.xml
 
-marcelo_starting_files/tests/protocol test/requestParserTest
+ssemd
+
+socks5d
