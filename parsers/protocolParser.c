@@ -1,5 +1,5 @@
-#include "./../include/protocolParser.h"
-#define TOKEN_SIZE 2
+#include "../include/protocolParser.h"
+#define TOKEN_SIZE 25
 
 
 bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
@@ -45,25 +45,27 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             if( byte == 0x01){
                 parser->data->version = byte;
                 parser->state = protocol_token;
-                parser->data->token = calloc(TOKEN_SIZE, sizeof(uint8_t));
+                parser->data->token = malloc(TOKEN_SIZE* sizeof(uint8_t));
                 parser->token_index = 0;
                 break;
             }
         case protocol_token:
-            // if(parser->token_index == TOKEN_SIZE){
-            //         realloc(parser->data->token,parser->token_index+1);
-            // }
-            // parser->data->token[parser->token_index++] = byte;
-            // if(byte == 0x00){
-            //     realloc(parser->data->token,parser->token_index);
-            //     parser->data->token_len = parser->token_index;
-            //     parser->state = protocol_type;
-            // }
-            parser->data->token = "j";
+            if(parser->token_index % TOKEN_SIZE == 0){
+                     parser->data->token = realloc(parser->data->token,parser->token_index + TOKEN_SIZE);
+            }
+            if(byte == 0x00){
+                parser->data->token[parser->token_index] = byte;
+                parser->data->token = realloc(parser->data->token,parser->token_index);
+                parser->data->token_len = parser->token_index;
+                parser->state = protocol_type;
+            }else{
+                parser->data->token[parser->token_index++] = byte;
+            }
+            /*parser->data->token = "j";
             parser->data->token_len = 1;
             if(byte == 0x00) {
                 parser->state = protocol_type;
-            }
+            }*/
         break;
         case protocol_type:
             if(byte == 0x01){
