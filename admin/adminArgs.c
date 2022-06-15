@@ -39,11 +39,12 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     args->size1        = 0x00;
     args->size2        = 0x00;
     args->data        = NULL;
+
     
     int c;
 
     while (true) {
-        c = getopt (argc, argv, "t:G:E:d:");
+        c = getopt (argc, argv, "t:GE12d:");
 
         if (c == -1)
             break;
@@ -57,11 +58,15 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
                 break;
             case 'G':
                 handleRepeatedTYPE(args, 0x01);
-                args->cmd = *optarg; 
                 break;
             case 'E':
                 handleRepeatedTYPE(args, 0x02);
-                args->cmd = *optarg; 
+                break;
+            case '1':
+                handleRepeatedCMD(args, 0x01);
+                break;
+            case '2':
+                handleRepeatedCMD(args, 0x02);
                 break;
             case 'd':
                 args->data = optarg;
@@ -87,11 +92,11 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         int i=0;
         int size = 0;
         while(args->data[i] != 0x00){
-            fprintf(stderr, "%c", (char)args->data[i]);
+            // fprintf(stderr, "%c", (char)args->data[i]);
             size++;
             i++;
         }
-        fprintf(stderr, "\nsize:%d\n", size);
+        // fprintf(stderr, "\nsize:%d\n", size);
         if(size > 65656){
             fprintf(stderr, "\nsize too big:%d\n", size);
             exit(1);
@@ -102,14 +107,15 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
             args->size1 = 0x00;
             args->size2 = size;
         }
-
         fprintf(stderr, "size1: %d, %c\n", args->size1, args->size1);
         fprintf(stderr, "size2: %d, %c\n", args->size2, args->size2);
-
-        exit(1);
     }
     if(args->type == 0 || args->cmd == 0){
         fprintf(stderr, "argument required: type. \nusage: -G for Get or -E for Edit\n");
+        exit(1);
+    }
+    if(args->cmd == 0){
+        fprintf(stderr, "argument required: command. \nusage: -G2 for Get concurrent connections\n");
         exit(1);
     }
     if(args->admin_token == NULL){
@@ -123,6 +129,15 @@ void handleRepeatedTYPE(struct ssemd_args *args, char newType){
         args->type = newType;
     } else {
         fprintf(stderr, "argument not accepted: %x, usage example: -G1\n", newType);
+        exit(1);
+    }          
+}
+
+void handleRepeatedCMD(struct ssemd_args *args, char newCMD){
+    if(args->cmd == 0){
+        args->cmd = newCMD;
+    } else {
+        fprintf(stderr, "argument not accepted: %x, usage example: -G1\n", newCMD);
         exit(1);
     }          
 }

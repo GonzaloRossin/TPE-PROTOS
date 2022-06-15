@@ -39,3 +39,23 @@ int tcpClientSocket(const char *host, const char *service) {
 	freeaddrinfo(servAddr); 
 	return sock;
 }
+
+size_t getSize(struct ssemd_args *args){
+	size_t toRet = 0;
+	toRet++; //1 byte for VER
+	int n=0;
+	while(args->admin_token[n]!=0x00){
+		n++;
+	}
+	toRet += n; //n bytes for TOKEN
+	toRet++; //1 byte for \0 to mark end of TOKEN
+	toRet++; //1 byte for TYPE
+	toRet++; //1 byte for CMD
+	toRet+=2; //2 bytes for SIZE
+	toRet+=args->size2; 
+	if(args->size1 != 0x00){
+		toRet+=args->size1 + 255;
+	} //size1 size2 bytes for data
+	return toRet;
+}
+

@@ -4,13 +4,16 @@
 
 void handleHello(struct buffer * Buffer, int sock);
 void readHello(struct buffer * Buffer, int sock);
-void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer);
+void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend);
 void handleRecv(int sock, struct buffer * Buffer);
 
 int main(int argc, char *argv[]) {
 
 	struct ssemd_args * args = (struct ssemd_args *)calloc(1, sizeof(struct ssemd_args));
 	parse_ssemd_args(argc, argv, args);
+
+	size_t bytesToSend = getSize(args);
+	print_log(DEBUG, "%d", bytesToSend);
 
 	// Create a reliable, stream socket using TCP
 	int sock = tcpClientSocket(args->mng_addr,  args->mng_port);
@@ -32,10 +35,8 @@ int main(int argc, char *argv[]) {
 	// print_log(INFO, "\ndone with hello handshake\n");
 
 	// //send command to server
-	// handleSend(args, sock, Buffer);
+	handleSend(args, sock, Buffer, bytesToSend);
 	// handleRecv(sock, Buffer);
-
-	// size_t bytesToSend = args;
 
 	close(sock);
 	free(Buffer->data);
@@ -83,55 +84,69 @@ void readHello(struct buffer * Buffer, int sock){
 	}
 }
 
-void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer){
-	uint8_t manualSend_Request[3];
-    manualSend_Request[0] = args->type; //GET
-	manualSend_Request[1] = args->cmd; //Historic amount of connections
-	manualSend_Request[2] = args->size1; //Must be 00
-	//manualSend_Request[3] = args->data; //Must be 00
-
-	print_log(INFO, "sending socks request, from here its temporary");
-	uint8_t hardcode_request[14];
-	hardcode_request[0] = 0x05;
-	hardcode_request[1] = 0x01;
-	hardcode_request[2] = 0x00;
-	hardcode_request[3] = 0x03;
-	hardcode_request[4] = 0x07;
-	hardcode_request[5] = 0x77;
-	hardcode_request[6] = 0x74;
-	hardcode_request[7] = 0x74;
-	hardcode_request[8] = 0x72;
-	hardcode_request[9] = 0x2E;
-	hardcode_request[10] = 0x69;
-	hardcode_request[11] = 0x6E;
-	hardcode_request[12] = 0x00;
-	hardcode_request[13] = 0x50;
-
-	int bytesSent = send(sock, hardcode_request, sizeof(hardcode_request), 0);
-	
-	print_log(INFO, "reading request");
-	while (true) { //read REQUEST
-		ssize_t bytesRecieved = recv(sock, Buffer->data, BUFFSIZE, 0);
-		if (bytesRecieved < 0) {
-			print_log(ERROR, "recv() failed");
-		}
-		else if (bytesRecieved == 0)
-			print_log(ERROR, "recv() connection closed prematurely");
-		else {
-			for(int i=0; i<bytesRecieved; i++){
-				print_log(INFO, "%02x ", Buffer->data[i]);
-			}
-		}
-		if(bytesRecieved == 10){
-			break;
-		}
+void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend){
+	uint8_t message[bytesToSend];
+	int i=0;
+    message[i++] = 0x01; //VER
+	int n=0;
+	while(args->admin_token[n] != 0x00){
+		message[i++] = args->admin_token[n++];
 	}
-	print_log(INFO, "done with request read");
-	print_log(INFO, "sending basic get to recieve a reply from remote server");
-	//uint8_t hardcode_request[73];
-	//hardcode_request[0] = 0x47;
-	bytesSent = send(sock, hardcode_request, sizeof(uint8_t), 0);
-	print_log(INFO, "up to here its temporary\n");
+	message[i++] = 0x00; //TOKEN
+	message[i++] = args->type; //TYPE
+	message[i++] = args->cmd; //CMD
+	message[i++] = args->size1;
+	message[i++] = args->size2; //SIZE
+	int size = 0;
+	size+=args->size2; 
+	if(args->size1 != 0x00){
+		size+=args->size1 + 255;
+	} //size1 size2 bytes for data
+
+	n=0;
+	while(n<size){
+		message[i++] = args->data[n++];
+	}
+	if(i != bytesToSend){
+		print_log(ERROR, "error crafitng admin message");
+		exit(1);
+	}
+	print_log(DEBUG, "sending message: ");
+	for(n=0; n<bytesToSend; n++){
+		print_log(DEBUG, "%x ", message[n]);
+	}
+	exit(1);
+
+	// // size_t bytesSent = 0;
+	// // while (bytesSent < bytesToSend){
+	// // 	/
+	// // }
+
+	// int bytesSent = send(sock, message, sizeof(message), 0);
+	
+	// print_log(INFO, "reading request");
+	// while (true) { //read REQUEST
+	// 	ssize_t bytesRecieved = recv(sock, Buffer->data, BUFFSIZE, 0);
+	// 	if (bytesRecieved < 0) {
+	// 		print_log(ERROR, "recv() failed");
+	// 	}
+	// 	else if (bytesRecieved == 0)
+	// 		print_log(ERROR, "recv() connection closed prematurely");
+	// 	else {
+	// 		for(int i=0; i<bytesRecieved; i++){
+	// 			print_log(INFO, "%02x ", Buffer->data[i]);
+	// 		}
+	// 	}
+	// 	if(bytesRecieved == 10){
+	// 		break;
+	// 	}
+	// }
+	// print_log(INFO, "done with request read");
+	// print_log(INFO, "sending basic get to recieve a reply from remote server");
+	// //uint8_t hardcode_request[73];
+	// //hardcode_request[0] = 0x47;
+	// bytesSent = send(sock, hardcode_request, sizeof(uint8_t), 0);
+	// print_log(INFO, "up to here its temporary\n");
 }
 
 void handleRecv(int sock, struct buffer * Buffer){

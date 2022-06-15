@@ -27,9 +27,9 @@ struct ssemd_args {
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args);
 
-//helper for parse_ssemd_args
-void
-handleRepeatedTYPE(struct ssemd_args *args, char newCode);
+//helpers for parse_ssemd_args
+void handleRepeatedTYPE(struct ssemd_args *args, char newCode);
+void handleRepeatedCMD(struct ssemd_args *args, char newCMD);
 
 
 #endif
