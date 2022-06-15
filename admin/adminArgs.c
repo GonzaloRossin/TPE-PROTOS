@@ -36,13 +36,14 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     args->admin_token = NULL;
     args->type        = 0x00;
     args->cmd         = 0x00;
-    args->size        = 0x00;
-    args->data        = 0x00;
+    args->size1        = 0x00;
+    args->size2        = 0x00;
+    args->data        = NULL;
     
     int c;
 
     while (true) {
-        c = getopt (argc, argv, "t:G:E:");
+        c = getopt (argc, argv, "t:G:E:d:");
 
         if (c == -1)
             break;
@@ -50,6 +51,9 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         switch (c) {
             case 'h':
                 usage(argv[0]);
+                break;
+            case 't':
+                args->admin_token = optarg;
                 break;
             case 'G':
                 handleRepeatedTYPE(args, 0x01);
@@ -59,8 +63,8 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
                 handleRepeatedTYPE(args, 0x02);
                 args->cmd = *optarg; 
                 break;
-            case 't':
-                args->admin_token = optarg;
+            case 'd':
+                args->data = optarg;
                 break;
             default:
                 fprintf(stderr, "unknown argument %d.\n", c);
@@ -74,6 +78,34 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
             fprintf(stderr, "%s ", argv[optind++]);
         }
         fprintf(stderr, "\n");
+        exit(1);
+    }
+    if(args->data == NULL){
+        args->size1 = 0x00;
+        args->size2 = 0x00;
+    } else {
+        int i=0;
+        int size = 0;
+        while(args->data[i] != 0x00){
+            fprintf(stderr, "%c", (char)args->data[i]);
+            size++;
+            i++;
+        }
+        fprintf(stderr, "\nsize:%d\n", size);
+        if(size > 65656){
+            fprintf(stderr, "\nsize too big:%d\n", size);
+            exit(1);
+        } else if(size > 255){
+            args->size1 = size-255;
+            args->size2 = 255-(size-255);
+        } else {
+            args->size1 = 0x00;
+            args->size2 = size;
+        }
+
+        fprintf(stderr, "size1: %d, %c\n", args->size1, args->size1);
+        fprintf(stderr, "size2: %d, %c\n", args->size2, args->size2);
+
         exit(1);
     }
     if(args->type == 0 || args->cmd == 0){

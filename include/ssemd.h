@@ -32,6 +32,8 @@ struct ssemd
 {
     int fd;
 
+    char * admin_token;
+
     buffer * bufferRead;
     buffer * bufferWrite;
 

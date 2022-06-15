@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	parse_ssemd_args(argc, argv, args);
 
 	// Create a reliable, stream socket using TCP
-	int sock = tcpClientSocket(args->mng_addr,  args->mng_port); //esta funcion la usa otra persona?
+	int sock = tcpClientSocket(args->mng_addr,  args->mng_port);
 	if (sock < 0) {
 		print_log(FATAL, "socket() failed");
 		exit(1);
@@ -26,14 +26,16 @@ int main(int argc, char *argv[]) {
     buffer_init(Buffer, BUFFSIZE, dataClient);
 
 
-	// Send the HELLO to the server
-	handleHello(Buffer, sock);
-	readHello(Buffer, sock);
-	print_log(INFO, "\ndone with hello handshake\n");
+	// // Send the HELLO to the server
+	// handleHello(Buffer, sock);
+	// readHello(Buffer, sock);
+	// print_log(INFO, "\ndone with hello handshake\n");
 
-	//send command to server
-	handleSend(args, sock, Buffer);
-	handleRecv(sock, Buffer);
+	// //send command to server
+	// handleSend(args, sock, Buffer);
+	// handleRecv(sock, Buffer);
+
+	// size_t bytesToSend = args;
 
 	close(sock);
 	free(Buffer->data);
@@ -85,7 +87,7 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer){
 	uint8_t manualSend_Request[3];
     manualSend_Request[0] = args->type; //GET
 	manualSend_Request[1] = args->cmd; //Historic amount of connections
-	manualSend_Request[2] = args->size; //Must be 00
+	manualSend_Request[2] = args->size1; //Must be 00
 	//manualSend_Request[3] = args->data; //Must be 00
 
 	print_log(INFO, "sending socks request, from here its temporary");

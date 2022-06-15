@@ -29,7 +29,6 @@ struct socks5args {
 
     char *          admin_token;
 
-    //struct doh      doh;
     struct users    users[MAX_USERS];
 };
 
