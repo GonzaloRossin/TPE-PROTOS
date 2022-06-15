@@ -16,8 +16,8 @@ bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
             {
             case 0x03:
             case 0x04:
-            case 0x09:
-            case 0x10:
+            case 0x07:
+            case 0x08:
                 if(byte != 0x00){
                     return true;
                 }
@@ -83,7 +83,7 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             break;
 
         case protocol_cmd_edit:
-            if(byte <= 0x10){
+            if(byte <= 0x08){
                 parser->data->CMD = byte;
                 parser->state = protocol_size;
             }
