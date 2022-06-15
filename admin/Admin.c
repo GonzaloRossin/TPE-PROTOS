@@ -4,14 +4,12 @@
 
 void handleHello(struct buffer * Buffer, int sock);
 void readHello(struct buffer * Buffer, int sock);
-
 void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer);
-
 void handleRecv(int sock, struct buffer * Buffer);
 
 int main(int argc, char *argv[]) {
 
-	struct ssemd_args * args = (struct ssemd_args *)malloc(sizeof(struct ssemd_args));
+	struct ssemd_args * args = (struct ssemd_args *)calloc(1, sizeof(struct ssemd_args));
 	parse_ssemd_args(argc, argv, args);
 
 	// Create a reliable, stream socket using TCP
@@ -86,7 +84,7 @@ void readHello(struct buffer * Buffer, int sock){
 void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer){
 	uint8_t manualSend_Request[3];
     manualSend_Request[0] = args->type; //GET
-	manualSend_Request[1] = args->code; //Historic amount of connections
+	manualSend_Request[1] = args->cmd; //Historic amount of connections
 	manualSend_Request[2] = args->size; //Must be 00
 	//manualSend_Request[3] = args->data; //Must be 00
 

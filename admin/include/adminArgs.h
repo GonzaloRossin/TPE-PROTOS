@@ -11,8 +11,9 @@ struct ssemd_args {
     char           *mng_addr;
     char           *mng_port;
 
+    char           *admin_token;
     char            type;
-    char            code;
+    char            cmd;
     char            size;
     char           *data;
 };
@@ -23,4 +24,4 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args);
 
 //helper for parse_ssemd_args
 void
-handleRepeatedCMD(struct ssemd_args *args, char newCode);
+handleRepeatedTYPE(struct ssemd_args *args, char newCode);

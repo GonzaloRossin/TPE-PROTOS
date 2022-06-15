@@ -30,8 +30,6 @@ sigterm_handler(const int signal) {
 
 #define TRUE   1
 #define FALSE  0
-//#define PORT "8888"
-//#define ADMIN_PORT "8889"
 #define MAX_SOCKETS 1000
 #define MAX_PENDING_CONNECTIONS   10   // un valor bajo, para realizar pruebas
 
@@ -48,7 +46,13 @@ int main(int argc , char *argv[])
     //pongo esto primero así no corre nada de más si pone mal los args
     struct socks5args * args = (struct socks5args *)malloc(sizeof(struct socks5args));
 	parse_args(argc, argv, args);
+
+    char PORT[6];
+    char ADMIN_PORT[6];
+    sprintf(PORT, "%d", args->socks_port); //sets client port
+    sprintf(ADMIN_PORT, "%d", args->mng_port); //sets admin port
     char * ADMIN_TOKEN = args->admin_token;
+    print_log(INFO, "ADMIN TOKEN: %s", ADMIN_TOKEN);
 
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
@@ -70,10 +74,7 @@ int main(int argc , char *argv[])
     //initialise Admin
     admin = (struct ssemd*)calloc(1, sizeof(struct ssemd));
 
-    char PORT[6];
-    char ADMIN_PORT[6];
-    sprintf(PORT, "%d", args->socks_port);
-    sprintf(ADMIN_PORT, "%d", args->mng_port);
+
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
 	if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET)) < 0) {

@@ -16,24 +16,33 @@ usage(const char *progname) {
 
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
-    if(argc > 99){
-        fprintf(stderr, "Too many arguments, usage example: -G1 -t qwertyuiop\n");
-        exit(1);
-    } else if(argc < 3){
-        fprintf(stderr, "Too few arguments, usage example: -G1 -t qwertyuiop\n");
-        exit(1);
-    }
-    memset(args, 0, sizeof(*args)); // sobre todo para setear en null los punteros de users
-    
+    // if(argc > 99){
+    //     fprintf(stderr, "Too many arguments, usage example: -G1 -t qwertyuiop\n");
+    //     exit(1);
+    // } else if(argc < 3){
+    //     fprintf(stderr, "Too few arguments, usage example: -G1 -t qwertyuiop\n");
+    //     exit(1);
+    // }
+    // memset(args, 0, sizeof(struct ssemd_args));
+
+
+    char           *admin_token;
+    char            type;
+    char            cmd;
+
     args->mng_addr   = "127.0.0.1";
     args->mng_port   = "8889";
-    args->size       = 0x00;
-    args->data       = 0x00;
+
+    args->admin_token = NULL;
+    args->type        = 0x00;
+    args->cmd         = 0x00;
+    args->size        = 0x00;
+    args->data        = 0x00;
     
     int c;
 
     while (true) {
-        c = getopt (argc, argv, "G:E:t:");
+        c = getopt (argc, argv, "t:G:E:");
 
         if (c == -1)
             break;
@@ -43,25 +52,15 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
                 usage(argv[0]);
                 break;
             case 'G':
-                if(args->type == 0){
-                    args->type = 0x01;
-                    args->code = *optarg;
-                } else {
-                    fprintf(stderr, "argument not accepted: %c, usage example: -G1\n", c);
-                    exit(1);
-                }
- 
+                handleRepeatedTYPE(args, 0x01);
+                args->cmd = *optarg; 
                 break;
             case 'E':
-                if(args->type == 0){
-                    args->type = 0x02;
-                    args->code = *optarg;
-                } else {
-                    fprintf(stderr, "argument not accepted: %c, usage example: -G1\n", c);
-                    exit(1);
-                }
+                handleRepeatedTYPE(args, 0x02);
+                args->cmd = *optarg; 
                 break;
             case 't':
+                args->admin_token = optarg;
                 break;
             default:
                 fprintf(stderr, "unknown argument %d.\n", c);
@@ -77,17 +76,21 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         fprintf(stderr, "\n");
         exit(1);
     }
-    if(args->type == 0 || args->code == 0){
-        fprintf(stderr, "wrong usage, example: -G1\n");
+    if(args->type == 0 || args->cmd == 0){
+        fprintf(stderr, "argument required: type. \nusage: -G for Get or -E for Edit\n");
+        exit(1);
+    }
+    if(args->admin_token == NULL){
+        fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
         exit(1);
     }
 }
 
-void handleRepeatedCMD(struct ssemd_args *args, char newCode){
-    if(args->code == 0){
-        args->code = newCode;
+void handleRepeatedTYPE(struct ssemd_args *args, char newType){
+    if(args->type == 0){
+        args->type = newType;
     } else {
-        fprintf(stderr, "argument not accepted: %x, usage example: -G1\n", newCode);
+        fprintf(stderr, "argument not accepted: %x, usage example: -G1\n", newType);
         exit(1);
     }          
 }

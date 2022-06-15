@@ -138,4 +138,8 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
         fprintf(stderr, "\n");
         exit(1);
     }
+    if(args->admin_token == NULL){
+        fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
+        exit(1);
+    }
 }
