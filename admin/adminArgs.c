@@ -109,7 +109,12 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         }
         fprintf(stderr, "size1: %d, %c\n", args->size1, args->size1);
         fprintf(stderr, "size2: %d, %c\n", args->size2, args->size2);
+        
+        checkRequiredParams(args);
     }
+}
+
+void checkRequiredParams(struct ssemd_args *args){
     if(args->type == 0 || args->cmd == 0){
         fprintf(stderr, "argument required: type. \nusage: -G for Get or -E for Edit\n");
         exit(1);

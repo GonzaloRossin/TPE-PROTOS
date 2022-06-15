@@ -30,6 +30,7 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args);
 //helpers for parse_ssemd_args
 void handleRepeatedTYPE(struct ssemd_args *args, char newCode);
 void handleRepeatedCMD(struct ssemd_args *args, char newCMD);
+void checkRequiredParams(struct ssemd_args *args);
 
 
 #endif
