@@ -1,4 +1,5 @@
 #include "./../include/protocolParser.h"
+#define TOKEN_SIZE 10
 
 
 bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
@@ -40,7 +41,26 @@ extern void protocol_parser_init(struct protocol_parser * parser){
 
 extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser, const uint8_t byte){
     switch (parser->state){
-
+        case protocol_version:
+            if( byte == 0x01){
+                parser->data->version = byte;
+                parser->state = protocol_token;
+                parser->data->token = calloc(TOKEN_SIZE, sizeof(uint8_t));
+                break;
+            }
+        case protocol_token:
+            parser->token_index = 0;
+            if( byte != 0x00){
+                if(parser->token_index == TOKEN_SIZE){
+                    realloc(parser->data->token,parser->token_index+TOKEN_SIZE);
+                }
+                parser->data->token[parser->token_index++] = byte;
+            }else{
+                realloc(parser->data->token,parser->token_index);
+                parser->data->token_len = parser->token_index;
+                parser->state = protocol_type;
+            }
+        break;
         case protocol_type:
             if(byte == 0x01){
                 parser->data->type= byte;
