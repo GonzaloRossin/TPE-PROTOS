@@ -16,16 +16,6 @@ usage(const char *progname) {
 
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
-    // if(argc > 99){
-    //     fprintf(stderr, "Too many arguments, usage example: -G1 -t qwertyuiop\n");
-    //     exit(1);
-    // } else if(argc < 3){
-    //     fprintf(stderr, "Too few arguments, usage example: -G1 -t qwertyuiop\n");
-    //     exit(1);
-    // }
-    // memset(args, 0, sizeof(struct ssemd_args));
-
-
     char           *admin_token;
     char            type;
     char            cmd;
@@ -44,7 +34,7 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     int c;
 
     while (true) {
-        c = getopt (argc, argv, "t:GE12d:");
+        c = getopt (argc, argv, "t:GE12345678d:");
 
         if (c == -1)
             break;
@@ -68,6 +58,24 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
             case '2':
                 handleRepeatedCMD(args, 0x02);
                 break;
+            case '3':
+                handleRepeatedCMD(args, 0x03);
+                break;
+            case '4':
+                handleRepeatedCMD(args, 0x04);
+                break;
+            case '5':
+                handleRepeatedCMD(args, 0x05);
+                break;
+            case '6':
+                handleRepeatedCMD(args, 0x06);
+                break;
+            case '7':
+                handleRepeatedCMD(args, 0x07);
+                break;
+            case '8':
+                handleRepeatedCMD(args, 0x08);
+                break;
             case 'd':
                 args->data = optarg;
                 break;
@@ -85,7 +93,12 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         fprintf(stderr, "\n");
         exit(1);
     }
-    if(args->data == NULL){
+    setSize(args);
+    checkRequiredParams(args);
+}
+
+void setSize(struct ssemd_args * args){
+        if(args->data == NULL){
         args->size1 = 0x00;
         args->size2 = 0x00;
     } else {
@@ -109,8 +122,6 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
         }
         fprintf(stderr, "size1: %d, %c\n", args->size1, args->size1);
         fprintf(stderr, "size2: %d, %c\n", args->size2, args->size2);
-        
-        checkRequiredParams(args);
     }
 }
 
@@ -125,6 +136,10 @@ void checkRequiredParams(struct ssemd_args *args){
     }
     if(args->admin_token == NULL){
         fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
+        exit(1);
+    }
+    if(args->cmd > 0x06 && args->type == 0x01){
+        fprintf(stderr, "argument not accepted: %x, -G has max of 6\n", args->cmd);
         exit(1);
     }
 }

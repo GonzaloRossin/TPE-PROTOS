@@ -161,19 +161,25 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 	unsigned long c = 0;
 	switch(request->CMD) {
 		case SSEMD_HISTORIC_CONNECTIONS:
-			response->data = (uint8_t*) calloc(1, sizeof(long)); 
-			c = get_historic_connections();
-			c = htonl(c+4294967295+2);
-			memcpy(response->data, &c, sizeof(unsigned long));
 			setResponse(response, SSEMD_RESPONSE_LONG);
+			// response->data = (uint8_t*) calloc(1, sizeof(long)); 
+			c = get_historic_connections();
+			// c = htonl(c+4294967295+2);
+			c = htonl(c);
+			memcpy(response->data, &c, sizeof(unsigned long));
+		
             break;
 		case SSEMD_CURRENT_CONNECTIONS: 
-			c = get_current_connections();
-			memcpy(response->data, &c, sizeof(long));
 			setResponse(response, SSEMD_RESPONSE_LONG);
+			c = get_current_connections();
+			c = htonl(c);
+			memcpy(response->data, &c, sizeof(unsigned long));
             break;
 		case SSEMD_BYTES_TRANSFERRED: 
-		
+			setResponse(response, SSEMD_RESPONSE_LONG);
+			c = get_bytes_transferred();
+			c = htonl(c);
+			memcpy(response->data, &c, sizeof(unsigned long));
             break;
 		case SSEMD_USER_LIST: 
 		
@@ -251,22 +257,29 @@ void setResponse(ssemd_response * response, uint8_t code){
 		// response->size2=
 		break;
 	case SSEMD_RESPONSE_INT:
+		response->data = (uint8_t*) calloc(1, sizeof(int));
 		response->code=code;
 		response->size1=0x00;
 		response->size2=0x04;
 		break;
 	case SSEMD_RESPONSE_LONG:
+		response->data = (uint8_t*) calloc(1, sizeof(long));
 		response->code=code;
 		response->size1=0x00;
 		response->size2=0x08;
 		break;
 	case SSEMD_RESPONSE_BOOL:
+		response->data = (uint8_t*) calloc(1, sizeof(uint8_t));
 		response->code=code;
 		response->size1=0x00;
 		response->size2=0x01;
 		break;
 	
 	default:
+		response->status = SSEMD_ERROR;
+		response->code = 0xFF;
+		response->size1=0x00;
+		response->size2=0x00;
 		break;
 	}
 }

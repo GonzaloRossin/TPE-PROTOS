@@ -12,9 +12,6 @@ unsigned long get_current_connections();
 
 void unregister_current_connection();
 
-long
-bytes_transferred();
-
 char *
 list_users();
 
@@ -23,6 +20,10 @@ dissector_status();
 
 bool
 authentication_status();
+
+void register_bytes_transferred(ssize_t bytes);
+
+unsigned long get_bytes_transferred();
 
 
 //EDIT:
