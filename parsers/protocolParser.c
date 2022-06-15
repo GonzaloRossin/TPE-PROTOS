@@ -1,5 +1,5 @@
 #include "./../include/protocolParser.h"
-#define TOKEN_SIZE 10
+#define TOKEN_SIZE 2
 
 
 bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
@@ -33,7 +33,7 @@ bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
 }
 
 extern void protocol_parser_init(struct protocol_parser * parser){
-    parser->state = protocol_type;
+    parser->state = protocol_version;
     parser->data =(payload*) calloc(1,sizeof (struct payload));
     parser->on_size_authentication_method = &(on_size_authentication_method);
     parser->data->data_len=0;
@@ -50,13 +50,18 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
                 break;
             }
         case protocol_token:
-            if(parser->token_index == TOKEN_SIZE){
-                    realloc(parser->data->token,parser->token_index+1);
-            }
-            parser->data->token[parser->token_index++] = byte;
-            if(byte == 0x00){
-                realloc(parser->data->token,parser->token_index);
-                parser->data->token_len = parser->token_index;
+            // if(parser->token_index == TOKEN_SIZE){
+            //         realloc(parser->data->token,parser->token_index+1);
+            // }
+            // parser->data->token[parser->token_index++] = byte;
+            // if(byte == 0x00){
+            //     realloc(parser->data->token,parser->token_index);
+            //     parser->data->token_len = parser->token_index;
+            //     parser->state = protocol_type;
+            // }
+            parser->data->token = "j";
+            parser->data->token_len = 1;
+            if(byte == 0x00) {
                 parser->state = protocol_type;
             }
         break;
@@ -101,8 +106,12 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             }
             parser->size = byte;
             memset(&(parser->data->data), 0, parser->size);
-            //parser->data->data = calloc(1,parser->size);
-            parser->state = protocol_data;
+            // parser->data->data = calloc(1,parser->size);
+            if (byte > 0) {
+                parser->state = protocol_data;
+            } else {
+                parser->state = protocol_done;
+            }
             break;
 
         case protocol_data:

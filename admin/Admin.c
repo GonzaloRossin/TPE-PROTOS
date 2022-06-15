@@ -96,19 +96,19 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 	message[i++] = args->type; //TYPE
 	message[i++] = args->cmd; //CMD
 	message[i++] = args->size1;
-	message[i++] = args->size2; //SIZE
+	// message[i++] = args->size2; //SIZE
 	int size = 0;
 	size+=args->size2; 
 	if(args->size1 != 0x00){
 		size+=args->size1 + 255;
 	} //size1 size2 bytes for data
 
-	n=0;
+	n = 0;
 	while(n<size){
 		message[i++] = args->data[n++];
 	}
 	if(i != bytesToSend){
-		print_log(ERROR, "error crafitng admin message");
+		print_log(ERROR, "error crafting admin message");
 		exit(1);
 	}
 	print_log(DEBUG, "sending message: ");

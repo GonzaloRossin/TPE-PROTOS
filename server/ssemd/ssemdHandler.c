@@ -53,12 +53,20 @@ void ssemd_write(struct selector_key *key) {
 		case SSEMD_HELLO_READ_REQUEST:
 			break;
 		case SSEMD_HELLO_WRITE_REQUEST:
-			// Funcion
+			ssemd_write_request(key);
 			break;
 		case SSEMD_ERROR_STATE:
 			break;
 		default:
 			break;
+	}
+}
+
+void ssemd_write_request(struct selector_key *key) {
+	struct ssemd * currAdmin = (struct ssemd *)key->data;
+
+	if(handleWrite(key->fd, currAdmin->bufferWrite) == 0){
+		selector_unregister_fd(key->s, key->fd);
 	}
 }
 
@@ -82,9 +90,13 @@ void ssemd_read_request(struct selector_key *key) {
 		if (protocol_is_done(st, &error) && !error) {
 			if (SELECTOR_SUCCESS == selector_set_interest_key(key, OP_WRITE)) {
 				ssemd_request_process(currAdmin);
+				currAdmin->connection_state.ssemd_state = SSEMD_HELLO_WRITE_REQUEST;
+				selector_set_interest(key->s, key->fd, OP_WRITE);
 			} else {
 				ret = SSEMD_ERROR_STATE;
 			}
+		} else {
+			// TODO: Enviar el error response_marshall();
 		}
 	} else {
 		ret = SSEMD_ERROR_STATE;
@@ -171,6 +183,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
         default:
 			break;
 	}
+	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
 int validate_token(struct ssemd * currAdmin) {
@@ -183,8 +196,10 @@ int validate_token(struct ssemd * currAdmin) {
 }
 
 void read_request_init(struct ssemd * currAdmin) {
-	if (currAdmin->connection_state.init != 0) {
+	if (currAdmin->connection_state.init == false) {
+		currAdmin->pr = (protocol_parser *)calloc(1, sizeof(protocol_parser));
 		protocol_parser_init(currAdmin->pr);
+		currAdmin->connection_state.init = true;
 	}
 }
 
