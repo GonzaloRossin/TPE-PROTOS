@@ -23,6 +23,7 @@
 #include "connectedState.h"
 #include "ssemd.h"
 #include "adminFunctions.h"
+#include <time.h>
 
 
 #define BUFFSIZE 16384

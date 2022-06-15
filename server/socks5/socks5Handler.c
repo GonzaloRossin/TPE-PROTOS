@@ -27,13 +27,16 @@ void masterSocks5Handler(struct selector_key *key) {
 			new_client(&clis[i], new_client_socket, BUFFSIZE);
 
 			register_client_connection();
-			// set_client_remote(&clis[i], new_remote_socket, BUFFSIZE);
 			
 			selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
-			// selector_register(key->s, new_remote_socket, &socksv5, OP_READ, &clis[i]);
 
 			print_log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
 			// print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
+
+			time_t t = time(NULL);
+  			struct tm tm = *localtime(&t);
+ 			print_log(INFO, "now: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+			print_log(INFO, "fecha: %s\tnombre\tip:puerto origen\tip:puerto destino\tstatus code\n", asctime(timeinfo));
 			break;
 		}
 	}
