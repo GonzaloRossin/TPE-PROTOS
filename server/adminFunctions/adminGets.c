@@ -8,6 +8,9 @@ static unsigned int BUFFSIZE = 4096;
 
 static char ADMIN_TOKEN[100];
 
+static bool dissector_status = true;
+static bool auth_status = true;
+
 
 void register_client_connection() {
     current_connections++;
@@ -52,5 +55,45 @@ void set_ADMIN_TOKEN(char * newToken){
 }
 
 bool get_dissector_state() {
-    return true;
+    return dissector_status;
+}
+
+bool set_dissector_ON(){
+    dissector_status = true;
+    if(dissector_status == true){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool set_dissector_OFF(){
+    dissector_status = false;
+    if(dissector_status == false){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool get_auth_state() {
+    return auth_status;
+}
+
+bool set_auth_ON(){
+    auth_status = true;
+    if(auth_status == true){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool set_auth_OFF(){
+    auth_status = false;
+    if(auth_status == false){
+        return true;
+    } else {
+        return false;
+    }
 }

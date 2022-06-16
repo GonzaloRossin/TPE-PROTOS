@@ -148,10 +148,12 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 		
             break;
 		case SSEMD_DISSECTOR_STATUS: 
-		
+			setResponse(response, SSEMD_RESPONSE_BOOL);
+			handleBoolResponse(request, response);
             break;
 		case SSEMD_AUTH_STATUS: 
-
+			setResponse(response, SSEMD_RESPONSE_BOOL);
+			handleBoolResponse(request, response);
             break;
 		case SSEMD_GET_BUFFER_SIZE: 
 			setResponse(response, SSEMD_RESPONSE_INT);
@@ -181,10 +183,24 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 		
             break;
 		case SSEMD_DISSECTOR_ON: 
-		
+			if(set_dissector_ON()){
+				response->status = SSEMD_RESPONSE;
+				response->code = SSEMD_RESPONSE_OK;
+			} else {
+				response->status = SSEMD_ERROR;
+				response->code = 0xFF;
+				free(response->data);
+			}
             break;
 		case SSEMD_DISSECTOR_OFF: 
-		
+			if(set_dissector_OFF()){
+				response->status = SSEMD_RESPONSE;
+				response->code = SSEMD_RESPONSE_OK;
+			} else {
+				response->status = SSEMD_ERROR;
+				response->code = 0xFF;
+				free(response->data);
+			}
             break;
 		case SSEMD_ADD_USER: 
 		
@@ -193,15 +209,56 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 
 			break;
 		case SSEMD_AUTH_ON: 
-		
+			if(set_auth_ON()){
+				response->status = SSEMD_RESPONSE;
+				response->code = SSEMD_RESPONSE_OK;
+			} else {
+				response->status = SSEMD_ERROR;
+				response->code = 0xFF;
+				free(response->data);
+			}
             break;
 		case SSEMD_AUTH_OFF: 
-		
+			if(set_auth_OFF()){
+				response->status = SSEMD_RESPONSE;
+				response->code = SSEMD_RESPONSE_OK;
+			} else {
+				response->status = SSEMD_ERROR;
+				response->code = 0xFF;
+				free(response->data);
+			}
             break;
+
         default:
 			break;
 	}
 	marshall(currAdmin->bufferWrite, currAdmin->response);
+}
+
+void handleBoolResponse(struct payload * request, ssemd_response * response){
+	if(request->CMD == SSEMD_DISSECTOR_STATUS){
+		response->status = SSEMD_RESPONSE;
+		response->code = SSEMD_RESPONSE_OK;
+		if(get_dissector_state()){
+			c = SSEMD_TRUE;
+		} else {
+			c = SSEMD_FALSE;
+		}
+		memcpy(response->data, &c, sizeof(unsigned char));
+	} else if(request->CMD == SSEMD_AUTH_STATUS){
+		response->status = SSEMD_RESPONSE;
+		response->code = SSEMD_RESPONSE_OK;
+		if(get_auth_state()){
+			c = SSEMD_TRUE;
+		} else {
+			c = SSEMD_FALSE;
+		}
+		memcpy(response->data, &c, sizeof(unsigned char));
+	} else {
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_UNKNOWNTYPE;
+		free(response->data);
+	}
 }
 
 void handleSetBuffSize(struct payload * request, ssemd_response * response){
@@ -219,9 +276,11 @@ void handleSetBuffSize(struct payload * request, ssemd_response * response){
 	if(ret <= 0){
 		response->status = SSEMD_ERROR;
 		response->code = SSEMD_ERROR_SMALLBUFFER;
+		free(response->data);
 	} else if(ret > 2048000){
 		response->status = SSEMD_ERROR;
 		response->code = SSEMD_ERROR_BIGBUFFER;
+		free(response->data);
 	} else {
 		response->status = SSEMD_RESPONSE;
 		response->code = SSEMD_RESPONSE_OK;
@@ -258,6 +317,7 @@ int marshall(buffer * buffer, ssemd_response * response){
 	if(max_write < 4+size){
 		response->status = SSEMD_ERROR;
         response->code = SSEMD_ERROR_NOSPACE;
+		free(response->data);
     }
 	int i=0;
 	buff[i++] = response->status; //STATUS
@@ -307,6 +367,7 @@ void setResponse(ssemd_response * response, uint8_t code){
 		response->code = SSEMD_ERROR_UNKNOWNTYPE;
 		response->size1=0x00;
 		response->size2=0x00;
+		free(response->data);
 		break;
 	}
 }

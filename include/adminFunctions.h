@@ -29,14 +29,23 @@ unsigned int get_bytes_transferred();
 
 unsigned int get_BUFFSIZE();
 
-bool get_dissector_state();
-
 void set_BUFFSIZE(unsigned int newSize);
 
 char * get_ADMIN_TOKEN();
 
 void set_ADMIN_TOKEN(char * newToken);
 
+bool get_dissector_state();
+
+bool set_dissector_ON();
+
+bool set_dissector_OFF();
+
+bool get_auth_state();
+
+bool set_auth_ON();
+
+bool set_auth_OFF();
 
 //EDIT:
 

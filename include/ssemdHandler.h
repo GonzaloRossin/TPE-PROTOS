@@ -53,6 +53,8 @@ void setResponse(ssemd_response * response, uint8_t code);
 
 void handleSetBuffSize(struct payload * request, ssemd_response * response);
 
+void handleBoolResponse(struct payload * request, ssemd_response * response);
+
 #endif
 
 
