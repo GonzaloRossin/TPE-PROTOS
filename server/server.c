@@ -54,6 +54,8 @@ int main(int argc , char *argv[])
     sprintf(PORT, "%d", args->socks_port); //sets client port
     sprintf(ADMIN_PORT, "%d", args->mng_port); //sets admin port
     set_ADMIN_TOKEN(args->admin_token);
+    init_users(args->users);
+
 
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;

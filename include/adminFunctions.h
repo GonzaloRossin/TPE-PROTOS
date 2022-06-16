@@ -4,6 +4,7 @@
 #include "util.h"
 #include <string.h>
 #include "logger.h"
+#include "args.h"
 
 //GET:
 void register_client_connection();
@@ -46,6 +47,8 @@ bool get_auth_state();
 bool set_auth_ON();
 
 bool set_auth_OFF();
+
+void init_users(struct users* new_users);
 
 //EDIT:
 
