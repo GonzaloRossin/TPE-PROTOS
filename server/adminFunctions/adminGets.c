@@ -43,7 +43,7 @@ void unregister_current_connection() {
     current_connections--;
 }
 
-void register_bytes_transferred(ssize_t bytes){
+void register_bytes_transferred(unsigned int bytes){
     bytes_transferred += bytes;
 }
 

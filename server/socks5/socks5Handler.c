@@ -128,6 +128,8 @@ void socks5_close(struct selector_key *key) {
 	if (currClient->client_socket == 0 || currClient->remote_socket == 0) {
 		// currClient->client.st_connected.init = 0;
 		// currClient->remote.st_connected.init = 0;
+		
+		free(currClient->connection_state);
 
 		free(currClient->bufferFromClient->data);
 		free(currClient->bufferFromRemote->data);
@@ -138,7 +140,7 @@ void socks5_close(struct selector_key *key) {
 		memset(currClient, 0, sizeof(struct socks5));
 		currClient->isAvailable = true;
 
-		void unregister_current_connection();
+		unregister_current_connection();
 
 	}
 	

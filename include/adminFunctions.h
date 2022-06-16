@@ -24,7 +24,7 @@ void unregister_current_connection();
 // bool
 // authentication_status();
 
-void register_bytes_transferred(ssize_t bytes);
+void register_bytes_transferred(unsigned int bytes);
 
 unsigned int get_bytes_transferred();
 

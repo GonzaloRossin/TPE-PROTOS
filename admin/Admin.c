@@ -134,7 +134,7 @@ void parseResponse(struct buffer * Buffer){
 					print_log(INFO, "Response number:\n");
 					adminParser->state = read_size1;
 				} else if(Buffer->data[n] == SSEMD_RESPONSE_BOOL){
-					print_log(INFO, "The list of users is:\n");
+					print_log(INFO, "Boolean answer:\n");
 					adminParser->state = read_size1;
 				} else {
 					print_log(INFO, "You have recieved a message with unknown CODE\n");
@@ -190,7 +190,12 @@ void parseResponse(struct buffer * Buffer){
 								printf("\n");
 							}
 						} else {
-							printf("%c", adminParser->data[i] + '0');
+							printf("%0X\n", adminParser->data[i]);
+							// if(adminParser->data[i] >= 0x00 && adminParser->data[i] <= 0x09){
+							// 	printf("%c", adminParser->data[i] + '0');
+							// } else {
+							// 	printf("%c", adminParser->data[i] + '0');
+							// }
 						}
 
 					}
