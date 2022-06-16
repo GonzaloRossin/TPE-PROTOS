@@ -27,7 +27,7 @@ void hello_read(struct selector_key *key) {
 
 	size_t nbytes = buff_r->limit - buff_r->write;
 	long valread = 0;
-	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
+	if ((valread = read(key->fd , buff_r->data, nbytes)) <= 0) {
 		print_log(INFO, "Host disconnected socket = %d \n", key->fd);
 		selector_unregister_fd(key->s, key->fd);
 		return ;
@@ -76,6 +76,7 @@ void hello_write(struct selector_key *key) {
 
 	if(handleWrite(key->fd, currClient->client.st_hello.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
+		currClient->connection_state->on_arrival = up_init(currClient);
 		change_state(currClient, UP_READ_STATE);
 	}
 }

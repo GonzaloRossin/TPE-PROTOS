@@ -18,6 +18,7 @@ server has array of clients
 #include <stdio.h>
 #include <stdlib.h>
 #include "selector.h"
+#include "auth_parser.h"
 
 #define IP_V4_ADDR_SIZE 4
 #define IP_V6_ADDR_SIZE 16
@@ -41,6 +42,12 @@ typedef enum t_protocol{
     PROT_POP3
 } t_protocol;
 
+typedef enum AuthStatus
+{
+    AUTH_SUCCESS = 0x00,
+    AUTH_FAILURE = 0xFF,
+} AuthStatus;
+
 struct clients_data
 {
     struct socks5 * clients;
@@ -55,6 +62,15 @@ struct hello
 
     uint8_t method;
 };
+
+typedef struct userpass_st {
+    buffer *r, *w;
+
+    struct up_req_parser * parser;
+
+    uint8_t * user;
+    uint8_t * password;
+} userpass_st;
 
 struct st_request
 {
@@ -119,6 +135,7 @@ struct socks5
 
     union {
         struct hello st_hello;
+        struct userpass_st userpass;
         struct st_request st_request;
         struct connected st_connected;
     } client;
@@ -127,6 +144,8 @@ struct socks5
         struct connecting conn;
         connected st_connected;
     } remote;
+
+    uint8_t * username;
 
     bool isAvailable;
 };
