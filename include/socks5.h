@@ -25,6 +25,8 @@ server has array of clients
 enum client_state {
     HELLO_READ_STATE = 0,
     HELLO_WRITE_STATE,
+    UP_READ_STATE,
+    UP_WRITE_STATE,
     REQUEST_READ_STATE,
     REQUEST_RESOLVE_STATE,
     REQUEST_CONNECTING_STATE,
@@ -50,6 +52,8 @@ struct hello
     hello_parser * pr;
     buffer * w;
     buffer * r;
+
+    uint8_t method;
 };
 
 struct st_request

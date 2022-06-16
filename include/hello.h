@@ -29,18 +29,33 @@ enum hello_state {
     hello_error,
 };
 
+/** Constant for no authentication required for the user */
+static const uint8_t SOCKS_HELLO_NOAUTHENTICATION_REQUIRED = 0x00;
+
+/** Constant for user password auth */
+static const uint8_t SOCKS_HELLO_USERPASS = 0x02;
+
+static const uint8_t SOCKS_HELLO_NO_ACCEPTABLE_METHODS = 0xFF;
+
 //estado interno del parser
 typedef struct hello_parser {
-    //invocado cada vez que se presenta un nuevo método
-    void(*on_authentication_method)
-        (struct hello_parser *parser, const uint8_t method);
+    // //invocado cada vez que se presenta un nuevo método
+    // void(*on_authentication_method)
+    //     (struct hello_parser *parser, const uint8_t method);
     
-    //para que el usuario del parser almacene sus datos
-    void *data;
+    // //para que el usuario del parser almacene sus datos
+    // void *data;
 
+    // enum hello_state state;
+
+    // uint8_t remaining_methods;
+
+    // public:
+    uint8_t nauth;
+    uint8_t * auth;
+    // private:
+    unsigned int bytes_to_read;
     enum hello_state state;
-
-    uint8_t remaining_methods;
 } hello_parser;
 
 void hello_parser_init (struct hello_parser *parser);

@@ -3,8 +3,8 @@
 
 
 extern void hello_parser_init(struct hello_parser * parser){
-    parser->state = hello_version;
-    parser->remaining_methods = 0;
+    memset(parser, 0, sizeof(struct hello_parser));
+    parser->auth = NULL;
 }
 
 extern enum hello_state hello_parser_feed(struct hello_parser * parser, const uint8_t byte){
@@ -19,20 +19,34 @@ extern enum hello_state hello_parser_feed(struct hello_parser * parser, const ui
             break;
         
         case hello_nmethods:
-            parser->remaining_methods = byte;
-            parser->state = hello_methods;
-            if(parser->remaining_methods <= 0){
-                parser->state = hello_done;
+            if (byte == 0) {
+                parser->state = hello_error;
             }
+            parser->nauth = byte;
+            parser->auth = malloc(byte);
+            parser->bytes_to_read = byte;
+            parser->state = hello_methods;
+            // parser->remaining_methods = byte;
+            // parser->state = hello_methods;
+            // if(parser->remaining_methods <= 0){
+            //     parser->state = hello_done;
+            // }
             break;
 
         case hello_methods:
-            if(parser->on_authentication_method != NULL) {
-                parser->on_authentication_method(parser, byte);
-            }
-            parser->remaining_methods--;
-            if(parser->remaining_methods <= 0){
-                parser->state = hello_done;
+            // if(parser->on_authentication_method != NULL) {
+            //     parser->on_authentication_method(parser, byte);
+            // }
+            // parser->remaining_methods--;
+            // if(parser->remaining_methods <= 0){
+            //     parser->state = hello_done;
+            // }
+            if (parser->bytes_to_read) {
+                parser->auth[parser->nauth - parser->bytes_to_read] = byte;
+                parser->bytes_to_read--;
+                if (parser->bytes_to_read == 0){
+                    parser->state = hello_done;
+                }
             }
             break;
         

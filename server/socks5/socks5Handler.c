@@ -78,6 +78,9 @@ void socks5_read(struct selector_key *key) {
 		//Nunca entra aca porque estamos en lectura
 		case HELLO_WRITE_STATE:
 			break;
+		case UP_READ_STATE:
+			hello_read(key);
+			break;
 		
 		case REQUEST_READ_STATE:
 			request_read(key);
@@ -102,6 +105,10 @@ void socks5_write(struct selector_key *key) {
 		case HELLO_WRITE_STATE:
 			hello_write(key);
 		break;
+
+		case UP_WRITE_STATE:
+			up_read(key);
+			break;
 
 		case REQUEST_CONNECTING_STATE:
 			request_connecting(key);
