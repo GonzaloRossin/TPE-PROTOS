@@ -11,6 +11,8 @@ INT	-> a 4 byte big endian unsigned int.
 BOOL	-> 1 byte, either X'00' (false), or X'11' (true).
 LIST	-> a list of UTF-8 strings, separated by \0.
 
+SIZE is a 2 byte unsigned number in big endian.
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	Client Request
@@ -155,7 +157,8 @@ The values currently defined for CODE for ERROR TYPE are:
 	- X'08' : 
 	- X'09' : 
 	- X'A0' : Unkown type
-	- X'A1' : No space to process request
+	- X'A1'	: Unknown command
+	- X'FA' : No space to process request
 	- X'FF' : Unknown error
 
 

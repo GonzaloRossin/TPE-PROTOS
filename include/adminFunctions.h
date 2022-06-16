@@ -50,6 +50,8 @@ bool set_auth_OFF();
 
 void init_users(struct users* new_users);
 
+struct users * get_users();
+
 //EDIT:
 
 

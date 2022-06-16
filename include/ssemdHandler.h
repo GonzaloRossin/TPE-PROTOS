@@ -55,6 +55,8 @@ void handleSetBuffSize(struct payload * request, ssemd_response * response);
 
 void handleBoolResponse(struct payload * request, ssemd_response * response);
 
+void handleGetUserList(struct payload * request, ssemd_response * response);
+
 #endif
 
 

@@ -11,15 +11,19 @@ static char ADMIN_TOKEN[100];
 static bool dissector_status = true;
 static bool auth_status = true;
 
-struct users * users = NULL;
+static struct users myUsers[MAX_USERS];
+// struct users * users = NULL;
 
-void init_users(struct users* new_users){
-    users = (struct users *)malloc(sizeof(struct users) * MAX_USERS);
-    memcpy(users, new_users, sizeof(new_users));
+void init_users(struct users * new_users){
+    // users = (struct users )malloc(sizeof(struct users) MAX_USERS);
+    // memcpy(users, new_users, sizeof(new_users));
+    for (int i = 0; i < MAX_USERS; i++) {
+        myUsers[i] = new_users[i];
+    }
 }
 
-struct users * get_users(){
-    return users;
+struct users * get_users() {
+    return myUsers;
 }
 
 void register_client_connection() {

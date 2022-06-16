@@ -130,37 +130,43 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			c = get_historic_connections();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
-		
             break;
+
 		case SSEMD_CURRENT_CONNECTIONS: 
 			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_current_connections();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
             break;
+
 		case SSEMD_BYTES_TRANSFERRED: 
 			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_bytes_transferred();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
             break;
+
 		case SSEMD_USER_LIST: 
-		
+			handleGetUserList(request, response);
             break;
+
 		case SSEMD_DISSECTOR_STATUS: 
 			setResponse(response, SSEMD_RESPONSE_BOOL);
 			handleBoolResponse(request, response);
             break;
+
 		case SSEMD_AUTH_STATUS: 
 			setResponse(response, SSEMD_RESPONSE_BOOL);
 			handleBoolResponse(request, response);
             break;
+
 		case SSEMD_GET_BUFFER_SIZE: 
 			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_BUFFSIZE();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned int));
             break;
+
         default:
 			setResponse(response, 0x00);
 			break;
@@ -234,6 +240,55 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 	}
 	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
+
+void handleGetUserList(struct payload * request, ssemd_response * response){
+	if(request->type == SSEMD_GET && request->CMD == SSEMD_USER_LIST){
+		struct users * users = get_users();
+		response->data = (uint8_t *)malloc(sizeof(uint8_t) * (3)); // minimum
+		char * name;
+		char * pass;
+		int dataPointer = 0;
+		int wordPointer;
+		int userNumber;
+		for(userNumber = 0; userNumber < MAX_USERS; userNumber++){
+			wordPointer = 0;
+			name = users[userNumber].name;
+			pass = users[userNumber].pass;
+			if(name != '\0' && pass != '\0'){ //if is a valid user
+				// size_t toMalloc = strlen(name) + strlen(pass) +2;
+				response->data = realloc(response->data, sizeof(uint8_t) * (dataPointer + strlen(name) + strlen(pass) + 2)); // + : + \0
+				while(name[wordPointer] != '\0'){
+					print_log(DEBUG, "%c", name[wordPointer]);
+					response->data[dataPointer++] = name[wordPointer++]; 
+				}
+				response->data[dataPointer++] = 0x3A; //es el ":"
+				print_log(DEBUG, "%c", 0x3A);
+				wordPointer = 0;
+				while(pass[wordPointer] != '\0'){
+					print_log(DEBUG, "%c", pass[wordPointer]);
+					response->data[dataPointer++] = pass[wordPointer++]; 
+				}
+				response->data[dataPointer++] = 0x00; //fin de este usuario
+			}
+
+		}
+
+		if(dataPointer > 255){
+			response->size1 = (uint8_t) (uint8_t)((dataPointer & 0xFF00) >> 8); //(dataPointer/255);//    (255 - dataPointer);
+			response->size2 = (uint8_t) (uint8_t)(dataPointer & 0x00FF); //dataPointer;
+		} else {
+			response->size1 = 0x00;
+			response->size2 = (uint8_t) dataPointer;
+		}
+		response->status = SSEMD_RESPONSE;
+		response->code = SSEMD_USER_LIST;
+		
+	} else {
+		response->status = SSEMD_ERROR;
+		response->code = 0xFF;
+	}
+}
+
 
 void handleBoolResponse(struct payload * request, ssemd_response * response){
 	if(request->CMD == SSEMD_DISSECTOR_STATUS){

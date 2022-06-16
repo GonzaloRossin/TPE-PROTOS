@@ -141,6 +141,7 @@ void handleRecv(int sock, struct buffer * Buffer){
 			}
 			for(int i=0; i<size; i++){
 				print_log(DEBUG, "DATA %0x\n", Buffer->data[4+i]);
+				print_log(DEBUG, "ascii DATA %c", Buffer->data[4+i]);
 			}
 			break;
 		}
