@@ -7,6 +7,8 @@ static const struct fd_handler socksv5 = {
 	.handle_block	   = socks5_block,
 };
 
+unsigned int identify_protocol_type(uint8_t * port);
+
 void request_departure(struct socks5 * currClient) {
 	free(currClient->client.st_request.pr->request);
 	free(currClient->client.st_request.pr);
@@ -58,6 +60,7 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 			currClient->origin_domain = AF_INET;
 			request->dest_addr.ipv4.sin_port = request->dest_port;
 			currClient->origin_addr_len = sizeof(request->dest_addr.ipv4);
+			currClient->protocol_type = identify_protocol_type(request->dest_port);
 			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv4));
 			ret = request_connect(key);
 			break;
@@ -67,6 +70,7 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 			currClient->origin_domain = AF_INET6;
 			request->dest_addr.ipv6.sin6_port = request->dest_port;
 			currClient->origin_addr_len = sizeof(request->dest_addr.ipv6);
+			currClient->protocol_type = identify_protocol_type(request->dest_port);
 			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv6));
 			ret = request_connect(key);
 			break;
@@ -96,8 +100,6 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 			ret = REQUEST_WRITE_STATE;
 			break;
 		}
-
-        // status = cmd_resolve(request, &originaddr, &origin_addr_len, &origin_domain);//a chequear
 		break;
 	case socks_req_cmd_bind:
 		break;
@@ -170,13 +172,15 @@ void request_connecting(struct selector_key *key) {
 			currClient->client.st_request.state = status_succeeded;
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
 		} else {
-            if (currClient->origin_resolution_current->ai_next) {
-                currClient->origin_resolution_current = currClient->origin_resolution_current->ai_next;
-                set_next_ip(currClient, currClient->origin_resolution_current);
-                enum client_state state =  request_connect(key);
-	            change_state(currClient, state);
-                return ;
-            }			
+			if (currClient->origin_resolution_current) {
+				if (currClient->origin_resolution_current->ai_next) {
+					currClient->origin_resolution_current = currClient->origin_resolution_current->ai_next;
+					set_next_ip(currClient, currClient->origin_resolution_current);
+					enum client_state state = request_connect(key);
+					change_state(currClient, state);
+					return ;
+				}
+			}				
 		}
 	}
 
@@ -270,4 +274,15 @@ void set_next_ip(struct socks5 * currClient, struct addrinfo * addr) {
     currClient->origin_domain = addr->ai_family;
 	currClient->origin_addr_len = addr->ai_addrlen;
 	memcpy(&currClient->origin_addr, addr->ai_addr, addr->ai_addrlen);
+}
+
+unsigned int
+identify_protocol_type(uint8_t * port){
+    if(port == NULL){
+        return PROT_UNIDENTIFIED;
+    }
+    else if(port[0] == 0 && port[1] == 110){
+        return PROT_POP3;
+    }
+    return PROT_UNIDENTIFIED;
 }

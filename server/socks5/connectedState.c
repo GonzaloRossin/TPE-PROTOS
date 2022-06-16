@@ -14,6 +14,15 @@ void connected_init(struct socks5 * currClient) {
 	// Init connected for origin
 	d = &currClient->remote.st_connected;
 
+    if(get_dissector_state()) {
+        if (currClient->protocol_type == PROT_POP3) {
+            pop3_parser_init(d->pop_parser);
+            buffer_init(d->aux_b, get_BUFFSIZE() + 1, malloc(get_BUFFSIZE() + 1)); // No me convence traerme el buff size asi
+        }
+    }
+
+    currClient->disector_enabled = get_dissector_state();
+
 	d->fd = currClient->remote_socket;
 	d->r = currClient->bufferFromRemote;
 	d->w = currClient->bufferFromClient;
@@ -97,18 +106,41 @@ void write_connected_state(struct selector_key *key) {
 }
 
 void read_connected_state(struct selector_key *key) {
+    struct socks5 * currClient = (struct socks5 *)key->data;
 	connected *d = get_connected_ptr(key);
 
 	buffer *b = d->r;
 	uint8_t *ptr;
 	size_t count;
 	ssize_t n;
+    buffer *aux_b;
+    int error = 0;
 
 	ptr = buffer_write_ptr(b, &count);
 
 	n = recv(key->fd, ptr, count, 0);
 	if (n > 0) {
 		buffer_write_adv(b, n);
+
+        if (currClient->disector_enabled && key->fd == currClient->client_socket) {
+            if (currClient->protocol_type == PROT_POP3) {
+                aux_b = d->aux_b;
+                buffer_reset(aux_b);
+                memcpy(aux_b->data, ptr, n);
+                buffer_write_adv(aux_b, n);
+
+                while (buffer_can_read(aux_b)) {
+                    pop3_consume_msg(aux_b, d->pop_parser, &error);
+                    if (pop3_done_parsing(d->pop_parser, &error)) {
+                        if (!error) {
+                            extract_pop3_auth(d->pop_parser, currClient);
+                        }
+                        free_pop3_parser(d->pop_parser);
+                        error = 0;
+                    }
+                }
+            }
+        }
 	} else {
 		shutdown(d->fd, SHUT_RD);
 		// Removing the interest to read from this connected
@@ -130,5 +162,14 @@ void read_connected_state(struct selector_key *key) {
 	if (d->interest == OP_NOOP)
     {
         socks5_done(key);
+    }
+}
+
+void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
+{
+    if (pop3_p->user != NULL && pop3_p->pass != NULL)
+    {
+        // Fijarse que hay que ahcer aca
+        // log_disector(s->username, s->origin_info, pop3_p->user, pop3_p->pass);
     }
 }

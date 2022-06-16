@@ -34,6 +34,11 @@ enum client_state {
     ERROR_STATE,
 };
 
+typedef enum t_protocol{
+    PROT_UNIDENTIFIED,
+    PROT_POP3
+} t_protocol;
+
 struct clients_data
 {
     struct socks5 * clients;
@@ -63,6 +68,9 @@ typedef struct connected {
   fd_interest interest;
 
   struct connected * other_connected;
+
+  struct pop3_parser * pop_parser;
+  buffer * aux_b;
 
   buffer * w;
   buffer * r;
@@ -95,6 +103,7 @@ struct socks5
     int origin_addr_len;
     uint8_t origin_ipv4_addr[IP_V4_ADDR_SIZE];
     uint8_t origin_port[2];
+    t_protocol protocol_type;
 
     struct sockaddr_storage origin_addr;
 
@@ -102,6 +111,7 @@ struct socks5
     buffer * bufferFromRemote;
 
     struct connection_state connection_state;
+    bool disector_enabled;
 
     union {
         struct hello st_hello;

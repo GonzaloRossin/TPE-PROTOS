@@ -5,6 +5,7 @@
 #include "socks5.h"
 #include "selector.h"
 #include "socks5Handler.h"
+#include "pop3Parser.h"
 
 
 void connected_init(struct socks5 * currClient);
