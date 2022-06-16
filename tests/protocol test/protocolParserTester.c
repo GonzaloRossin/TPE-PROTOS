@@ -1,20 +1,21 @@
-#include "../../include/protocolParser.h"
+#include "./../include/protocolParser.h"
 #include <ctype.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "buffer.h"
 
+#define VERSION 0x01
 #define TYPE 0x02
 #define WRONG_TYPE 0x03
-#define CMD 0x10
+#define CMD 0x05
 #define SIZE 0x04
 
 #define N(x) (sizeof(x)/sizeof((x)[0]))
 
 int main (int argc, char * argv[]) {
 
-    uint8_t protoTest[] = {TYPE, CMD, SIZE, 0x03, 0x01, 0x05, 0x07};
+    uint8_t protoTest[] = {VERSION, 0x02, 0x07, 0x05, 0x01, 0x00, TYPE, CMD, SIZE, 0x03, 0x01, 0x05, 0x07};
 
     buffer buff;
     uint8_t data[512] = {'d', 'u', 'm', 'm','y'};
