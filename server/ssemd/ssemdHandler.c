@@ -206,9 +206,13 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 
 void handleSetBuffSize(struct payload * request, ssemd_response * response){
 	int i;
-	double ret;
+	double ret=0;
+	double power;
+	unsigned int number;
 	for(i=0; i<request->data_len; i++){
-		ret += request->data[i] * pow(10, request->data_len -i-1);
+		power = pow(10, request->data_len -i-1);
+		number = request->data[i] - '0';
+		ret +=  number * power;
 	}
 
 	set_BUFFSIZE(ret);

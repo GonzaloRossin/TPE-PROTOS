@@ -53,28 +53,14 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
                 handleRepeatedTYPE(args, 0x02);
                 break;
             case '1':
-                handleRepeatedCMD(args, 0x01);
-                break;
             case '2':
-                handleRepeatedCMD(args, 0x02);
-                break;
             case '3':
-                handleRepeatedCMD(args, 0x03);
-                break;
             case '4':
-                handleRepeatedCMD(args, 0x04);
-                break;
             case '5':
-                handleRepeatedCMD(args, 0x05);
-                break;
             case '6':
-                handleRepeatedCMD(args, 0x06);
-                break;
             case '7':
-                handleRepeatedCMD(args, 0x07);
-                break;
             case '8':
-                handleRepeatedCMD(args, 0x08);
+                handleRepeatedCMD(args, c-'0'); //ascii to int
                 break;
             case 'd':
                 args->data = optarg;
@@ -107,43 +93,7 @@ void parseData(struct ssemd_args * args){
     int i = 0;
     if(args->cmd == 0x01){
         while(data[i] != '\0'){
-            switch (data[i]){
-                case '0':
-                    toRet[i++] = 0x00;
-                    break;
-                case '1':
-                    toRet[i++] = 0x01;
-                    break;
-                case '2':
-                    toRet[i++] = 0x02;
-                    break;
-                case '3':
-                    toRet[i++] = 0x03;
-                    break;
-                case '4':
-                    toRet[i++] = 0x04;
-                    break;
-                case '5':
-                    toRet[i++] = 0x05;
-                    break;
-                case '6':
-                    toRet[i++] = 0x06;
-                    break;
-                case '7':
-                    toRet[i++] = 0x07;
-                    break;
-                case '8':
-                    toRet[i++] = 0x08;
-                    break;
-                case '9':
-                    toRet[i++] = 0x09;
-                    break;
-                
-                default:
-                    fprintf(stderr, "\nonly numbers allowed in that parameter\n");
-                    exit(1);
-                    break;
-            }
+            toRet[i++] = data[i] - '0'; //ascii to int
         }
         int a;
         for(a=0; a<i; a++){
