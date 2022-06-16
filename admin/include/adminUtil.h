@@ -18,6 +18,8 @@
 #include "../../include/logger.h"
 #include "../../include/buffer.h"
 #include "../../include/util.h"
+#include "parseUtil.h"
+
 
 // Create and connect a new TCP client socket
 int tcpClientSocket(const char *server, const char *service);

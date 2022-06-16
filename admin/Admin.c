@@ -2,10 +2,9 @@
 
 #define BUFFSIZE 4096
 
-void handleHello(struct buffer * Buffer, int sock);
-void readHello(struct buffer * Buffer, int sock);
 void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend);
 void handleRecv(int sock, struct buffer * Buffer);
+void parseResponse(struct buffer * Buffer);
 
 int main(int argc, char *argv[]) {
 
@@ -42,45 +41,6 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-void handleHello(struct buffer * Buffer, int sock){
-	buffer_write(Buffer, 0x05);
-	buffer_write(Buffer, 0x02);
-	buffer_write(Buffer, 0x00);
-	buffer_write(Buffer, 0x01);
-
-	size_t bytesToSend = Buffer->write - Buffer->read;
-	print_log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, sock);
-	ssize_t bytesSent = send(sock, Buffer->data, bytesToSend, 0); //write HELLO
-	if(bytesSent>0){
-		buffer_read_adv(Buffer, bytesSent);
-		print_log(INFO, "Sent %zu bytes: ", bytesSent);
-	} else {
-		print_log(ERROR, "Error sending to sock %d", sock);
-		exit(1);
-	}
-}
-
-void readHello(struct buffer * Buffer, int sock){
-	ssize_t bytesRecieved = 0;
-	print_log(INFO, "Received: ");
-	while (true) { //read HELLO
-		bytesRecieved += recv(sock, Buffer->data, BUFFSIZE, 0);
-		if (bytesRecieved < 0) {
-			print_log(ERROR, "recv() failed");
-		}
-		else if (bytesRecieved == 0)
-			print_log(ERROR, "recv() connection closed prematurely");
-		else {
-			for(int i=0; i<bytesRecieved; i++){
-				print_log(INFO, "%02x ", Buffer->data[i]);
-			}
-		}
-		if(bytesRecieved == 2){
-			break;
-		}
-	}
-}
-
 void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend){
 	uint8_t message[bytesToSend];
 	int i=0;
@@ -113,12 +73,15 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 		print_log(DEBUG, "%d: %x ",n, message[n]);
 	}
 
+	int bytesSent = send(sock, message, sizeof(message), 0);
 	// // size_t bytesSent = 0;
 	// // while (bytesSent < bytesToSend){
 	// // 	/
 	// // }
 
-	int bytesSent = send(sock, message, sizeof(message), 0);
+	if(bytesSent < bytesToSend){
+		print_log(ERROR, "ERROR, COULDN'T SEND ALL BYTES");
+	}
 }
 
 void handleRecv(int sock, struct buffer * Buffer){
@@ -131,19 +94,114 @@ void handleRecv(int sock, struct buffer * Buffer){
 			print_log(ERROR, "recv() connection closed prematurely");
 			break;
 		} else {
-			print_log(DEBUG, "STATUS\tCODE\tSIZE\tDATA\n", Buffer->data[0]);
-			print_log(DEBUG, "%0X\t%0X\t%0X %0X\t", Buffer->data[0], Buffer->data[1], Buffer->data[2], Buffer->data[3]);
+			parseResponse(Buffer);
 
-			int size = 0; //bytes for data
-			size+=Buffer->data[3]; 
-			if(Buffer->data[2] != 0x00){
-				size+=Buffer->data[2] + 255;
-			}
-			for(int i=0; i<size; i++){
-				print_log(DEBUG, "DATA %0x\n", Buffer->data[4+i]);
-				print_log(DEBUG, "ascii DATA %c", Buffer->data[4+i]);
-			}
 			break;
 		}
 	}
+}
+
+void parseResponse(struct buffer * Buffer){
+	int n = 0;
+	struct admin_parser * adminParser = (struct admin_parser *)malloc(sizeof(struct admin_parser));
+	adminParser->size = 0;
+	adminParser->state = read_status;
+	while(adminParser->state != read_close){
+		switch (adminParser->state){
+			case read_status:
+				if(Buffer->data[n] == SSEMD_RESPONSE){
+					adminParser->state = read_response_code;
+				} else if(Buffer->data[n] == SSEMD_ERROR){
+					print_log(INFO, "The server has replied the following error:\n");
+					adminParser->state = read_error_code;
+				} else {
+					print_log(INFO, "You have recieved a message with unknown STATUS\n");
+					adminParser->state = read_error;
+				}
+				n++;
+				break;
+
+			case read_response_code:
+				if(Buffer->data[n] == SSEMD_RESPONSE_OK){
+					print_log(INFO, "OK, The requested command was processed succesfully\n");
+					adminParser->state = read_done;
+				} else if(Buffer->data[n] == SSEMD_RESPONSE_LIST){
+					print_log(INFO, "The list of users is:\n");
+					adminParser->state = read_size1;
+				} else if(Buffer->data[n] == SSEMD_RESPONSE_INT){
+					print_log(INFO, "Response number:\n");
+					adminParser->state = read_size1;
+				} else if(Buffer->data[n] == SSEMD_RESPONSE_BOOL){
+					print_log(INFO, "The list of users is:\n");
+					adminParser->state = read_size1;
+				} else {
+					print_log(INFO, "You have recieved a message with unknown CODE\n");
+					adminParser->state = read_error;
+				}
+				n++;
+				break;
+
+			case read_size1:
+				adminParser->size = 0;
+				if(Buffer->data[n] != 0x00){
+					adminParser->size += 256 * (uint8_t) Buffer->data[n];
+				}
+				adminParser->state = read_size2;
+				n++;
+				break;
+			
+			case read_size2:
+				if(Buffer->data[n] == 0x00){
+					if(adminParser->size == 0){
+						print_log(INFO, "You recieved a message that should contain DATA but it doesn't\n");
+						adminParser->state = read_error;
+					} else {
+						adminParser->state = prepare_data;
+					}
+				} else {
+					adminParser->size += (uint8_t) Buffer->data[n];
+					adminParser->state = prepare_data;
+				}
+				n++;
+				break;
+
+			case prepare_data:
+				adminParser->data = (char *)malloc(sizeof(uint8_t) * adminParser->size);
+				adminParser->dataPointer = 0;
+				adminParser->state = read_data;
+				break;
+
+			case read_data:
+				adminParser->data[adminParser->dataPointer++] = Buffer->data[n++];
+				if(adminParser->dataPointer == adminParser->size){
+					adminParser->state = read_done;
+				}
+				break;
+
+			case read_done:
+				if(adminParser->size > 0) {
+					int i;
+					for(i=0; i<adminParser->size; i++){
+						printf("%c", adminParser->data[i]);
+						if(adminParser->data[i] == '\0'){
+							printf("\n");
+						}
+					}
+					adminParser->state = read_close;
+				}
+				printf("\n");
+				break;
+
+			case read_error:
+				print_log(INFO, "exiting because of error\n");
+				break;
+
+			default:
+				print_log(ERROR, "Unknown parser state\n");
+				adminParser->state = read_error;
+				break;
+		}
+	}
+	free(adminParser->data);
+	free(adminParser);
 }
