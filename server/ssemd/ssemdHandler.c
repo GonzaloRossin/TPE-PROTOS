@@ -1,6 +1,6 @@
 #include "./../../include/ssemdHandler.h"
 
-long valread;
+unsigned int c;
 
 static const struct fd_handler ssemdHandler = {
 	.handle_read       = ssemd_read,
@@ -124,26 +124,22 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
 	payload * request = currAdmin->pr->data;
 	currAdmin->response = response;
-	unsigned long c = 0;
 	switch(request->CMD) {
 		case SSEMD_HISTORIC_CONNECTIONS:
-			setResponse(response, SSEMD_RESPONSE_LONG);
-			// response->data = (uint8_t*) calloc(1, sizeof(long)); 
+			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_historic_connections();
-			// c = htonl(c+4294967295+2);
-			// c = htobe64(c);
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
 		
             break;
 		case SSEMD_CURRENT_CONNECTIONS: 
-			setResponse(response, SSEMD_RESPONSE_LONG);
+			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_current_connections();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
             break;
 		case SSEMD_BYTES_TRANSFERRED: 
-			setResponse(response, SSEMD_RESPONSE_LONG);
+			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_bytes_transferred();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
@@ -281,16 +277,10 @@ void setResponse(ssemd_response * response, uint8_t code){
 		// response->size2=
 		break;
 	case SSEMD_RESPONSE_INT:
-		response->data = (uint8_t*) calloc(1, sizeof(int));
+		response->data = (uint8_t*) calloc(1, sizeof(unsigned int));
 		response->code=code;
 		response->size1=0x00;
 		response->size2=0x04;
-		break;
-	case SSEMD_RESPONSE_LONG:
-		response->data = (uint8_t*) calloc(1, sizeof(long));
-		response->code=code;
-		response->size1=0x00;
-		response->size2=0x08;
 		break;
 	case SSEMD_RESPONSE_BOOL:
 		response->data = (uint8_t*) calloc(1, sizeof(uint8_t));

@@ -8,9 +8,9 @@
 //GET:
 void register_client_connection();
 
-unsigned long get_historic_connections();
+unsigned int get_historic_connections();
 
-unsigned long get_current_connections();
+unsigned int get_current_connections();
 
 void unregister_current_connection();
 
@@ -25,7 +25,7 @@ void unregister_current_connection();
 
 void register_bytes_transferred(ssize_t bytes);
 
-unsigned long get_bytes_transferred();
+unsigned int get_bytes_transferred();
 
 unsigned int get_BUFFSIZE();
 

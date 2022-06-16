@@ -119,7 +119,7 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             if(parser->size1 != 0x00){
                 size += 255 + parser->size1;
             }
-            if(size>0){
+            if(size > 0){
                 parser->data->data = calloc(1, sizeof(uint8_t) * size);
                 parser->state = protocol_data;
             } else {

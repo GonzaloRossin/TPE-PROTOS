@@ -40,8 +40,7 @@ enum ssmed_response_code {
     SSEMD_RESPONSE_OK = 0x01,
     SSEMD_RESPONSE_LIST = 0x02,
     SSEMD_RESPONSE_INT = 0x03,
-    SSEMD_RESPONSE_LONG = 0x04,
-    SSEMD_RESPONSE_BOOL = 0x05,
+    SSEMD_RESPONSE_BOOL = 0x04,
 };
 
 // struct ssemd_hello

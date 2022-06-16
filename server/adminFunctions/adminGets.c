@@ -1,8 +1,8 @@
 #include "../../include/adminFunctions.h"
 
-static unsigned long historic_connections = 0;
-static unsigned long current_connections = 0;
-static unsigned long bytes_transferred = 0;
+static unsigned int historic_connections = 0;
+static unsigned int current_connections = 0;
+static unsigned int bytes_transferred = 0;
 
 static unsigned int BUFFSIZE = 4096;
 
@@ -14,11 +14,11 @@ void register_client_connection() {
     historic_connections++;
 }
 
-unsigned long get_historic_connections() {
+unsigned int get_historic_connections() {
     return historic_connections;
 }
 
-unsigned long get_current_connections() {
+unsigned int get_current_connections() {
     return current_connections;
 }
 
@@ -30,7 +30,7 @@ void register_bytes_transferred(ssize_t bytes){
     bytes_transferred += bytes;
 }
 
-unsigned long get_bytes_transferred(){
+unsigned int get_bytes_transferred(){
     return bytes_transferred;
 }
 
