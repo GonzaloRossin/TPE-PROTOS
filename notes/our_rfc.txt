@@ -7,8 +7,7 @@ It is has a Request-Response dynamic.
 Note: when clarifying a [format]', [] will be used to encompass the expected format, but they do not form part of the expected format.
 
 Different data types used in this protocol:
-INT	-> a 4 byte little endian unsigned int.
-LONG	-> a 8 byte little endian unsigned long.
+INT	-> a 4 byte big endian unsigned int.
 BOOL	-> 1 byte, either X'00' (false), or X'11' (true).
 LIST	-> a list of UTF-8 strings, separated by \0.
 
@@ -38,7 +37,7 @@ Knowing which TYPE of command is being requested, the Server must know which com
 The CMD field is to identify which COMMAND is being requested by the Client.
 The values currently defined for CMD for GET TYPE are:
 	- X'01' : Get historic quantity of connections;
-		Returns LONG if OK, ERROR status otherwise.
+		Returns INT if OK, ERROR status otherwise.
 		SIZE must be X'0000'
 
 	- X'02' : Get quantity of current connections
@@ -46,7 +45,7 @@ The values currently defined for CMD for GET TYPE are:
 		SIZE must be X'0000'
 
 	- X'03' : Get quantity of bytes transferred
-		Returns LONG if OK, ERROR status otherwise.
+		Returns INT if OK, ERROR status otherwise.
 		SIZE must be X'0000'
 
 	- X'04' : Get list of Users
@@ -138,10 +137,7 @@ The values currently defined for CODE for RESPONSE STATUS are:
 	- X'03' : The response is an INT.
 		SIZE must be X'0004'
 
-	- X'04' : The response is a LONG.
-		SIZE must be X'0008'
-
-	- X'05' : The response is a BOOL.
+	- X'04' : The response is a BOOL.
 		SIZE must be X'0001'
  		DATA can be either X'00' (false) or X'11' (true)
 
@@ -149,15 +145,17 @@ The values currently defined for CODE for RESPONSE STATUS are:
 The Server can also respond with a ERROR STATUS if an error was encountered processing the client's request.
 All ERROR STATUS must have a SIZE of X'0000'.
 The values currently defined for CODE for ERROR TYPE are:
-	- X'01' : Buffer size error
-	- X'02' : Timeout error
-	- X'03' : 
-	- X'04' : 
+	- X'01' : Buffer size too small
+	- X'02' : Buffer size too big
+	- X'03' : Timeout too small
+	- X'04' : Timeout too big
 	- X'05' : 
 	- X'06' : 
 	- X'07' : 
 	- X'08' : 
 	- X'09' : 
+	- X'A0' : Unkown type
+	- X'A1' : No space to process request
 	- X'FF' : Unknown error
 
 

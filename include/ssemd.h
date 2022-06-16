@@ -42,6 +42,15 @@ enum ssmed_response_code {
     SSEMD_RESPONSE_INT = 0x03,
     SSEMD_RESPONSE_BOOL = 0x04,
 };
+enum ssmed_error_code {
+    SSEMD_ERROR_SMALLBUFFER = 0x01,
+    SSEMD_ERROR_BIGBUFFER = 0x02,
+    SSEMD_ERROR_SMALLTIMEOUT = 0x03,
+    SSEMD_ERROR_BIGTIMEOUT = 0x04,
+
+    SSEMD_ERROR_UNKNOWNTYPE = 0xA0,
+    SSEMD_ERROR_NOSPACE = 0xA1,
+};
 
 // struct ssemd_hello
 // {

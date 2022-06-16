@@ -160,6 +160,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			memcpy(response->data, &c, sizeof(unsigned int));
             break;
         default:
+			setResponse(response, 0x00);
 			break;
 	}
 	marshall(currAdmin->bufferWrite, currAdmin->response);
@@ -211,9 +212,12 @@ void handleSetBuffSize(struct payload * request, ssemd_response * response){
 	}
 
 	set_BUFFSIZE(ret);
-	if(ret <= 0 || ret > 2048000){
+	if(ret <= 0){
 		response->status = SSEMD_ERROR;
-		response->code = 0x01;
+		response->code = SSEMD_ERROR_SMALLBUFFER;
+	} else if(ret > 2048000){
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_BIGBUFFER;
 	} else {
 		response->status = SSEMD_RESPONSE;
 		response->code = SSEMD_RESPONSE_OK;
@@ -249,7 +253,7 @@ int marshall(buffer * buffer, ssemd_response * response){
     uint8_t * buff = buffer_write_ptr(buffer, &max_write);
 	if(max_write < 4+size){
 		response->status = SSEMD_ERROR;
-        response->code = 0xFF;
+        response->code = SSEMD_ERROR_NOSPACE;
     }
 	int i=0;
 	buff[i++] = response->status; //STATUS
@@ -296,7 +300,7 @@ void setResponse(ssemd_response * response, uint8_t code){
 	
 	default:
 		response->status = SSEMD_ERROR;
-		response->code = 0xFF;
+		response->code = SSEMD_ERROR_UNKNOWNTYPE;
 		response->size1=0x00;
 		response->size2=0x00;
 		break;
