@@ -38,7 +38,8 @@ enum protocol_state {
     protocol_cmd,
     protocol_cmd_get,
     protocol_cmd_edit,
-    protocol_size,
+    protocol_size1,
+    protocol_size2,
     protocol_page,
     protocol_data,
     protocol_done,
@@ -57,11 +58,12 @@ typedef struct payload{
 typedef struct protocol_parser {
 
     //invocado cada vez que se presenta un nuevo método
-   bool(*on_size_authentication_method)
+   bool(*has_appropiate_size)
             (struct protocol_parser *parser, const uint8_t byte);
 
     payload* data;
-    uint8_t size;
+    uint8_t size1;
+    uint8_t size2;
     uint8_t page;
     int token_index;
     enum protocol_state state;

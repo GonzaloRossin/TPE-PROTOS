@@ -53,7 +53,7 @@ size_t getSize(struct ssemd_args *args){
 	toRet++; //1 byte for \0 to mark end of TOKEN
 	toRet++; //1 byte for TYPE
 	toRet++; //1 byte for CMD
-	toRet += 1; //2 bytes for SIZE
+	toRet += 2; //2 bytes for SIZE
 	toRet += args->size2; 
 	if(args->size1 != 0x00){
 		toRet+=args->size1 + 255;

@@ -1,6 +1,6 @@
 #include "./../../include/ssemdHandler.h"
 
-long valread;
+unsigned int c;
 
 static const struct fd_handler ssemdHandler = {
 	.handle_read       = ssemd_read,
@@ -124,26 +124,22 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
 	payload * request = currAdmin->pr->data;
 	currAdmin->response = response;
-	unsigned long c = 0;
 	switch(request->CMD) {
 		case SSEMD_HISTORIC_CONNECTIONS:
-			setResponse(response, SSEMD_RESPONSE_LONG);
-			// response->data = (uint8_t*) calloc(1, sizeof(long)); 
+			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_historic_connections();
-			// c = htonl(c+4294967295+2);
-			// c = htobe64(c);
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
 		
             break;
 		case SSEMD_CURRENT_CONNECTIONS: 
-			setResponse(response, SSEMD_RESPONSE_LONG);
+			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_current_connections();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
             break;
 		case SSEMD_BYTES_TRANSFERRED: 
-			setResponse(response, SSEMD_RESPONSE_LONG);
+			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_bytes_transferred();
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
@@ -155,10 +151,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 		
             break;
 		case SSEMD_AUTH_STATUS: 
-			setResponse(response, SSEMD_RESPONSE_INT);
-			c = get_BUFFSIZE();
-			c = htonl(c);
-			memcpy(response->data, &c, sizeof(unsigned int));
+
             break;
 		case SSEMD_GET_BUFFER_SIZE: 
 			setResponse(response, SSEMD_RESPONSE_INT);
@@ -167,6 +160,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			memcpy(response->data, &c, sizeof(unsigned int));
             break;
         default:
+			setResponse(response, 0x00);
 			break;
 	}
 	marshall(currAdmin->bufferWrite, currAdmin->response);
@@ -179,10 +173,9 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 	currAdmin->response = response;
 	response->size1 = 0x00;
 	response->size2 = 0x00;
-	unsigned long c = 0;
 	switch(request->CMD) {
 		case SSEMD_BUFFER_SIZE:
-
+			handleSetBuffSize(request, response);
             break;
 		case SSEMD_CLIENT_TIMEOUT: 
 		
@@ -211,6 +204,25 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
+void handleSetBuffSize(struct payload * request, ssemd_response * response){
+	int i;
+	double ret;
+	for(i=0; i<request->data_len; i++){
+		ret += request->data[i] * pow(10, request->data_len -i-1);
+	}
+
+	set_BUFFSIZE(ret);
+	if(ret <= 0){
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_SMALLBUFFER;
+	} else if(ret > 2048000){
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_BIGBUFFER;
+	} else {
+		response->status = SSEMD_RESPONSE;
+		response->code = SSEMD_RESPONSE_OK;
+	}
+}
 
 int validate_token(struct ssemd * currAdmin) {
 	char *my_token = get_ADMIN_TOKEN();
@@ -241,7 +253,7 @@ int marshall(buffer * buffer, ssemd_response * response){
     uint8_t * buff = buffer_write_ptr(buffer, &max_write);
 	if(max_write < 4+size){
 		response->status = SSEMD_ERROR;
-        response->code = 0xFF;
+        response->code = SSEMD_ERROR_NOSPACE;
     }
 	int i=0;
 	buff[i++] = response->status; //STATUS
@@ -274,16 +286,10 @@ void setResponse(ssemd_response * response, uint8_t code){
 		// response->size2=
 		break;
 	case SSEMD_RESPONSE_INT:
-		response->data = (uint8_t*) calloc(1, sizeof(int));
+		response->data = (uint8_t*) calloc(1, sizeof(unsigned int));
 		response->code=code;
 		response->size1=0x00;
 		response->size2=0x04;
-		break;
-	case SSEMD_RESPONSE_LONG:
-		response->data = (uint8_t*) calloc(1, sizeof(long));
-		response->code=code;
-		response->size1=0x00;
-		response->size2=0x08;
 		break;
 	case SSEMD_RESPONSE_BOOL:
 		response->data = (uint8_t*) calloc(1, sizeof(uint8_t));
@@ -294,7 +300,7 @@ void setResponse(ssemd_response * response, uint8_t code){
 	
 	default:
 		response->status = SSEMD_ERROR;
-		response->code = 0xFF;
+		response->code = SSEMD_ERROR_UNKNOWNTYPE;
 		response->size1=0x00;
 		response->size2=0x00;
 		break;
