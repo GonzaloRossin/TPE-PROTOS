@@ -30,8 +30,10 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args);
 //helpers for parse_ssemd_args
 void handleRepeatedTYPE(struct ssemd_args *args, char newCode);
 void handleRepeatedCMD(struct ssemd_args *args, char newCMD);
-void checkRequiredParams(struct ssemd_args *args);
-void setSize(struct ssemd_args * args);
+void checkRequiredParams(struct ssemd_args *args); //checks if passed a repeated param
+void setSize(struct ssemd_args * args); //sets size value calculating size of data
+void parseData(struct ssemd_args * args); //parses data from string to hex
+
 
 
 #endif

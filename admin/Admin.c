@@ -92,8 +92,8 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 	message[i++] = 0x00; //TOKEN
 	message[i++] = args->type; //TYPE
 	message[i++] = args->cmd; //CMD
-	message[i++] = args->size1;
-	// message[i++] = args->size2; //SIZE
+	// message[i++] = args->size1;
+	message[i++] = args->size2; //SIZE
 	int size = 0;
 	size+=args->size2; 
 	if(args->size1 != 0x00){
@@ -110,9 +110,8 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 	}
 	print_log(DEBUG, "sending message: ");
 	for(n=0; n<bytesToSend; n++){
-		print_log(DEBUG, "%x ", message[n]);
+		print_log(DEBUG, "%d: %x ",n, message[n]);
 	}
-	// exit(1);
 
 	// // size_t bytesSent = 0;
 	// // while (bytesSent < bytesToSend){
@@ -120,30 +119,6 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 	// // }
 
 	int bytesSent = send(sock, message, sizeof(message), 0);
-	
-	// print_log(INFO, "reading request");
-	// while (true) { //read REQUEST
-	// 	ssize_t bytesRecieved = recv(sock, Buffer->data, BUFFSIZE, 0);
-	// 	if (bytesRecieved < 0) {
-	// 		print_log(ERROR, "recv() failed");
-	// 	}
-	// 	else if (bytesRecieved == 0)
-	// 		print_log(ERROR, "recv() connection closed prematurely");
-	// 	else {
-	// 		for(int i=0; i<bytesRecieved; i++){
-	// 			print_log(INFO, "%02x ", Buffer->data[i]);
-	// 		}
-	// 	}
-	// 	if(bytesRecieved == 10){
-	// 		break;
-	// 	}
-	// }
-	// print_log(INFO, "done with request read");
-	// print_log(INFO, "sending basic get to recieve a reply from remote server");
-	// //uint8_t hardcode_request[73];
-	// //hardcode_request[0] = 0x47;
-	// bytesSent = send(sock, hardcode_request, sizeof(uint8_t), 0);
-	// print_log(INFO, "up to here its temporary\n");
 }
 
 void handleRecv(int sock, struct buffer * Buffer){
@@ -158,8 +133,7 @@ void handleRecv(int sock, struct buffer * Buffer){
 		} else {
 			print_log(DEBUG, "STATUS\tCODE\tSIZE\tDATA\n", Buffer->data[0]);
 			print_log(DEBUG, "%0X\t%0X\t%0X %0X\t", Buffer->data[0], Buffer->data[1], Buffer->data[2], Buffer->data[3]);
-			// print_log(DEBUG, "%0X\t", Buffer->data[1]);
-			// print_log(DEBUG, "%0X %0X\t", Buffer->data[2], Buffer->data[3]);
+
 			int size = 0; //bytes for data
 			size+=Buffer->data[3]; 
 			if(Buffer->data[2] != 0x00){

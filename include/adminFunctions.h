@@ -2,6 +2,8 @@
 #define ADMIN_FUNCTIONS_H_
 
 #include "util.h"
+#include <string.h>
+#include "logger.h"
 
 //GET:
 void register_client_connection();
@@ -12,18 +14,26 @@ unsigned long get_current_connections();
 
 void unregister_current_connection();
 
-char *
-list_users();
+// char *
+// list_users();
 
-bool
-dissector_status();
+// bool
+// dissector_status();
 
-bool
-authentication_status();
+// bool
+// authentication_status();
 
 void register_bytes_transferred(ssize_t bytes);
 
 unsigned long get_bytes_transferred();
+
+unsigned int get_BUFFSIZE();
+
+void set_BUFFSIZE(unsigned int newSize);
+
+char * get_ADMIN_TOKEN();
+
+void set_ADMIN_TOKEN(char * newToken);
 
 
 //EDIT:

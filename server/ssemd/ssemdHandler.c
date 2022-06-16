@@ -5,7 +5,7 @@ long valread;
 static const struct fd_handler ssemdHandler = {
 	.handle_read       = ssemd_read,
 	.handle_write      = ssemd_write,
-	.handle_close      = NULL, // ssemd_close, // nada que liberar
+	.handle_close      = ssemd_close,
 	.handle_block	   = NULL,
 };
 
@@ -16,7 +16,7 @@ void masterssemdHandler(struct selector_key *key) {
     struct ssemd * admin = (struct ssemd *)key->data;
 
     if(admin->isAvailable) {
-        new_admin(admin, new_admin_socket, BUFFSIZE);
+        new_admin(admin, new_admin_socket, get_BUFFSIZE());
 
         selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, admin);
 		print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
@@ -31,11 +31,11 @@ void ssemd_read(struct selector_key *key) {
 	struct ssemd_connection_state currState = currAdmin->connection_state;
 	switch (currState.ssemd_state)
 	{
-		case SSEMD_HELLO_READ_REQUEST:
+		case SSEMD_READ_REQUEST:
 			ssemd_read_request(key);
 			break;
 		//Nunca entra aca porque estamos en lectura
-		case SSEMD_HELLO_WRITE_REQUEST:
+		case SSEMD_WRITE_REQUEST:
 			break;
 		case SSEMD_ERROR_STATE:
 			break;
@@ -50,9 +50,9 @@ void ssemd_write(struct selector_key *key) {
 
 	switch (currState.ssemd_state) {
 		//Nunca entra aca porque estamos en escritura
-		case SSEMD_HELLO_READ_REQUEST:
+		case SSEMD_READ_REQUEST:
 			break;
-		case SSEMD_HELLO_WRITE_REQUEST:
+		case SSEMD_WRITE_REQUEST:
 			ssemd_write_request(key);
 			break;
 		case SSEMD_ERROR_STATE:
@@ -76,7 +76,7 @@ void ssemd_read_request(struct selector_key *key) {
 	read_request_init(currAdmin);
 
 	buffer * r = currAdmin->bufferRead;
-	unsigned ret = SSEMD_HELLO_READ_REQUEST;
+	unsigned ret = SSEMD_READ_REQUEST;
 	size_t count;
 	ssize_t n;
 	bool error = false;
@@ -90,7 +90,7 @@ void ssemd_read_request(struct selector_key *key) {
 		if (protocol_is_done(st, &error) && !error) {
 			if (SELECTOR_SUCCESS == selector_set_interest_key(key, OP_WRITE)) {
 				ssemd_request_process(currAdmin);
-				currAdmin->connection_state.ssemd_state = SSEMD_HELLO_WRITE_REQUEST;
+				currAdmin->connection_state.ssemd_state = SSEMD_WRITE_REQUEST;
 				selector_set_interest(key->s, key->fd, OP_WRITE);
 			} else {
 				ret = SSEMD_ERROR_STATE;
@@ -120,40 +120,6 @@ void ssemd_request_process(struct ssemd * currAdmin) {
 	
 }
 
-void ssemd_process_edit(struct ssemd * currAdmin) {
-	ssemd_response * response = (ssemd_response *) malloc(sizeof(response));
-	payload * request = currAdmin->pr->data;
-	currAdmin->response = response;
-	switch(request->CMD) {
-		case SSEMD_BUFFER_SIZE: 
-
-            break;
-		case SSEMD_CLIENT_TIMEOUT: 
-		
-            break;
-		case SSEMD_DISSECTOR_ON: 
-		
-            break;
-		case SSEMD_DISSECTOR_OFF: 
-		
-            break;
-		case SSEMD_ADD_USER: 
-		
-            break;
-		case SSEMD_REMOVE_USER: 
-		
-            break;
-		case SSEMD_AUTH_ON: 
-		
-            break;
-		case SSEMD_AUTH_OFF: 
-		
-            break;
-        default:
-			break;
-	}
-}
-
 void ssemd_process_get(struct ssemd * currAdmin) {
 	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
 	payload * request = currAdmin->pr->data;
@@ -165,6 +131,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			// response->data = (uint8_t*) calloc(1, sizeof(long)); 
 			c = get_historic_connections();
 			// c = htonl(c+4294967295+2);
+			// c = htobe64(c);
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned long));
 		
@@ -188,6 +155,54 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 		
             break;
 		case SSEMD_AUTH_STATUS: 
+			setResponse(response, SSEMD_RESPONSE_INT);
+			c = get_BUFFSIZE();
+			c = htonl(c);
+			memcpy(response->data, &c, sizeof(unsigned int));
+            break;
+		case SSEMD_GET_BUFFER_SIZE: 
+			setResponse(response, SSEMD_RESPONSE_INT);
+			c = get_BUFFSIZE();
+			c = htonl(c);
+			memcpy(response->data, &c, sizeof(unsigned int));
+            break;
+        default:
+			break;
+	}
+	marshall(currAdmin->bufferWrite, currAdmin->response);
+}
+
+
+void ssemd_process_edit(struct ssemd * currAdmin) {
+	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
+	payload * request = currAdmin->pr->data;
+	currAdmin->response = response;
+	response->size1 = 0x00;
+	response->size2 = 0x00;
+	unsigned long c = 0;
+	switch(request->CMD) {
+		case SSEMD_BUFFER_SIZE:
+
+            break;
+		case SSEMD_CLIENT_TIMEOUT: 
+		
+            break;
+		case SSEMD_DISSECTOR_ON: 
+		
+            break;
+		case SSEMD_DISSECTOR_OFF: 
+		
+            break;
+		case SSEMD_ADD_USER: 
+		
+            break;
+		case SSEMD_REMOVE_USER:
+
+			break;
+		case SSEMD_AUTH_ON: 
+		
+            break;
+		case SSEMD_AUTH_OFF: 
 		
             break;
         default:
@@ -196,8 +211,10 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
+
 int validate_token(struct ssemd * currAdmin) {
-	char *my_token = currAdmin->admin_token, *try_token = currAdmin->pr->data->token;
+	char *my_token = get_ADMIN_TOKEN();
+	char *try_token = currAdmin->pr->data->token;
 	if (0 == strcmp(my_token, try_token)) {
 		return 0;
 	} else {
@@ -284,33 +301,21 @@ void setResponse(ssemd_response * response, uint8_t code){
 	}
 }
 
-// void ssemd_close(struct selector_key *key) {
-// 	struct ssemd * currClient = (struct ssemd *)key->data;
+void ssemd_close(struct selector_key *key) {
+	struct ssemd * currAdmin = (struct ssemd *)key->data;
 
-// 	if (currClient->client_socket == 0 || currClient->remote_socket == 0) {
-// 		currClient->client.st_connected.init = 0;
-// 		currClient->remote.st_connected.init = 0;
+	free(currAdmin->bufferRead->data);
+	free(currAdmin->bufferWrite->data);
 
-// 		free(currClient->bufferFromClient->data);
-// 		free(currClient->bufferFromRemote->data);
+	free(currAdmin->bufferRead);
+	free(currAdmin->bufferWrite);
 
-// 		free(currClient->bufferFromClient);
-// 		free(currClient->bufferFromRemote);
+	memset(currAdmin, 0, sizeof(struct ssemd));
+	currAdmin->connection_state.ssemd_state = SSEMD_READ_REQUEST;
+	currAdmin->isAvailable = true;
 
-// 		memset(currClient, 0, sizeof(struct ssemd));
-// 		currClient->connection_state.client_state = HELLO_READ_STATE;
-// 		currClient->isAvailable = true;
-
-// 	}
-	
-// 	if (key->fd == currClient->client_socket) {
-// 		currClient->client_socket = 0;
-// 	}
-// 	if (key->fd == currClient->remote_socket) {
-// 		currClient->remote_socket = 0;
-// 	}
-// 	close(key->fd);
-// }
+	close(key->fd);
+}
 
 // void ssemd_change_state(struct ssemd * currClient, enum client_state state) {
 // 	currClient->connection_state.client_state = state;

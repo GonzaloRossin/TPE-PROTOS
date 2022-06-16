@@ -18,6 +18,7 @@
 #include "../include/selector.h"
 #include "../include/args.h"
 #include "../include/ssemdHandler.h"
+#include "../include/adminFunctions.h"
 
 static bool done = false;
 
@@ -52,8 +53,7 @@ int main(int argc , char *argv[])
     char ADMIN_PORT[6];
     sprintf(PORT, "%d", args->socks_port); //sets client port
     sprintf(ADMIN_PORT, "%d", args->mng_port); //sets admin port
-    char * ADMIN_TOKEN = args->admin_token;
-    print_log(INFO, "ADMIN TOKEN: %s", ADMIN_TOKEN);
+    set_ADMIN_TOKEN(args->admin_token);
 
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
 	int master_socket_size=0;
@@ -74,7 +74,6 @@ int main(int argc , char *argv[])
 
     //initialise Admin
     admin = (struct ssemd*)calloc(1, sizeof(struct ssemd));
-    admin->admin_token = ADMIN_TOKEN;
     admin->isAvailable = true;
 
 

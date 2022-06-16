@@ -95,10 +95,64 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     }
     setSize(args);
     checkRequiredParams(args);
+    parseData(args);
+}
+
+void parseData(struct ssemd_args * args){
+    char * data = args->data;
+    uint8_t * toRet;
+    int i = 0;
+    if(args->cmd == 0x01){
+        while(data[i] != '\0'){
+            switch (data[i]){
+                case '0':
+                    toRet[i++] = 0x00;
+                    break;
+                case '1':
+                    toRet[i++] = 0x01;
+                    break;
+                case '2':
+                    toRet[i++] = 0x02;
+                    break;
+                case '3':
+                    toRet[i++] = 0x03;
+                    break;
+                case '4':
+                    toRet[i++] = 0x04;
+                    break;
+                case '5':
+                    toRet[i++] = 0x05;
+                    break;
+                case '6':
+                    toRet[i++] = 0x06;
+                    break;
+                case '7':
+                    toRet[i++] = 0x07;
+                    break;
+                case '8':
+                    toRet[i++] = 0x08;
+                    break;
+                case '9':
+                    toRet[i++] = 0x09;
+                    break;
+                
+                default:
+                    fprintf(stderr, "\nonly numbers allowed in that parameter\n");
+                    exit(1);
+                    break;
+            }
+        }
+        int a;
+        for(a=0; a<i; a++){
+            args->data[a] = toRet[a];
+        }
+        // memcpy(args->data, toRet, i);
+        // args->data = (char*)toRet;
+    }
 }
 
 void setSize(struct ssemd_args * args){
-        if(args->data == NULL){
+    if(args->data == NULL){
         args->size1 = 0x00;
         args->size2 = 0x00;
     } else {
@@ -138,7 +192,7 @@ void checkRequiredParams(struct ssemd_args *args){
         fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
         exit(1);
     }
-    if(args->cmd > 0x06 && args->type == 0x01){
+    if(args->cmd > 0x07 && args->type == 0x01){
         fprintf(stderr, "argument not accepted: %x, -G has max of 6\n", args->cmd);
         exit(1);
     }

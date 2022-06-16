@@ -24,6 +24,7 @@
 #include "protocolParser.h"
 #include "ssemd.h"
 #include "util.h"
+#include <endian.h>
 
 void masterssemdHandler(struct selector_key *key);
 

@@ -6,8 +6,8 @@
 #include "protocolParser.h"
 
 enum ssemd_state {
-    SSEMD_HELLO_READ_REQUEST = 0,
-    SSEMD_HELLO_WRITE_REQUEST,
+    SSEMD_READ_REQUEST = 0,
+    SSEMD_WRITE_REQUEST,
     SSEMD_ERROR_STATE
 };
 
@@ -24,6 +24,7 @@ enum ssmed_cmd_get {
     SSEMD_USER_LIST = 0x04,
     SSEMD_DISSECTOR_STATUS = 0x05,
     SSEMD_AUTH_STATUS = 0x06,
+    SSEMD_GET_BUFFER_SIZE = 0x07,
 };
 enum ssmed_cmd_EDIT {
     SSEMD_BUFFER_SIZE = 0x01,

@@ -24,9 +24,9 @@
 #include "ssemd.h"
 #include "adminFunctions.h"
 #include <time.h>
+#include "adminFunctions.h"
 
 
-#define BUFFSIZE 16384
 #define N(x) (sizeof(x) / sizeof((x)[0]))
 
 
