@@ -20,8 +20,9 @@ new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE){
 
     newClient->bufferFromRemote = newOriginBuffer;
 
+    newClient->connection_state = (connection_state *) calloc(1, sizeof(connection_state));
+    newClient->connection_state->client_state = HELLO_READ_STATE;
     newClient->isAvailable = false;
-
 }
 
 void

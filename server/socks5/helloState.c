@@ -9,13 +9,13 @@ void hello_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	hello_parser * pr = currClient->client.st_hello.pr;
 	// Hello initialization
-	if(!currClient->connection_state.init) {
+	if(!currClient->connection_state->init) {
 		pr = (hello_parser *) calloc(1, sizeof(hello_parser));
 		hello_parser_init(pr);
 		pr->on_authentication_method = on_auth;
-		currClient->connection_state.init = true;
+		currClient->connection_state->init = true;
 		currClient->client.st_hello.r = currClient->bufferFromClient;
-		currClient->connection_state.on_departure = hello_departure;
+		currClient->connection_state->on_departure = hello_departure;
 		currClient->client.st_hello.w = currClient->bufferFromRemote;
 		currClient->client.st_hello.pr = pr;
 	}

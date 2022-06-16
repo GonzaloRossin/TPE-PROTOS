@@ -76,12 +76,12 @@ typedef struct connected {
   buffer * r;
 } connected;
 
-struct connection_state {
+typedef struct connection_state {
     int init;
     enum client_state client_state;
     void (*on_departure) (struct socks5 * currClient);
     void (*on_arrival) (struct socks5 * currClient);
-};
+} connection_state;
 
 struct connecting {
     buffer *w;
@@ -110,7 +110,7 @@ struct socks5
     buffer * bufferFromClient;
     buffer * bufferFromRemote;
 
-    struct connection_state connection_state;
+    struct connection_state * connection_state;
     bool disector_enabled;
 
     union {

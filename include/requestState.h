@@ -15,5 +15,6 @@ int request_marshall(struct socks5 * currClient);
 void request_write(struct selector_key *key);
 void request_resolve(struct selector_key *key);
 void request_departure(struct socks5 * currClient);
+uint8_t * get_port(struct socks5 * currClient);
 
 #endif

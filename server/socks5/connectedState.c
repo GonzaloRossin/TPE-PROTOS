@@ -11,15 +11,19 @@ void connected_init(struct socks5 * currClient) {
 	d->interest = OP_READ | OP_WRITE;
 	d->other_connected = &currClient->remote.st_connected;
 
-	// Init connected for origin
-	d = &currClient->remote.st_connected;
-
     if(get_dissector_state()) {
         if (currClient->protocol_type == PROT_POP3) {
+            d->pop_parser = (pop3_parser)malloc(sizeof(struct pop3_parser));
             pop3_parser_init(d->pop_parser);
+
+            buffer * newBuffer = (buffer*)malloc(sizeof(buffer));
+            d->aux_b = newBuffer;
             buffer_init(d->aux_b, get_BUFFSIZE() + 1, malloc(get_BUFFSIZE() + 1)); // No me convence traerme el buff size asi
         }
     }
+
+    // Init connected for origin
+	d = &currClient->remote.st_connected;
 
     currClient->disector_enabled = get_dissector_state();
 
@@ -136,6 +140,7 @@ void read_connected_state(struct selector_key *key) {
                             extract_pop3_auth(d->pop_parser, currClient);
                         }
                         free_pop3_parser(d->pop_parser);
+                        pop3_parser_init(d->pop_parser);
                         error = 0;
                     }
                 }
@@ -169,7 +174,6 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
 {
     if (pop3_p->user != NULL && pop3_p->pass != NULL)
     {
-        // Fijarse que hay que ahcer aca
-        // log_disector(s->username, s->origin_info, pop3_p->user, pop3_p->pass);
+        fprintf(stdout, "%s\t%c\t%s\t%s\t%s\n", "owner", "p", "POP3", pop3_p->user, pop3_p->pass);
     }
 }

@@ -29,6 +29,8 @@ unsigned long get_bytes_transferred();
 
 unsigned int get_BUFFSIZE();
 
+bool get_dissector_state();
+
 void set_BUFFSIZE(unsigned int newSize);
 
 char * get_ADMIN_TOKEN();

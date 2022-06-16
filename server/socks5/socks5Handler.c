@@ -69,8 +69,8 @@ int handleWrite(int socket, struct buffer * buffer) {
 
 void socks5_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	struct connection_state currState = currClient->connection_state;
-	switch (currState.client_state)
+	struct connection_state * currState = currClient->connection_state;
+	switch (currState->client_state)
 	{
 		case HELLO_READ_STATE:
 			hello_read(key);
@@ -93,8 +93,8 @@ void socks5_read(struct selector_key *key) {
 
 void socks5_write(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	struct connection_state currState = currClient->connection_state;
-	switch (currState.client_state) {
+	struct connection_state * currState = currClient->connection_state;
+	switch (currState->client_state) {
 		//Nunca entra aca porque estamos en escritura
 		case HELLO_READ_STATE:
 			break;
@@ -136,7 +136,6 @@ void socks5_close(struct selector_key *key) {
 		free(currClient->bufferFromRemote);
 
 		memset(currClient, 0, sizeof(struct socks5));
-		currClient->connection_state.client_state = HELLO_READ_STATE;
 		currClient->isAvailable = true;
 
 		void unregister_current_connection();
@@ -153,23 +152,23 @@ void socks5_close(struct selector_key *key) {
 }
 
 void change_state(struct socks5 * currClient, enum client_state state) {
-	currClient->connection_state.client_state = state;
-	currClient->connection_state.init = false;
-	if (currClient->connection_state.on_departure != 0) {
-		currClient->connection_state.on_departure(currClient);
-		currClient->connection_state.on_departure = NULL;
+	currClient->connection_state->client_state = state;
+	currClient->connection_state->init = false;
+	if (currClient->connection_state->on_departure != NULL) {
+		currClient->connection_state->on_departure(currClient);
+		currClient->connection_state->on_departure = NULL;
 	}
-	if (currClient->connection_state.on_arrival != 0) {
-		currClient->connection_state.on_arrival(currClient);
-		currClient->connection_state.on_arrival = NULL;
+	if (currClient->connection_state->on_arrival != NULL) {
+		currClient->connection_state->on_arrival(currClient);
+		currClient->connection_state->on_arrival = NULL;
 	}
 }
 
 void socks5_block(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	struct connection_state currState = currClient->connection_state;
+	struct connection_state * currState = currClient->connection_state;
 
-	switch (currState.client_state)
+	switch (currState->client_state)
 	{
 		case HELLO_READ_STATE:
 			break;

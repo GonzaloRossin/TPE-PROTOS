@@ -18,10 +18,10 @@ void request_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	request_parser * pr = currClient->client.st_request.pr;
 	// Hello initialization
-	if(!currClient->connection_state.init) {
+	if(!currClient->connection_state->init) {
 		pr = (request_parser *) calloc(1, sizeof(request_parser)); //Limpiar mas tarde
 		request_parser_init(pr);
-		currClient->connection_state.init = true;
+		currClient->connection_state->init = true;
 		currClient->client.st_request.pr = pr;
 		currClient->client.st_request.r = currClient->bufferFromClient;
 		currClient->client.st_request.w = currClient->bufferFromRemote;
@@ -60,7 +60,7 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 			currClient->origin_domain = AF_INET;
 			request->dest_addr.ipv4.sin_port = request->dest_port;
 			currClient->origin_addr_len = sizeof(request->dest_addr.ipv4);
-			currClient->protocol_type = identify_protocol_type(request->dest_port);
+			currClient->protocol_type = identify_protocol_type((uint8_t *) request->dest_port);
 			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv4));
 			ret = request_connect(key);
 			break;
@@ -70,7 +70,7 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 			currClient->origin_domain = AF_INET6;
 			request->dest_addr.ipv6.sin6_port = request->dest_port;
 			currClient->origin_addr_len = sizeof(request->dest_addr.ipv6);
-			currClient->protocol_type = identify_protocol_type(request->dest_port);
+			currClient->protocol_type = identify_protocol_type((uint8_t *) request->dest_port);
 			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv6));
 			ret = request_connect(key);
 			break;
@@ -170,6 +170,7 @@ void request_connecting(struct selector_key *key) {
 			conn->origin_fd = key->fd;
 			currClient->remote_socket = key->fd;
 			currClient->client.st_request.state = status_succeeded;
+			currClient->protocol_type = identify_protocol_type(get_port(currClient));
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
 		} else {
 			if (currClient->origin_resolution_current) {
@@ -190,6 +191,17 @@ void request_connecting(struct selector_key *key) {
 		change_state(currClient, REQUEST_WRITE_STATE);
 		selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
 	}
+}
+
+uint8_t * get_port(struct socks5 * currClient) {
+	struct sockaddr_storage *sin = (struct sockaddr_storage *)&currClient->origin_addr;
+
+	if (sin->ss_family == AF_INET) {
+		memcpy(currClient->origin_port, &((struct sockaddr_in*)sin)->sin_port, sizeof(((struct sockaddr_in*)sin))->sin_port);
+	} else if (sin->ss_family == AF_INET6) {
+		memcpy(currClient->origin_port, &((struct sockaddr_in6*)sin)->sin6_port, sizeof(((struct sockaddr_in6*)sin))->sin6_port);
+	}
+	return currClient->origin_port;
 }
 
 enum socks_addr_type family_to_socks_addr_type(int family) {
@@ -248,8 +260,8 @@ void request_write(struct selector_key *key) {
 
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
-        currClient->connection_state.on_departure = request_departure;
-		currClient->connection_state.on_arrival = connected_init;
+        currClient->connection_state->on_departure = request_departure;
+		currClient->connection_state->on_arrival = connected_init;
 		change_state(currClient, CONNECTED_STATE);
 	}
 }

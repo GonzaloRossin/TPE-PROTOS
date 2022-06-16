@@ -50,3 +50,7 @@ void set_ADMIN_TOKEN(char * newToken){
     strcpy(ADMIN_TOKEN, newToken);
     print_log(INFO, "NEW ADMIN TOKEN: %s", ADMIN_TOKEN);
 }
+
+bool get_dissector_state() {
+    return true;
+}

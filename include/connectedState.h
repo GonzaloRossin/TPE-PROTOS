@@ -12,5 +12,6 @@ void connected_init(struct socks5 * currClient);
 void connected_close(struct selector_key *key);
 void write_connected_state(struct selector_key *key);
 void read_connected_state(struct selector_key *key);
+void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s);
 
 #endif
