@@ -2,10 +2,10 @@
 #define TOKEN_SIZE 25
 
 
-bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
+bool has_appropiate_size(struct protocol_parser* p, uint8_t byte){
     switch(p->data->type){
-        case 0x01:{
-            if(byte != 0x00){
+        case 0x01:{ //GET
+            if(byte == 0x00){ //must have empty size
                 return true;
             }else{
                 return false;
@@ -18,11 +18,16 @@ bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
             case 0x04:
             case 0x07:
             case 0x08:
-                if(byte != 0x00){
+                if(byte == 0x00){ //must have empty size
                     return true;
                 }
                 return false;
                 break;
+            case 0x01:
+            case 0x02:
+            case 0x05:
+            case 0x06: //they can have any size
+                return true;
             
             default:
                 break;
@@ -35,7 +40,7 @@ bool on_size_authentication_method(struct protocol_parser* p, uint8_t byte){
 extern void protocol_parser_init(struct protocol_parser * parser){
     parser->state = protocol_version;
     parser->data =(payload*) calloc(1,sizeof (struct payload));
-    parser->on_size_authentication_method = &(on_size_authentication_method);
+    parser->has_appropiate_size = &(has_appropiate_size);
     parser->data->data_len=0;
 }
 
@@ -61,11 +66,6 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             }else{
                 parser->data->token[parser->token_index++] = byte;
             }
-            /*parser->data->token = "j";
-            parser->data->token_len = 1;
-            if(byte == 0x00) {
-                parser->state = protocol_type;
-            }*/
         break;
         case protocol_type:
             if(byte == 0x01){
@@ -100,9 +100,9 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             break;
 
         case protocol_size1:
-            if(parser->on_size_authentication_method != NULL ) {
-                if(parser->on_size_authentication_method(parser, byte)){//devuelve falso si el size no matchea con el comando
-                    parser->state = protocol_error;
+            if(parser->has_appropiate_size != NULL ) {
+                if(! parser->has_appropiate_size(parser, byte)){
+                    parser->state = protocol_error; //devuelve falso si el size no matchea con el comando
                     break;
                 }
             }
@@ -113,6 +113,12 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             break;
         
         case protocol_size2:
+            if(parser->has_appropiate_size != NULL ) {
+                if(! parser->has_appropiate_size(parser, byte)){
+                    parser->state = protocol_error; //devuelve falso si el size no matchea con el comando
+                    break;
+                }
+            }
             parser->size2 = byte;
             int size=parser->size2;
 

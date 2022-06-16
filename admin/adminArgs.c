@@ -95,7 +95,10 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     }
     setSize(args);
     checkRequiredParams(args);
-    parseData(args);
+    if(args->size1 != 0x00 && args->size2 != 0x00){
+        parseData(args);
+    }
+
 }
 
 void parseData(struct ssemd_args * args){

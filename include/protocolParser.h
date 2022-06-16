@@ -58,7 +58,7 @@ typedef struct payload{
 typedef struct protocol_parser {
 
     //invocado cada vez que se presenta un nuevo método
-   bool(*on_size_authentication_method)
+   bool(*has_appropiate_size)
             (struct protocol_parser *parser, const uint8_t byte);
 
     payload* data;

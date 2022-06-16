@@ -211,8 +211,13 @@ void handleSetBuffSize(struct payload * request, ssemd_response * response){
 	}
 
 	set_BUFFSIZE(ret);
-	response->status = SSEMD_RESPONSE;
-	response->code = SSEMD_RESPONSE_OK;
+	if(ret <= 0 || ret > 2048000){
+		response->status = SSEMD_ERROR;
+		response->code = 0x01;
+	} else {
+		response->status = SSEMD_RESPONSE;
+		response->code = SSEMD_RESPONSE_OK;
+	}
 }
 
 int validate_token(struct ssemd * currAdmin) {
