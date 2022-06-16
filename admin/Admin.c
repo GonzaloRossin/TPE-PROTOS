@@ -105,6 +105,7 @@ void parseResponse(struct buffer * Buffer){
 	int n = 0;
 	struct admin_parser * adminParser = (struct admin_parser *)malloc(sizeof(struct admin_parser));
 	adminParser->size = 0;
+	adminParser->isList = false;
 	adminParser->state = read_status;
 	while(adminParser->state != read_close){
 		switch (adminParser->state){
@@ -127,6 +128,7 @@ void parseResponse(struct buffer * Buffer){
 					adminParser->state = read_done;
 				} else if(Buffer->data[n] == SSEMD_RESPONSE_LIST){
 					print_log(INFO, "The list of users is:\n");
+					adminParser->isList = true;
 					adminParser->state = read_size1;
 				} else if(Buffer->data[n] == SSEMD_RESPONSE_INT){
 					print_log(INFO, "Response number:\n");
@@ -182,10 +184,15 @@ void parseResponse(struct buffer * Buffer){
 				if(adminParser->size > 0) {
 					int i;
 					for(i=0; i<adminParser->size; i++){
-						printf("%c", adminParser->data[i]);
-						if(adminParser->data[i] == '\0'){
-							printf("\n");
+						if(adminParser->isList){
+							printf("%c", adminParser->data[i]);
+							if(adminParser->data[i] == '\0'){
+								printf("\n");
+							}
+						} else {
+							printf("%c", adminParser->data[i] + '0');
 						}
+
 					}
 					adminParser->state = read_close;
 				}

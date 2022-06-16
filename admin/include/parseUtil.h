@@ -27,6 +27,7 @@ typedef struct admin_parser{
     int size;
     char * data;
     int dataPointer;
+    bool isList;
 };
 
 enum ssmed_response_code {

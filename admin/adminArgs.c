@@ -89,11 +89,12 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
 
 void parseData(struct ssemd_args * args){
     char * data = args->data;
-    uint8_t * toRet;
+    uint8_t * toRet = (uint8_t *)args->data;
     int i = 0;
     if(args->cmd == 0x01){
         while(data[i] != '\0'){
-            toRet[i++] = data[i] - '0'; //ascii to int
+            toRet[i] = data[i] - '0'; //ascii to int
+            i++;
         }
         int a;
         for(a=0; a<i; a++){
@@ -145,10 +146,10 @@ void checkRequiredParams(struct ssemd_args *args){
         fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
         exit(1);
     }
-    if(args->cmd > 0x07 && args->type == 0x01){
-        fprintf(stderr, "argument not accepted: %x, -G has max of 6\n", args->cmd);
-        exit(1);
-    }
+    // if(args->cmd > 0x07 && args->type == 0x01){
+    //     fprintf(stderr, "argument not accepted: %x, -G has max of 6\n", args->cmd); //not anymore
+    //     exit(1);
+    // }
 }
 
 void handleRepeatedTYPE(struct ssemd_args *args, char newType){

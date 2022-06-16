@@ -129,21 +129,21 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_historic_connections();
 			c = htonl(c);
-			memcpy(response->data, &c, sizeof(unsigned long));
+			memcpy(response->data, &c, sizeof(unsigned int));
             break;
 
 		case SSEMD_CURRENT_CONNECTIONS: 
 			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_current_connections();
 			c = htonl(c);
-			memcpy(response->data, &c, sizeof(unsigned long));
+			memcpy(response->data, &c, sizeof(unsigned int));
             break;
 
 		case SSEMD_BYTES_TRANSFERRED: 
 			setResponse(response, SSEMD_RESPONSE_INT);
 			c = get_bytes_transferred();
 			c = htonl(c);
-			memcpy(response->data, &c, sizeof(unsigned long));
+			memcpy(response->data, &c, sizeof(unsigned int));
             break;
 
 		case SSEMD_USER_LIST: 
