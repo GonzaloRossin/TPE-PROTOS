@@ -92,7 +92,7 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 	message[i++] = 0x00; //TOKEN
 	message[i++] = args->type; //TYPE
 	message[i++] = args->cmd; //CMD
-	// message[i++] = args->size1;
+	message[i++] = args->size1;
 	message[i++] = args->size2; //SIZE
 	int size = 0;
 	size+=args->size2; 

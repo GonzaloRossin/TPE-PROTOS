@@ -155,10 +155,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 		
             break;
 		case SSEMD_AUTH_STATUS: 
-			setResponse(response, SSEMD_RESPONSE_INT);
-			c = get_BUFFSIZE();
-			c = htonl(c);
-			memcpy(response->data, &c, sizeof(unsigned int));
+
             break;
 		case SSEMD_GET_BUFFER_SIZE: 
 			setResponse(response, SSEMD_RESPONSE_INT);
@@ -179,10 +176,9 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 	currAdmin->response = response;
 	response->size1 = 0x00;
 	response->size2 = 0x00;
-	unsigned long c = 0;
 	switch(request->CMD) {
 		case SSEMD_BUFFER_SIZE:
-
+			handleSetBuffSize(request, response);
             break;
 		case SSEMD_CLIENT_TIMEOUT: 
 		
@@ -211,6 +207,17 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
+void handleSetBuffSize(struct payload * request, ssemd_response * response){
+	int i;
+	double ret;
+	for(i=0; i<request->data_len; i++){
+		ret += request->data[i] * pow(10, request->data_len -i-1);
+	}
+
+	set_BUFFSIZE(ret);
+	response->status = SSEMD_RESPONSE;
+	response->code = SSEMD_RESPONSE_OK;
+}
 
 int validate_token(struct ssemd * currAdmin) {
 	char *my_token = get_ADMIN_TOKEN();

@@ -7,7 +7,7 @@ clean:
 
 COMMON =  ./utils/logger.o ./utils/util.o ./utils/buffer.o ./utils/args.o
 
-SERVER_SOURCES = ./server/server.o ./utils/selector.o ./utils/tcpServerUtil.o ./server/socks5/socks5Handler.o ./server/socks5/socks5.o ./parsers/hello.o ./parsers/protocolParser.o ./parsers/request.o ./server/socks5/helloState.o ./server/socks5/requestState.o ./server/socks5/connectedState.o ./server/adminFunctions/adminGets.o ./server/ssemd/ssemdHandler.o ./server/ssemd/ssemd.o
+SERVER_SOURCES = -lm ./server/server.o ./utils/selector.o ./utils/tcpServerUtil.o ./server/socks5/socks5Handler.o ./server/socks5/socks5.o ./parsers/hello.o ./parsers/protocolParser.o ./parsers/request.o ./server/socks5/helloState.o ./server/socks5/requestState.o ./server/socks5/connectedState.o ./server/adminFunctions/adminGets.o ./server/ssemd/ssemdHandler.o ./server/ssemd/ssemd.o
 CLIENT_SOURCES = ./admin/Admin.o ./admin/adminUtil.o ./admin/adminArgs.o
 
 logger.o: ./include/logger.h

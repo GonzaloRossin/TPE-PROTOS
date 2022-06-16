@@ -55,7 +55,7 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             }
             if(byte == 0x00){
                 parser->data->token[parser->token_index] = byte;
-                parser->data->token = realloc(parser->data->token,parser->token_index);
+                parser->data->token = realloc(parser->data->token,parser->token_index+1);
                 parser->data->token_len = parser->token_index;
                 parser->state = protocol_type;
             }else{
@@ -80,9 +80,9 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             break;
 
         case protocol_cmd_get:
-            if(byte <= 0x06){
+            if(byte <= 0x08){
                 parser->data->CMD = byte;
-                parser->state = protocol_size;
+                parser->state = protocol_size1;
             }
             else{
                 parser->state = protocol_error;
@@ -92,24 +92,35 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
         case protocol_cmd_edit:
             if(byte <= 0x08){
                 parser->data->CMD = byte;
-                parser->state = protocol_size;
+                parser->state = protocol_size1;
             }
             else{
                 parser->state = protocol_error;
             }
             break;
 
-        case protocol_size:
+        case protocol_size1:
             if(parser->on_size_authentication_method != NULL ) {
                 if(parser->on_size_authentication_method(parser, byte)){//devuelve falso si el size no matchea con el comando
                     parser->state = protocol_error;
                     break;
                 }
             }
-            parser->size = byte;
-            memset(&(parser->data->data), 0, parser->size);
+            parser->size1 = byte;
+            // memset(&(parser->data->data), 0, parser->size);
             // parser->data->data = calloc(1,parser->size);
-            if (byte > 0) {
+            parser->state = protocol_size2;
+            break;
+        
+        case protocol_size2:
+            parser->size2 = byte;
+            int size=parser->size2;
+
+            if(parser->size1 != 0x00){
+                size += 255 + parser->size1;
+            }
+            if(size>0){
+                parser->data->data = calloc(1, sizeof(uint8_t) * size);
                 parser->state = protocol_data;
             } else {
                 parser->state = protocol_done;
@@ -117,9 +128,14 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             break;
 
         case protocol_data:
+            size = parser->size2;
+            if(parser->size1 != 0x00){
+                size += 255 + parser->size1;
+            }
+
             parser->data->data[parser->data->data_len] = byte;
             parser->data->data_len++;
-            if(parser->data->data_len == parser->size){
+            if(parser->data->data_len == size){
                 parser->state = protocol_done;
             }
 

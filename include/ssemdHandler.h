@@ -25,6 +25,7 @@
 #include "ssemd.h"
 #include "util.h"
 #include <endian.h>
+#include <math.h>
 
 void masterssemdHandler(struct selector_key *key);
 
@@ -50,6 +51,7 @@ int marshall(buffer * buffer, ssemd_response * response);
 
 void setResponse(ssemd_response * response, uint8_t code);
 
+void handleSetBuffSize(struct payload * request, ssemd_response * response);
 
 #endif
 
