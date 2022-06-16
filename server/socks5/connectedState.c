@@ -19,13 +19,15 @@ void connected_init(struct socks5 * currClient) {
             buffer * newBuffer = (buffer*)malloc(sizeof(buffer));
             d->aux_b = newBuffer;
             buffer_init(d->aux_b, get_BUFFSIZE() + 1, malloc(get_BUFFSIZE() + 1)); // No me convence traerme el buff size asi
+
+            currClient->disector_enabled = get_dissector_state();
         }
     }
 
     // Init connected for origin
 	d = &currClient->remote.st_connected;
 
-    currClient->disector_enabled = get_dissector_state();
+    
 
 	d->fd = currClient->remote_socket;
 	d->r = currClient->bufferFromRemote;
