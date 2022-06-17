@@ -12,7 +12,7 @@ void hello_read_init(struct socks5 * currClient) {
 	hello_parser_init(d->pr);
 	d->r = currClient->bufferFromClient;
 	d->w = currClient->bufferFromRemote;
-	
+
 	c->on_departure = hello_departure;
 	c->init = true;
 }
@@ -85,6 +85,8 @@ void hello_write(struct selector_key *key) {
 			change_state(currClient, UP_READ_STATE);
 		} else if (currClient->client.hello.method == SOCKS_HELLO_NOAUTHENTICATION_REQUIRED) {
 			change_state(currClient, REQUEST_READ_STATE);
+		} else {
+			socks5_done(key);
 		}
 	}
 }
