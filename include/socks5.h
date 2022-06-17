@@ -54,14 +54,13 @@ struct clients_data
     int clients_size;
 };
 
-struct hello
-{
+typedef struct hello_st {
     hello_parser * pr;
     buffer * w;
     buffer * r;
 
     uint8_t method;
-};
+} hello_st;
 
 typedef struct userpass_st {
     buffer *r, *w;
@@ -134,7 +133,7 @@ struct socks5
     bool disector_enabled;
 
     union {
-        struct hello st_hello;
+        hello_st hello;
         struct userpass_st userpass;
         struct st_request st_request;
         struct connected st_connected;

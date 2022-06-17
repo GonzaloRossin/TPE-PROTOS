@@ -118,7 +118,7 @@ extern enum hello_state hello_consume(buffer * buffer, struct hello_parser * par
 extern int hello_marshall(buffer * buffer, const uint8_t method){
     size_t n;
     uint8_t * buff = buffer_write_ptr(buffer, &n);
-    if(n<2){
+    if(n<2) {
         return -1;
     }
     buff[0] = 0x05;

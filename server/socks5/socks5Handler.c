@@ -25,6 +25,7 @@ void masterSocks5Handler(struct selector_key *key) {
 		if(clis[i].isAvailable)
 		{
 			new_client(&clis[i], new_client_socket, get_BUFFSIZE());
+			hello_read_init(&clis[i]);
 
 			register_client_connection();
 			
