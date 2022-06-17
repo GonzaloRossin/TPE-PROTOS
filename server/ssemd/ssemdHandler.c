@@ -300,7 +300,7 @@ void handleBoolResponse(struct payload * request, ssemd_response * response){
 	unsigned int c;
 	if(request->CMD == SSEMD_DISSECTOR_STATUS){
 		response->status = SSEMD_RESPONSE;
-		response->code = SSEMD_RESPONSE_OK;
+		response->code = SSEMD_RESPONSE_BOOL;
 		if(get_dissector_state()){
 			c = SSEMD_TRUE;
 		} else {
@@ -309,7 +309,7 @@ void handleBoolResponse(struct payload * request, ssemd_response * response){
 		memcpy(response->data, &c, sizeof(unsigned char));
 	} else if(request->CMD == SSEMD_AUTH_STATUS){
 		response->status = SSEMD_RESPONSE;
-		response->code = SSEMD_RESPONSE_OK;
+		response->code = SSEMD_RESPONSE_BOOL;
 		if(get_auth_state()){
 			c = SSEMD_TRUE;
 		} else {

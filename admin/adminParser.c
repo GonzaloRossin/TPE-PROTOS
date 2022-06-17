@@ -165,9 +165,9 @@ void printList(struct admin_parser * adminParser){
 
 void printBool(struct admin_parser * adminParser){
     if(adminParser->data[0] == SSEMD_TRUE){
-        printf("turned ON");
+        printf("turned ON\n");
     } else if(adminParser->data[0] == SSEMD_FALSE){
-        printf("turned OFF");
+        printf("turned OFF\n");
     } else {
         print_log(ERROR, "Reading boolean response");
     }
