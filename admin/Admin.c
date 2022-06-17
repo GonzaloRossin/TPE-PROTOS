@@ -254,6 +254,10 @@ void processParser(struct admin_parser * adminParser){
 				print_log(ERROR, "Couldn't add new user, no space for new users");
 				break;
 
+			case SSEMD_ERROR_REPEATEDUSER:
+				print_log(ERROR, "Couldn't add new user, repeated [user:pass]");
+				break;
+
 			case SSEMD_ERROR_UNKNOWNTYPE:
 				print_log(ERROR, "Couldn't execute command, unknown TYPE");
 				break;

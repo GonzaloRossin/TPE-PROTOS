@@ -258,7 +258,7 @@ void ssemd_incorrect_token(struct ssemd * currAdmin) {
 
 void handleEditUser(struct payload * request, ssemd_response * response, bool isAdd){
 	struct users * users = get_users();
-	bool done = false;
+	int retCode = 2;
 	char * newName;
 	char * name;
 	char * pass;
@@ -276,35 +276,34 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 			pass = users[userNumber].pass;
 			if(! (name != '\0' && pass != '\0')){ //if is not a valid user, write it here
 				while(request->data[dataPointer] != ':'){ //write username
-					// users[userNumber].name[wordPointer++] = request->data[dataPointer++];
 					newUser.name[wordPointer++] = request->data[dataPointer++];
-					// newName[wordPointer++] = request->data[dataPointer++];
 				}
 				newUser.name[wordPointer++] = '\0';
-				// users[userNumber].name[wordPointer] = '\0';
 				wordPointer = 0; dataPointer++;
 
-				// while(request->data[dataPointer] != '\0'){ //write password
 				while(dataPointer < request->data_len){ //write password
-					// users[userNumber].pass[wordPointer++] = request->data[dataPointer++];
 					newUser.pass[wordPointer++] = request->data[dataPointer++];
 				}
-				// users[userNumber].pass[wordPointer] = '\0';
 				newUser.pass[wordPointer++] = '\0';
 
-				users[userNumber] = newUser;
-
-				done=true;
+				if(! findUser(newUser)){
+					users[userNumber] = newUser;
+					retCode = 0;
+				} else {
+					retCode = 1;
+				}
 				break;
 			}
 		}
-		if(!done){
-			response->status = SSEMD_ERROR;
-			response->code = SSEMD_ERROR_NOSPACEUSER;
-		} else {
-
+		if(retCode == 0){
 			response->status = SSEMD_RESPONSE;
 			response->code = SSEMD_RESPONSE_OK;
+		} else if(retCode == 1){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_REPEATEDUSER;
+		} else if(retCode == 2){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_NOSPACEUSER;
 		}
 		response->size1 = 0x00;
 		response->size2 = 0x00;
@@ -312,6 +311,27 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 	} else { //is remove
 
 	}
+}
+
+bool findUser(struct users findUser){
+    struct users *users = get_users();
+    bool found = false;
+
+    int i = 0;
+    while (i < MAX_USERS && !found) {
+        if (users[i].name != '\0') {
+            if (0 == strcmp((const char *)users[i].name, findUser.name)) {
+                if (users[i].pass != '\0') {
+                    if (0 == strcmp((const char *)users[i].pass, findUser.pass)) {
+                        found = true;
+                    }
+                }  
+            }
+        }
+        i++;
+    }
+
+    return found;
 }
 
 void handleGetUserList(struct payload * request, ssemd_response * response){
