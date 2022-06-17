@@ -39,6 +39,8 @@ int validate_token(struct ssemd * currAdmin);
 void ssemd_process_get(struct ssemd * currAdmin);
 void ssemd_process_edit(struct ssemd * currAdmin);
 
+void ssemd_incorrect_token(struct ssemd * currAdmin);
+
 void ssemd_write_request(struct selector_key *key);
 
 void ssemd_write(struct selector_key *key);

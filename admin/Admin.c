@@ -108,6 +108,10 @@ void handleRecv(int sock, struct buffer * Buffer, struct admin_parser * adminPar
 }
 
 void processParser(struct admin_parser * adminParser){
+	if(adminParser->status == SSEMD_ERROR && adminParser->response_code == SSEMD_ERROR_INCORRECT_TOKEN){
+		print_log(ERROR, "Wrong token");
+		return;
+	}
 	switch (adminParser->type_sent)
 	{
 	case SSEMD_GET:

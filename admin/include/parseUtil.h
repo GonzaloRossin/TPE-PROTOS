@@ -56,6 +56,7 @@ enum ssemd_error_code {
 
     SSEMD_ERROR_UNKNOWNTYPE     = 0xA0,
     SSEMD_ERROR_UNKNOWNCMD      = 0xA1,
+    SSEMD_ERROR_INCORRECT_TOKEN = 0xA2,
 
     SSEMD_ERROR_NOSPACE         = 0xFA,
     SSEMD_ERROR_UNKNOWNERROR    = 0xFF,

@@ -51,7 +51,7 @@ extern enum admin_state admin_parser_feed(struct admin_parser * adminParser, con
         case read_size2:
             if(byte == 0x00){
                 if(adminParser->size == 0){
-                    if(adminParser->response_code != SSEMD_RESPONSE_OK){
+                    if(adminParser->response_code != SSEMD_RESPONSE_OK && adminParser->status != SSEMD_ERROR){
                         adminParser->state = read_error; //it should contain data but doesnt
                     } else {
                         adminParser->state = read_done;
@@ -76,7 +76,10 @@ extern enum admin_state admin_parser_feed(struct admin_parser * adminParser, con
             }
             break;
 
-        // case read_error_code:
+        case read_error_code:
+            adminParser->response_code = byte;
+            adminParser->state = read_size1;
+            break;
 
 
         case read_error:

@@ -111,11 +111,9 @@ void ssemd_request_process(struct ssemd * currAdmin) {
 		} else if (request->type == SSEMD_EDIT) {
 			ssemd_process_edit(currAdmin);
 		}
-	} else {
-
+	} else { //incorrect token
+		ssemd_incorrect_token(currAdmin);
 	}
-	
-	
 }
 
 void ssemd_process_get(struct ssemd * currAdmin) {
@@ -244,6 +242,17 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
         default:
 			break;
 	}
+	marshall(currAdmin->bufferWrite, currAdmin->response);
+}
+
+void ssemd_incorrect_token(struct ssemd * currAdmin) {
+	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
+	payload * request = currAdmin->pr->data;
+	currAdmin->response = response;
+	response->status = SSEMD_ERROR;
+	response->code = SSEMD_ERROR_INCORRECT_TOKEN;
+	response->size1 = 0x00;
+	response->size2 = 0x00;
 	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
