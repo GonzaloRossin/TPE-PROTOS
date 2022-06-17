@@ -205,7 +205,7 @@ void parseResponse(struct buffer * Buffer){
 						case SSEMD_RESPONSE_LIST:
 							printf("%c", adminParser->data[i]);
 							if(adminParser->data[i] == '\0'){
-								printf("\n ");
+								printf("\n");
 							}
 							break;
 						
@@ -244,6 +244,9 @@ void parseResponse(struct buffer * Buffer){
 						}
 					}
 					adminParser->state = read_close;
+					free(adminParser->data);
+				} else {
+					adminParser->state = read_close;
 				}
 				printf("\n");
 				break;
@@ -259,6 +262,5 @@ void parseResponse(struct buffer * Buffer){
 				break;
 		}
 	}
-	free(adminParser->data);
 	free(adminParser);
 }
