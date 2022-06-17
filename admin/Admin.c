@@ -26,10 +26,14 @@ int main(int argc, char *argv[]) {
     uint8_t * dataClient = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
     memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
     buffer_init(Buffer, BUFFSIZE, dataClient);
+	print_log(DEBUG, "%0x %0x %0x %0x", Buffer->data[0], Buffer->data[1], Buffer->data[2], Buffer->data[3]);
+
 
 
 	//send command to server
 	handleSend(args, sock, Buffer, bytesToSend);
+
+	memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
 
 	//read reply
 	handleRecv(sock, Buffer);
@@ -94,6 +98,7 @@ void handleRecv(int sock, struct buffer * Buffer){
 			print_log(ERROR, "recv() connection closed prematurely");
 			break;
 		} else {
+			print_log(DEBUG, "%0x %0x %0x %0x", Buffer->data[4], Buffer->data[5], Buffer->data[6], Buffer->data[7]);
 			parseResponse(Buffer);
 
 			break;
@@ -104,7 +109,8 @@ void handleRecv(int sock, struct buffer * Buffer){
 void parseResponse(struct buffer * Buffer){
 	int n = 0;
 	struct admin_parser * adminParser = (struct admin_parser *)malloc(sizeof(struct admin_parser));
-	int j, number;
+	int j;
+	unsigned int number;
 	double power; 
 	adminParser->number = 0;
 	adminParser->size = 0;
@@ -173,7 +179,7 @@ void parseResponse(struct buffer * Buffer){
 				break;
 
 			case prepare_data:
-				adminParser->data = (char *)malloc(sizeof(uint8_t) * adminParser->size);
+				adminParser->data = (unsigned char *)malloc(sizeof(uint8_t) * adminParser->size);
 				adminParser->dataPointer = 0;
 				adminParser->state = read_data;
 				break;
@@ -203,15 +209,17 @@ void parseResponse(struct buffer * Buffer){
 							}
 							break;
 						
-						case SSEMD_RESPONSE_INT:					
-
-								for(j=0; j<4; j++){
-									power = pow(10, 4 - j -1);
+						case SSEMD_RESPONSE_INT:
+								j = i;					
+								for(j; j<i+4; j++){
+									power = pow(256, 4 - j -1);
 									number = adminParser->data[j];// - '0';
+									// letter = adminParser->data[j] + '0';
+									printf("%0x ", adminParser->data[j]);
 									adminParser->number +=  number * power;
 								}
 
-							printf("%u", adminParser->number);
+							printf("\n%u", adminParser->number);
 							adminParser->state = read_close;
 							i+=4;
 							break;

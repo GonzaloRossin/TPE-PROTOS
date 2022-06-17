@@ -1,7 +1,5 @@
 #include "./../../include/ssemdHandler.h"
 
-unsigned int c;
-
 static const struct fd_handler ssemdHandler = {
 	.handle_read       = ssemd_read,
 	.handle_write      = ssemd_write,
@@ -124,6 +122,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
 	payload * request = currAdmin->pr->data;
 	currAdmin->response = response;
+	unsigned int c = 0;
 	switch(request->CMD) {
 		case SSEMD_HISTORIC_CONNECTIONS:
 			setResponse(response, SSEMD_RESPONSE_INT);
@@ -291,6 +290,7 @@ void handleGetUserList(struct payload * request, ssemd_response * response){
 
 
 void handleBoolResponse(struct payload * request, ssemd_response * response){
+	unsigned int c;
 	if(request->CMD == SSEMD_DISSECTOR_STATUS){
 		response->status = SSEMD_RESPONSE;
 		response->code = SSEMD_RESPONSE_OK;

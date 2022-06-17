@@ -47,7 +47,7 @@ enum ssemd_bool {
 typedef struct admin_parser{
     enum admin_state state;
     int size;
-    char * data;
+    unsigned char * data;
     int dataPointer;
     enum ssemd_response_code code;
     unsigned int number;

@@ -7,50 +7,60 @@
 #include "args.h"
 
 //GET:
-void register_client_connection();
+void
+register_client_connection();
 
-unsigned int get_historic_connections();
+unsigned int
+get_historic_connections();
 
-unsigned int get_current_connections();
+unsigned int
+get_current_connections();
 
-void unregister_current_connection();
+void
+unregister_current_connection();
 
-// char *
-// list_users();
 
-// bool
-// dissector_status();
+void
+register_bytes_transferred(unsigned int bytes);
 
-// bool
-// authentication_status();
+unsigned int
+get_bytes_transferred();
 
-void register_bytes_transferred(unsigned int bytes);
+unsigned int
+get_BUFFSIZE();
 
-unsigned int get_bytes_transferred();
+void
+set_BUFFSIZE(unsigned int newSize);
 
-unsigned int get_BUFFSIZE();
+char *
+get_ADMIN_TOKEN();
 
-void set_BUFFSIZE(unsigned int newSize);
+void
+set_ADMIN_TOKEN(char * newToken);
 
-char * get_ADMIN_TOKEN();
+bool
+get_dissector_state();
 
-void set_ADMIN_TOKEN(char * newToken);
+bool 
+set_dissector_ON();
 
-bool get_dissector_state();
+bool 
+set_dissector_OFF();
 
-bool set_dissector_ON();
+bool 
+get_auth_state();
 
-bool set_dissector_OFF();
+bool 
+set_auth_ON();
 
-bool get_auth_state();
+bool 
+set_auth_OFF();
 
-bool set_auth_ON();
+void 
+init_users(struct users* new_users);
 
-bool set_auth_OFF();
-
-void init_users(struct users* new_users);
-
-struct users * get_users();
+struct 
+users * get_users();
 
 //EDIT:
 
