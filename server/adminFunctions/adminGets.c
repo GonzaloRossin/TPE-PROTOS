@@ -12,6 +12,7 @@ static bool dissector_status = true;
 static bool auth_status = true;
 
 static struct users myUsers[MAX_USERS];
+static unsigned int userQty;
 // struct users * users = NULL;
 
 void init_users(struct users * new_users) {
@@ -23,6 +24,8 @@ void init_users(struct users * new_users) {
 struct users * get_users() {
     return myUsers;
 }
+
+// unsigned int 
 
 void register_client_connection() {
     current_connections++;

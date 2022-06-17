@@ -64,9 +64,13 @@ bool validate_user_proxy(uint8_t *uid, uint8_t *pw) {
 
     int i = 0;
     while (i < MAX_USERS && !auth_valid) {
-        if (0 == strcmp((const char *)users[i].name, (const char *)uid)) {
-            if (0 == strcmp((const char *)users[i].pass, (const char *)pw)) {
-                auth_valid = true;
+        if (users[i].name != '\0') {
+            if (0 == strcmp((const char *)users[i].name, (const char *)uid)) {
+                if (users[i].pass != '\0') {
+                    if (0 == strcmp((const char *)users[i].pass, (const char *)pw)) {
+                        auth_valid = true;
+                    }
+                }  
             }
         }
         i++;
