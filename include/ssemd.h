@@ -25,6 +25,8 @@ enum ssmed_cmd_get {
     SSEMD_DISSECTOR_STATUS      = 0x05,
     SSEMD_AUTH_STATUS           = 0x06,
     SSEMD_GET_BUFFER_SIZE       = 0x07,
+    SSEMD_GET_TIMEOUT           = 0x08,
+
 };
 enum ssmed_cmd_EDIT {
     SSEMD_BUFFER_SIZE       = 0x01,

@@ -165,6 +165,13 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned int));
             break;
+		
+		case SSEMD_GET_TIMEOUT: 
+			setResponse(response, SSEMD_RESPONSE_INT);
+			c = get_timeout();
+			c = htonl(c);
+			memcpy(response->data, &c, sizeof(unsigned int));
+            break;
 
         default:
 			setResponse(response, 0x00);
@@ -327,8 +334,6 @@ void handleSetInt(struct payload * request, ssemd_response * response){
 		ret +=  number * power;
 	}
 
-
-
 	if(ret <= 0){
 		response->status = SSEMD_ERROR;
 		response->code = SSEMD_ERROR_SMALLBUFFER;
@@ -356,7 +361,7 @@ void handleSetInt(struct payload * request, ssemd_response * response){
 			response->status = SSEMD_RESPONSE;
 			response->code = SSEMD_RESPONSE_OK;
 		}
-	} else if(request->CMD == SSEMD_BUFFER_SIZE){
+	} else if(request->CMD == SSEMD_CLIENT_TIMEOUT){
 		if(ret <= 0){
 			response->status = SSEMD_ERROR;
 			response->code = SSEMD_ERROR_SMALLTIMEOUT;
