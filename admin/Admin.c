@@ -104,8 +104,10 @@ void handleRecv(int sock, struct buffer * Buffer){
 void parseResponse(struct buffer * Buffer){
 	int n = 0;
 	struct admin_parser * adminParser = (struct admin_parser *)malloc(sizeof(struct admin_parser));
+	int j, number;
+	double power; 
+	adminParser->number = 0;
 	adminParser->size = 0;
-	adminParser->isList = false;
 	adminParser->state = read_status;
 	while(adminParser->state != read_close){
 		switch (adminParser->state){
@@ -125,16 +127,19 @@ void parseResponse(struct buffer * Buffer){
 			case read_response_code:
 				if(Buffer->data[n] == SSEMD_RESPONSE_OK){
 					print_log(INFO, "OK, The requested command was processed succesfully\n");
+					adminParser->code = SSEMD_RESPONSE_OK;
 					adminParser->state = read_done;
 				} else if(Buffer->data[n] == SSEMD_RESPONSE_LIST){
-					print_log(INFO, "The list of users is:\n");
-					adminParser->isList = true;
+					print_log(INFO, "The list of users:passwords is:\n");
+					adminParser->code = SSEMD_RESPONSE_LIST;
 					adminParser->state = read_size1;
 				} else if(Buffer->data[n] == SSEMD_RESPONSE_INT){
 					print_log(INFO, "Response number:\n");
+					adminParser->code = SSEMD_RESPONSE_INT;
 					adminParser->state = read_size1;
 				} else if(Buffer->data[n] == SSEMD_RESPONSE_BOOL){
 					print_log(INFO, "Boolean answer:\n");
+					adminParser->code = SSEMD_RESPONSE_BOOL;
 					adminParser->state = read_size1;
 				} else {
 					print_log(INFO, "You have recieved a message with unknown CODE\n");
@@ -184,20 +189,51 @@ void parseResponse(struct buffer * Buffer){
 				if(adminParser->size > 0) {
 					int i;
 					for(i=0; i<adminParser->size; i++){
-						if(adminParser->isList){
+						switch (adminParser->code)
+						{
+						case SSEMD_RESPONSE_OK:
+							print_log(ERROR, "This response shouldn't have any DATA, error");
+							adminParser->state = read_error;
+							break;
+						
+						case SSEMD_RESPONSE_LIST:
 							printf("%c", adminParser->data[i]);
 							if(adminParser->data[i] == '\0'){
-								printf("\n");
+								printf("\n ");
 							}
-						} else {
-							printf("%0X\n", adminParser->data[i]);
-							// if(adminParser->data[i] >= 0x00 && adminParser->data[i] <= 0x09){
-							// 	printf("%c", adminParser->data[i] + '0');
-							// } else {
-							// 	printf("%c", adminParser->data[i] + '0');
-							// }
-						}
+							break;
+						
+						case SSEMD_RESPONSE_INT:					
 
+								for(j=0; j<4; j++){
+									power = pow(10, 4 - j -1);
+									number = adminParser->data[j];// - '0';
+									adminParser->number +=  number * power;
+								}
+
+							printf("%u", adminParser->number);
+							adminParser->state = read_close;
+							i+=4;
+							break;
+
+						case SSEMD_RESPONSE_BOOL:
+							if(adminParser->data[i] == 0x00){
+								printf("TRUE\n");
+
+							} else if(adminParser->data[i] == 0x11){
+								printf("FALSE\n");
+							}else{
+								print_log(ERROR, "Wrong response for a BOOL\n");
+								adminParser->state = read_error;
+							}
+							break;
+
+						default:
+							print_log(ERROR, "Wrong CODE detected\n");
+							adminParser->state = read_error;
+
+							break;
+						}
 					}
 					adminParser->state = read_close;
 				}
@@ -206,6 +242,7 @@ void parseResponse(struct buffer * Buffer){
 
 			case read_error:
 				print_log(INFO, "exiting because of error\n");
+				adminParser->state = read_close;
 				break;
 
 			default:

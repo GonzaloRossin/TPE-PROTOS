@@ -45,11 +45,11 @@ void masterSocks5Handler(struct selector_key *key) {
 // Escribo buffer en el socket
 int handleWrite(int socket, struct buffer * buffer) {
 	size_t bytesToSend = buffer->write - buffer->read;
-	print_log(DEBUG, "bytesToSend %zu", bytesToSend);
+	// print_log(DEBUG, "bytesToSend %zu", bytesToSend);
 	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
-		print_log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
+		// print_log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
 		ssize_t bytesSent = send(socket, buffer->data, bytesToSend,  MSG_DONTWAIT); 
-		print_log(INFO, "Sent %zu bytes\n", bytesSent);
+		// print_log(INFO, "Sent %zu bytes\n", bytesSent);
 
 		if ( bytesSent < 0) {
 			// Esto no deberia pasar ya que el socket estaba listo para escritura

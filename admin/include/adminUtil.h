@@ -19,6 +19,7 @@
 #include "../../include/buffer.h"
 #include "../../include/util.h"
 #include "parseUtil.h"
+#include <math.h>
 
 
 // Create and connect a new TCP client socket

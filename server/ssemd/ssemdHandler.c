@@ -281,7 +281,7 @@ void handleGetUserList(struct payload * request, ssemd_response * response){
 			response->size2 = (uint8_t) dataPointer;
 		}
 		response->status = SSEMD_RESPONSE;
-		response->code = SSEMD_USER_LIST;
+		response->code = SSEMD_RESPONSE_LIST;
 		
 	} else {
 		response->status = SSEMD_ERROR;
