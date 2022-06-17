@@ -1,13 +1,21 @@
 #include "../../include/upState.h"
 
+void up_departure(struct socks5 * currClient) {
+    free(currClient->client.userpass.parser);
+}
+
 void up_read_init(struct socks5 * currClient) {
     struct userpass_st * up_s = &currClient->client.userpass;
+    struct connection_state *c = currClient->connection_state;
 
     up_s->r = currClient->bufferFromClient;
     up_s->w = currClient->bufferFromRemote;
     up_s->parser = (up_req_parser)calloc(1, sizeof(struct up_req_parser));
     up_req_parser_init(up_s->parser);
     up_s->authenticated = false;
+
+    c->on_departure = up_departure;
+	c->init = true;
 }   
 
 void up_read_close(struct socks5 * currClient) {
@@ -86,6 +94,7 @@ void up_write(struct selector_key *key) {
     if (0 == handleWrite(key->fd, currClient->client.userpass.w)) {
         if (currClient->client.userpass.authenticated) {
             selector_set_interest(key->s, key->fd, OP_READ);
+            currClient->connection_state->on_arrival = request_read_init;
 		    change_state(currClient, REQUEST_READ_STATE);
         } else {
             socks5_done(key);

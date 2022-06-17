@@ -4,7 +4,8 @@
 #include "socks5.h"
 #include "selector.h"
 #include "socks5Handler.h"
-    
+
+void request_read_init(struct socks5 * currClient);
 void request_read(struct selector_key *key);
 enum client_state request_connect(struct selector_key *key);
 void request_connecting(struct selector_key *key);
