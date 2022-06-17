@@ -5,6 +5,17 @@ void hello_departure(struct socks5 * currClient) {
 	free(currClient->client.st_hello.pr);
 }
 
+void hello_read_init(struct socks5 * currClient) {
+	struct hello *d = &currClient->client.st_hello;
+	struct connection_state *c = currClient->connection_state;
+
+	// d->pr = (hello_parser *) calloc(1, sizeof(hello_parser));
+	// hello_parser_init(d->pr);
+	// d->r = currClient->bufferFromClient;
+	// d->w = currClient->bufferFromRemote;
+	// c->on_departure = hello_departure;
+}
+
 void hello_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	hello_parser * pr = currClient->client.st_hello.pr;
@@ -12,7 +23,6 @@ void hello_read(struct selector_key *key) {
 	if(!currClient->connection_state->init) {
 		pr = (hello_parser *) calloc(1, sizeof(hello_parser));
 		hello_parser_init(pr);
-		// pr->on_authentication_method = on_auth;
 		currClient->connection_state->init = true;
 		currClient->client.st_hello.r = currClient->bufferFromClient;
 		currClient->connection_state->on_departure = hello_departure;
@@ -53,14 +63,23 @@ void hello_process(struct hello *d) {
 	uint8_t *methods = d->pr->auth;
     uint8_t methods_c = d->pr->nauth;
 	uint8_t m = SOCKS_HELLO_NO_ACCEPTABLE_METHODS;
+	set_auth_OFF();
+	bool auth_on = get_auth_state();
 
-
+	
     for (int i = 0; i < methods_c; i++)
     {    
-        if(methods[i] == SOCKS_HELLO_USERPASS){
-            m = SOCKS_HELLO_USERPASS;
-            break;
-        }
+		if (auth_on) {
+			if(methods[i] == SOCKS_HELLO_USERPASS) {
+				m = SOCKS_HELLO_USERPASS;
+				break;
+        	}
+		} else {
+			if(methods[i] == SOCKS_HELLO_NOAUTHENTICATION_REQUIRED) {
+				m = SOCKS_HELLO_NOAUTHENTICATION_REQUIRED;
+				break;
+        	}
+		}
     }
 
 	d->method = m;
@@ -71,22 +90,18 @@ void hello_process(struct hello *d) {
     }
 }
 
+// Hello Write State
 void hello_write(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
 	if(handleWrite(key->fd, currClient->client.st_hello.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
-		currClient->connection_state->on_arrival = up_read_init;
-		change_state(currClient, UP_READ_STATE);
+		if (currClient->client.st_hello.method == SOCKS_HELLO_USERPASS) {
+			currClient->connection_state->on_arrival = up_read_init;
+			change_state(currClient, UP_READ_STATE);
+		} else if (currClient->client.st_hello.method == SOCKS_HELLO_NOAUTHENTICATION_REQUIRED) {
+			change_state(currClient, REQUEST_READ_STATE);
+		}
 	}
 }
-
-// void on_auth(struct hello_parser *parser, uint8_t method) {
-// 	if (!parser->data) {
-// 		u_int8_t * aux = (u_int8_t*) parser->data;
-// 		aux = (uint8_t*)calloc(1, sizeof(uint8_t));
-// 		*aux = method;
-// 		parser->data = aux;
-// 	}
-// }
 
