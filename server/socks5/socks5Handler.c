@@ -79,7 +79,7 @@ void socks5_read(struct selector_key *key) {
 		case HELLO_WRITE_STATE:
 			break;
 		case UP_READ_STATE:
-			hello_read(key);
+			up_read(key);
 			break;
 		
 		case REQUEST_READ_STATE:

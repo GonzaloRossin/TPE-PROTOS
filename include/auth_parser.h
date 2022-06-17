@@ -22,7 +22,7 @@ typedef enum up_req_state {
     UP_ERROR_INV_AUTH
 } up_req_state;
 
-struct  up_req_parser {
+struct up_req_parser {
     // public:      //
     uint8_t * uid;
     uint8_t * pw;

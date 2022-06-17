@@ -5,11 +5,12 @@ void up_read_init(struct socks5 * currClient) {
 
     up_s->r = currClient->bufferFromClient;
     up_s->w = currClient->bufferFromRemote;
+    up_s->parser = (up_req_parser)calloc(1, sizeof(struct up_req_parser));
     up_req_parser_init(up_s->parser);
 }   
 
 void up_read_close(struct socks5 * currClient) {
-	free_up_requ_parser(currClient->client.userpass.parser);
+	free_up_req_parser(currClient->client.userpass.parser);
 }
 
 void up_read(struct selector_key *key) {
@@ -54,5 +55,9 @@ void userpass_process(struct userpass_st *up_s, bool * auth_valid) {
     if(-1 == up_marshall(up_s->w, *auth_valid ? AUTH_SUCCESS : AUTH_FAILURE)){
 
     }
+}
+
+bool validate_user_proxy(uint8_t *uid, uint8_t *pw) {
+
 }
 

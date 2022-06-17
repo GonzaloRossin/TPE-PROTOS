@@ -1,7 +1,6 @@
 #include "../include/auth_parser.h"
 
 void up_req_parser_init(up_req_parser uprp) {
-    memset(uprp, 0, sizeof(struct up_req_parser));
     uprp->state = UP_REQ_VERSION;
     uprp->uid = NULL;
     uprp->pw = NULL;

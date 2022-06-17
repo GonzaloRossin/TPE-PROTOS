@@ -10,5 +10,6 @@ void up_read_init(struct socks5 * currClient);
 void userpass_process(struct userpass_st *up_s, bool * auth_valid);
 
 void up_read(struct selector_key *key);
+bool validate_user_proxy(uint8_t *uid, uint8_t *pw);
 
 #endif

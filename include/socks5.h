@@ -66,7 +66,7 @@ struct hello
 typedef struct userpass_st {
     buffer *r, *w;
 
-    struct up_req_parser * parser;
+    up_req_parser parser;
 
     uint8_t * user;
     uint8_t * password;

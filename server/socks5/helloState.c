@@ -76,7 +76,7 @@ void hello_write(struct selector_key *key) {
 
 	if(handleWrite(key->fd, currClient->client.st_hello.w) == 0){
 		selector_set_interest(key->s, key->fd, OP_READ);
-		currClient->connection_state->on_arrival = up_init(currClient);
+		currClient->connection_state->on_arrival = up_read_init;
 		change_state(currClient, UP_READ_STATE);
 	}
 }

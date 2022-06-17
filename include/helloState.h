@@ -4,6 +4,7 @@
 #include "socks5.h"
 #include "selector.h"
 #include "socks5Handler.h"
+#include "upState.h"
 
 void hello_read(struct selector_key *key);
 void hello_write(struct selector_key *key);
