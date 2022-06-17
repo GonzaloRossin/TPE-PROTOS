@@ -2,9 +2,10 @@
 
 #define BUFFSIZE 4096
 
-void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend);
-void handleRecv(int sock, struct buffer * Buffer);
+void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend, struct admin_parser * adminParser);
+void handleRecv(int sock, struct buffer * Buffer, struct admin_parser * adminParser);
 void parseResponse(struct buffer * Buffer);
+void processParser(struct admin_parser * adminParser);
 
 int main(int argc, char *argv[]) {
 
@@ -12,7 +13,6 @@ int main(int argc, char *argv[]) {
 	parse_ssemd_args(argc, argv, args);
 
 	size_t bytesToSend = getSize(args);
-	print_log(DEBUG, "%d", bytesToSend);
 
 	// Create a reliable, stream socket using TCP
 	int sock = tcpClientSocket(args->mng_addr,  args->mng_port);
@@ -26,26 +26,36 @@ int main(int argc, char *argv[]) {
     uint8_t * dataClient = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
     memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
     buffer_init(Buffer, BUFFSIZE, dataClient);
-	print_log(DEBUG, "%0x %0x %0x %0x", Buffer->data[0], Buffer->data[1], Buffer->data[2], Buffer->data[3]);
 
-
+	struct admin_parser * adminParser = NULL;
+	if(adminParser == NULL){
+		adminParser = (struct admin_parser *)malloc(sizeof(struct admin_parser));
+		admin_parser_init(adminParser);
+	}
 
 	//send command to server
-	handleSend(args, sock, Buffer, bytesToSend);
+	handleSend(args, sock, Buffer, bytesToSend, adminParser);
 
 	memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
 
 	//read reply
-	handleRecv(sock, Buffer);
+	handleRecv(sock, Buffer, adminParser);
+
+	processParser(adminParser);
 
 	close(sock);
 	free(Buffer->data);
 	free(Buffer);
 	free(args);
+	free(adminParser->data);
+	free(adminParser);
 	return 0;
 }
 
-void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend){
+void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend, struct admin_parser * adminParser){
+	adminParser->type_sent = args->type;
+	adminParser->cmd_sent = args->cmd;
+
 	uint8_t message[bytesToSend];
 	int i=0;
     message[i++] = 0x01; //VER
@@ -72,10 +82,10 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 		print_log(ERROR, "error crafting admin message");
 		exit(1);
 	}
-	print_log(DEBUG, "sending message: ");
-	for(n=0; n<bytesToSend; n++){
-		print_log(DEBUG, "%d: %x ",n, message[n]);
-	}
+	// print_log(DEBUG, "sending message: ");
+	// for(n=0; n<bytesToSend; n++){
+	// 	print_log(DEBUG, "%d: %x ",n, message[n]);
+	// }
 
 	int bytesSent = send(sock, message, sizeof(message), 0);
 	// // size_t bytesSent = 0;
@@ -88,179 +98,182 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 	}
 }
 
-void handleRecv(int sock, struct buffer * Buffer){
-	print_log(INFO, "Reading server reply\n");
+void handleRecv(int sock, struct buffer * Buffer, struct admin_parser * adminParser){
 	while (true) { //read REQUEST
 		ssize_t bytesRecieved = recv(sock, Buffer->data, BUFFSIZE, 0);
+		buffer_write_adv(Buffer, bytesRecieved);
+		bool * errored = 0;
 		if (bytesRecieved < 0) {
 			print_log(ERROR, "recv() failed");
 		} else if (bytesRecieved == 0) {
 			print_log(ERROR, "recv() connection closed prematurely");
 			break;
 		} else {
-			print_log(DEBUG, "%0x %0x %0x %0x", Buffer->data[4], Buffer->data[5], Buffer->data[6], Buffer->data[7]);
-			parseResponse(Buffer);
+			if(admin_consume(Buffer, adminParser, errored) == read_done){
+				break;
+			}
+		}
+	}
+}
 
+void processParser(struct admin_parser * adminParser){
+	switch (adminParser->type_sent)
+	{
+	case SSEMD_GET:
+		switch (adminParser->cmd_sent)
+		{
+		case SSEMD_HISTORIC_CONNECTIONS:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "Quantity of historic connections: ");
+				printInt(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get quantity of historic connections");
+			}
+			break;
+
+		case SSEMD_CURRENT_CONNECTIONS:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "Quantity of current connections: ");
+				printInt(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get quantity of current connections");
+			}
+			break;
+		
+		case SSEMD_BYTES_TRANSFERRED:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "Quantity of bytes transferred: ");
+				printInt(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get quantity of bytes transferred");
+			}
+			break;
+
+		case SSEMD_USER_LIST:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "List of registered [user:password]:");
+				printList(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get list of registered users:");
+			}
+			break;
+
+		case SSEMD_DISSECTOR_STATUS:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "Dissector is currently ");
+				printBool(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get dissector status");
+			}
+			break;
+
+		case SSEMD_AUTH_STATUS:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "Authentication is currently ");
+				printBool(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get authentication status");
+			}
+			break;
+
+		case SSEMD_GET_BUFFER_SIZE:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "Buffer size: ");
+				printInt(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get buffer size");
+			}
+			break;
+
+		case SSEMD_GET_TIMEOUT:
+			if(adminParser->status == SSEMD_RESPONSE){
+				print_log(INFO, "Timeout size: ");
+				printInt(adminParser);
+			} else if(adminParser->status == SSEMD_ERROR){
+				print_log(INFO, "Couldn't get timeout");
+			}
+			break;
+		
+		default:
 			break;
 		}
-	}
-}
+		break;
 
-void parseResponse(struct buffer * Buffer){
-	int n = 0;
-	struct admin_parser * adminParser = (struct admin_parser *)malloc(sizeof(struct admin_parser));
-	int j;
-	unsigned int number;
-	double power; 
-	adminParser->number = 0;
-	adminParser->size = 0;
-	adminParser->state = read_status;
-	while(adminParser->state != read_close){
-		switch (adminParser->state){
-			case read_status:
-				if(Buffer->data[n] == SSEMD_RESPONSE){
-					adminParser->state = read_response_code;
-				} else if(Buffer->data[n] == SSEMD_ERROR){
-					print_log(INFO, "The server has replied the following error:\n");
-					adminParser->state = read_error_code;
-				} else {
-					print_log(INFO, "You have recieved a message with unknown STATUS\n");
-					adminParser->state = read_error;
-				}
-				n++;
+	case SSEMD_EDIT:
+		if(adminParser->status == SSEMD_RESPONSE){
+			switch (adminParser->cmd_sent) 
+			{
+			case SSEMD_BUFFER_SIZE:
+				print_log(INFO, "OK, setted new buffer size");
 				break;
 
-			case read_response_code:
-				if(Buffer->data[n] == SSEMD_RESPONSE_OK){
-					print_log(INFO, "OK, The requested command was processed succesfully\n");
-					adminParser->code = SSEMD_RESPONSE_OK;
-					adminParser->state = read_done;
-				} else if(Buffer->data[n] == SSEMD_RESPONSE_LIST){
-					print_log(INFO, "The list of users:passwords is:\n");
-					adminParser->code = SSEMD_RESPONSE_LIST;
-					adminParser->state = read_size1;
-				} else if(Buffer->data[n] == SSEMD_RESPONSE_INT){
-					print_log(INFO, "Response number:\n");
-					adminParser->code = SSEMD_RESPONSE_INT;
-					adminParser->state = read_size1;
-				} else if(Buffer->data[n] == SSEMD_RESPONSE_BOOL){
-					print_log(INFO, "Boolean answer:\n");
-					adminParser->code = SSEMD_RESPONSE_BOOL;
-					adminParser->state = read_size1;
-				} else {
-					print_log(INFO, "You have recieved a message with unknown CODE\n");
-					adminParser->state = read_error;
-				}
-				n++;
-				break;
-
-			case read_size1:
-				adminParser->size = 0;
-				if(Buffer->data[n] != 0x00){
-					adminParser->size += 256 * (uint8_t) Buffer->data[n];
-				}
-				adminParser->state = read_size2;
-				n++;
+			case SSEMD_CLIENT_TIMEOUT:
+				print_log(INFO, "OK, setted new timeout");
 				break;
 			
-			case read_size2:
-				if(Buffer->data[n] == 0x00){
-					if(adminParser->size == 0){
-						print_log(INFO, "You recieved a message that should contain DATA but it doesn't\n");
-						adminParser->state = read_error;
-					} else {
-						adminParser->state = prepare_data;
-					}
-				} else {
-					adminParser->size += (uint8_t) Buffer->data[n];
-					adminParser->state = prepare_data;
-				}
-				n++;
+			case SSEMD_DISSECTOR_ON:
+				print_log(INFO, "OK, dissector turned ON");
 				break;
 
-			case prepare_data:
-				adminParser->data = (unsigned char *)malloc(sizeof(uint8_t) * adminParser->size);
-				adminParser->dataPointer = 0;
-				adminParser->state = read_data;
+			case SSEMD_DISSECTOR_OFF:
+				print_log(INFO, "OK, dissector turned OFF");
 				break;
 
-			case read_data:
-				adminParser->data[adminParser->dataPointer++] = Buffer->data[n++];
-				if(adminParser->dataPointer == adminParser->size){
-					adminParser->state = read_done;
-				}
+			case SSEMD_ADD_USER:
+				print_log(INFO, "OK, added new user");
 				break;
 
-			case read_done:
-				if(adminParser->size > 0) {
-					int i;
-					for(i=0; i<adminParser->size; i++){
-						switch (adminParser->code)
-						{
-						case SSEMD_RESPONSE_OK:
-							print_log(ERROR, "This response shouldn't have any DATA, error");
-							adminParser->state = read_error;
-							break;
-						
-						case SSEMD_RESPONSE_LIST:
-							printf("%c", adminParser->data[i]);
-							if(adminParser->data[i] == '\0'){
-								printf("\n");
-							}
-							break;
-						
-						case SSEMD_RESPONSE_INT:
-								j = i;					
-								for(j; j<i+4; j++){
-									power = pow(256, 4 - j -1);
-									number = adminParser->data[j];// - '0';
-									// letter = adminParser->data[j] + '0';
-									printf("%0x ", adminParser->data[j]);
-									adminParser->number +=  number * power;
-								}
-
-							printf("\n%u", adminParser->number);
-							adminParser->state = read_close;
-							i+=4;
-							break;
-
-						case SSEMD_RESPONSE_BOOL:
-							if(adminParser->data[i] == 0x00){
-								printf("TRUE\n");
-
-							} else if(adminParser->data[i] == 0x11){
-								printf("FALSE\n");
-							}else{
-								print_log(ERROR, "Wrong response for a BOOL\n");
-								adminParser->state = read_error;
-							}
-							break;
-
-						default:
-							print_log(ERROR, "Wrong CODE detected\n");
-							adminParser->state = read_error;
-
-							break;
-						}
-					}
-					adminParser->state = read_close;
-					free(adminParser->data);
-				} else {
-					adminParser->state = read_close;
-				}
-				printf("\n");
+			case SSEMD_REMOVE_USER:
+				print_log(INFO, "OK, user removed");
 				break;
 
-			case read_error:
-				print_log(INFO, "exiting because of error\n");
-				adminParser->state = read_close;
+			case SSEMD_AUTH_ON:
+				print_log(INFO, "OK, authentication turned ON");
 				break;
 
+			case SSEMD_AUTH_OFF:
+				print_log(INFO, "OK, authentication turned OFF");
+				break;
+			}
+
+		} else if(adminParser->status == SSEMD_ERROR){
+			switch (adminParser->response_code)
+			{
+			case SSEMD_ERROR_SMALLBUFFER:
+				print_log(ERROR, "Couldn't execute command, buffer size too small");
+				break;
+
+			case SSEMD_ERROR_BIGBUFFER:
+				print_log(ERROR, "Couldn't execute command, buffer size too big");
+				break;
+			
+			case SSEMD_ERROR_SMALLTIMEOUT:
+				print_log(ERROR, "Couldn't execute command, timeout too small");
+				break;
+
+			case SSEMD_ERROR_BIGTIMEOUT:
+				print_log(ERROR, "Couldn't execute command, timeout too big");
+				break;
+
+			case SSEMD_ERROR_UNKNOWNTYPE:
+				print_log(ERROR, "Couldn't execute command, unknown TYPE");
+				break;
+
+			case SSEMD_ERROR_UNKNOWNCMD:
+				print_log(ERROR, "Couldn't execute command, tunknown CMD");
+				break;
+
+			case SSEMD_ERROR_NOSPACE:
+				print_log(ERROR, "Couldn't execute command, no space to process command");
+				break;
+
+			case SSEMD_ERROR_UNKNOWNERROR:
 			default:
-				print_log(ERROR, "Unknown parser state\n");
-				adminParser->state = read_error;
+				print_log(ERROR, "Couldn't execute command, unknown error");
 				break;
+			}
 		}
 	}
-	free(adminParser);
 }
+
+
