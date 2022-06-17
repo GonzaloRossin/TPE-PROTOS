@@ -330,7 +330,7 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 	} else if(retCode == 3){
 		response->status = SSEMD_ERROR;
 		response->code = SSEMD_ERROR_USERTOOBIG;
-	} else if(retCode == 3){
+	} else if(retCode == 4){
 		response->status = SSEMD_ERROR;
 		response->code = SSEMD_ERROR_USERNOTFOUND;
 	}
