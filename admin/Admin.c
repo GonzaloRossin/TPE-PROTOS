@@ -259,7 +259,11 @@ void processParser(struct admin_parser * adminParser){
 				break;
 
 			case SSEMD_ERROR_USERTOOBIG:
-				print_log(ERROR, "Couldn't add new user, username or password is too big, max 20 chars");
+				print_log(ERROR, "Couldn't execute command, username or password is too big, max 20 chars");
+				break;
+
+			case SSEMD_ERROR_USERNOTFOUND:
+				print_log(ERROR, "Couldn't remove user, [user:pass] not found");
 				break;
 
 			case SSEMD_ERROR_UNKNOWNTYPE:

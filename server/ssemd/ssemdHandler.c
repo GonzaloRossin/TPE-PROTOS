@@ -213,10 +213,10 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 			}
             break;
 		case SSEMD_ADD_USER: 
-			handleEditUser(request, response, true);
+			handleEditUser(request, response, false);
             break;
 		case SSEMD_REMOVE_USER:
-			handleEditUser(request, response, false);
+			handleEditUser(request, response, true);
 			break;
 		case SSEMD_AUTH_ON: 
 			if(set_auth_ON()){
@@ -256,7 +256,7 @@ void ssemd_incorrect_token(struct ssemd * currAdmin) {
 	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
-void handleEditUser(struct payload * request, ssemd_response * response, bool isAdd){
+void handleEditUser(struct payload * request, ssemd_response * response, bool isRemove){
 	struct users * users = get_users();
 	int retCode = 2;
 	char * newName;
@@ -265,74 +265,81 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 	int dataPointer = 0;
 	int wordPointer = 0;
 	int userNumber;
-	if(isAdd){
-		// struct users * newUser = (struct user*)calloc(1, sizeof(struct users));
-		struct users newUser;
-		newUser.name = (char *)calloc(1, sizeof(uint8_t) * 21);
-		newUser.pass = (char *)calloc(1, sizeof(uint8_t) * 21);
+	// struct users * newUser = (struct user*)calloc(1, sizeof(struct users));
+	struct users newUser;
+	newUser.name = (char *)calloc(1, sizeof(uint8_t) * 21);
+	newUser.pass = (char *)calloc(1, sizeof(uint8_t) * 21);
 
-		for(userNumber = 0; userNumber < MAX_USERS; userNumber++){
-			name = users[userNumber].name;
-			pass = users[userNumber].pass;
-			if(! (name != '\0' && pass != '\0')){ //if is not a valid user, write it here
-				while(request->data[dataPointer] != ':'){ //write username
-					if(wordPointer > 19){
-						retCode = 3;
-						break;
-					} else {
-						newUser.name[wordPointer++] = request->data[dataPointer++];
-					}
-				}
-				if(retCode == 3){
+	for(userNumber = 0; userNumber < MAX_USERS; userNumber++){
+		name = users[userNumber].name;
+		pass = users[userNumber].pass;
+		if(! (name != '\0' && pass != '\0')){ //if is not a valid user, write it here
+			while(request->data[dataPointer] != ':'){ //write username
+				if(wordPointer > 19){
+					retCode = 3;
 					break;
-				}
-				newUser.name[wordPointer++] = '\0';
-				wordPointer = 0; dataPointer++;
-
-				while(dataPointer < request->data_len){ //write password
-					if(wordPointer > 19){
-						retCode = 3;
-						break;
-					} else {
-						newUser.pass[wordPointer++] = request->data[dataPointer++];
-					}
-				}
-				if(retCode == 3){
-					break;
-				}
-				newUser.pass[wordPointer++] = '\0';
-
-				if(! findUser(newUser)){
-					users[userNumber] = newUser;
-					retCode = 0;
 				} else {
-					retCode = 1;
+					newUser.name[wordPointer++] = request->data[dataPointer++];
 				}
+			}
+			if(retCode == 3){
 				break;
 			}
-		}
-		if(retCode == 0){
-			response->status = SSEMD_RESPONSE;
-			response->code = SSEMD_RESPONSE_OK;
-		} else if(retCode == 1){
-			response->status = SSEMD_ERROR;
-			response->code = SSEMD_ERROR_REPEATEDUSER;
-		} else if(retCode == 2){
-			response->status = SSEMD_ERROR;
-			response->code = SSEMD_ERROR_NOSPACEUSER;
-		} else if(retCode == 3){
-			response->status = SSEMD_ERROR;
-			response->code = SSEMD_ERROR_USERTOOBIG;
-		}
-		response->size1 = 0x00;
-		response->size2 = 0x00;
-		return;
-	} else { //is remove
+			newUser.name[wordPointer++] = '\0';
+			wordPointer = 0; dataPointer++;
 
+			while(dataPointer < request->data_len){ //write password
+				if(wordPointer > 19){
+					retCode = 3;
+					break;
+				} else {
+					newUser.pass[wordPointer++] = request->data[dataPointer++];
+				}
+			}
+			if(retCode == 3){
+				break;
+			}
+			newUser.pass[wordPointer++] = '\0';
+
+			if(isRemove){
+				if(findUser(newUser, isRemove)){
+					retCode = 0;
+				} else {
+					retCode = 4;
+				}
+			} else {
+				if(findUser(newUser, isRemove)){
+					retCode = 1;
+				} else {
+					users[userNumber] = newUser;
+					retCode = 0;
+				}
+			}
+			break;
+		}
 	}
+	if(retCode == 0){
+		response->status = SSEMD_RESPONSE;
+		response->code = SSEMD_RESPONSE_OK;
+	} else if(retCode == 1){
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_REPEATEDUSER;
+	} else if(retCode == 2){
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_NOSPACEUSER;
+	} else if(retCode == 3){
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_USERTOOBIG;
+	} else if(retCode == 3){
+		response->status = SSEMD_ERROR;
+		response->code = SSEMD_ERROR_USERNOTFOUND;
+	}
+	response->size1 = 0x00;
+	response->size2 = 0x00;
+	return;
 }
 
-bool findUser(struct users findUser){
+bool findUser(struct users findUser, bool andRemove){
     struct users *users = get_users();
     bool found = false;
 
@@ -343,6 +350,11 @@ bool findUser(struct users findUser){
                 if (users[i].pass != '\0') {
                     if (0 == strcmp((const char *)users[i].pass, findUser.pass)) {
                         found = true;
+						if(andRemove){
+							memset(users[i].name, '\0', sizeof(users[i].name));
+							memset(users[i].pass, '\0', sizeof(users[i].pass));
+							// memset(users[i], 0, sizeof(users[i]));
+						}
                     }
                 }  
             }

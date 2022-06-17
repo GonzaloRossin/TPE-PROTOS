@@ -59,9 +59,12 @@ void handleBoolResponse(struct payload * request, ssemd_response * response);
 
 void handleGetUserList(struct payload * request, ssemd_response * response);
 
-void handleEditUser(struct payload * request, ssemd_response * response, bool isAdd);
+void handleEditUser(struct payload * request, ssemd_response * response, bool isRemove);
 
-bool findUser(struct users findUser);
+// void handleAddUser(struct payload * request, ssemd_response * response, bool isAdd);
+
+
+bool findUser(struct users findUser, bool andRemove);
 #endif
 
 
