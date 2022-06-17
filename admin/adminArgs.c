@@ -100,8 +100,6 @@ void parseData(struct ssemd_args * args){
         for(a=0; a<i; a++){
             args->data[a] = toRet[a];
         }
-        // memcpy(args->data, toRet, i);
-        // args->data = (char*)toRet;
     }
 }
 
@@ -113,11 +111,9 @@ void setSize(struct ssemd_args * args){
         int i=0;
         int size = 0;
         while(args->data[i] != 0x00){
-            // fprintf(stderr, "%c", (char)args->data[i]);
             size++;
             i++;
         }
-        // fprintf(stderr, "\nsize:%d\n", size);
         if(size > 65656){
             fprintf(stderr, "\nsize too big:%d\n", size);
             exit(1);
@@ -128,8 +124,6 @@ void setSize(struct ssemd_args * args){
             args->size1 = 0x00;
             args->size2 = size;
         }
-        fprintf(stderr, "size1: %d, %c\n", args->size1, args->size1);
-        fprintf(stderr, "size2: %d, %c\n", args->size2, args->size2);
     }
 }
 
@@ -146,10 +140,6 @@ void checkRequiredParams(struct ssemd_args *args){
         fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
         exit(1);
     }
-    // if(args->cmd > 0x07 && args->type == 0x01){
-    //     fprintf(stderr, "argument not accepted: %x, -G has max of 6\n", args->cmd); //not anymore
-    //     exit(1);
-    // }
 }
 
 void handleRepeatedTYPE(struct ssemd_args *args, char newType){

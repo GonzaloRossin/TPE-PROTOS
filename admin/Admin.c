@@ -47,7 +47,9 @@ int main(int argc, char *argv[]) {
 	free(Buffer->data);
 	free(Buffer);
 	free(args);
-	free(adminParser->data);
+	if(adminParser->data != NULL){
+		free(adminParser->data);
+	}
 	free(adminParser);
 	return 0;
 }
@@ -82,16 +84,8 @@ void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_
 		print_log(ERROR, "error crafting admin message");
 		exit(1);
 	}
-	// print_log(DEBUG, "sending message: ");
-	// for(n=0; n<bytesToSend; n++){
-	// 	print_log(DEBUG, "%d: %x ",n, message[n]);
-	// }
 
 	int bytesSent = send(sock, message, sizeof(message), 0);
-	// // size_t bytesSent = 0;
-	// // while (bytesSent < bytesToSend){
-	// // 	/
-	// // }
 
 	if(bytesSent < bytesToSend){
 		print_log(ERROR, "ERROR, COULDN'T SEND ALL BYTES");
@@ -105,9 +99,6 @@ void handleRecv(int sock, struct buffer * Buffer, struct admin_parser * adminPar
 		bool * errored = 0;
 		if (bytesRecieved < 0) {
 			print_log(ERROR, "recv() failed");
-		} else if (bytesRecieved == 0) {
-			print_log(ERROR, "recv() connection closed prematurely");
-			break;
 		} else {
 			if(admin_consume(Buffer, adminParser, errored) == read_done){
 				break;
