@@ -148,13 +148,17 @@ int main(int argc , char *argv[])
         .handle_close      = NULL, // nada que liberar
     };
 
-	struct clients_data clients_struct = {
-		.clients = clients,
-		.clients_size = max_clients
-	};
+    struct clients_data *clients_struct = (struct clients_data *)calloc(1, sizeof(struct clients_data));
+	    clients_struct->clients = clients;
+        clients_struct->clients_size = max_clients;
+
+    // struct clients_data clients_struct = {
+	// 	.clients = clients,
+	// 	.clients_size = max_clients
+	// };
     
     const struct fd_handler ssemd = {
-        .handle_read       = masterssemdHandler,//masterssemdHandler,
+        .handle_read       = masterssemdHandler,
         .handle_write      = NULL,
         .handle_close      = NULL, // nada que liberar
     };
@@ -162,7 +166,7 @@ int main(int argc , char *argv[])
 
 	for (int i = 0; i < master_socket_size; i++) {
         if(i < 2) { //1080 socks debe ser <2
-		    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, &clients_struct);
+		    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, clients_struct);
         } else { //8889 ssemd
             ss = selector_register(selector, master_socket[i], &ssemd, OP_READ, admin);
         }
