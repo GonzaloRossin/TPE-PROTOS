@@ -133,7 +133,7 @@ void socks5_write(struct selector_key *key) {
 void socks5_close(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
-	if (currClient->client_socket == 0 || currClient->remote_socket == 0) {
+	if (currClient->client_socket == -1 || currClient->remote_socket == -1) {
 		// currClient->client.st_connected.init = 0;
 		// currClient->remote.st_connected.init = 0;
 		
@@ -153,10 +153,10 @@ void socks5_close(struct selector_key *key) {
 	}
 	
 	if (key->fd == currClient->client_socket) {
-		currClient->client_socket = 0;
+		currClient->client_socket = -1;
 	}
 	if (key->fd == currClient->remote_socket) {
-		currClient->remote_socket = 0;
+		currClient->remote_socket = -1;
 	}
 	close(key->fd);
 }

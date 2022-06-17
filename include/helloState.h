@@ -5,6 +5,7 @@
 #include "selector.h"
 #include "socks5Handler.h"
 #include "upState.h"
+#include "request.h"
 
 void hello_read_init(struct socks5 * currClient);
 void hello_read(struct selector_key *key);

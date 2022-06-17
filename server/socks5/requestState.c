@@ -14,35 +14,44 @@ void request_departure(struct socks5 * currClient) {
 	free(currClient->client.st_request.pr);
 }
 
+void request_read_init(struct socks5 * currClient) {
+	hello_st *d = &currClient->client.hello;
+	struct connection_state *c = currClient->connection_state;
+
+	d->pr = (request_parser *) calloc(1, sizeof(request_parser));
+	d->r = currClient->bufferFromClient;
+	d->w = currClient->bufferFromRemote;
+
+	c->init = true;
+}
+
 void request_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	request_parser * pr = currClient->client.st_request.pr;
-	// Hello initialization
-	if(!currClient->connection_state->init) {
-		pr = (request_parser *) calloc(1, sizeof(request_parser)); //Limpiar mas tarde
-		request_parser_init(pr);
-		currClient->connection_state->init = true;
-		currClient->client.st_request.pr = pr;
-		currClient->client.st_request.r = currClient->bufferFromClient;
-		currClient->client.st_request.w = currClient->bufferFromRemote;
-	}
+	hello_st *d = &currClient->client.hello;
 
-	buffer * buff_r = currClient->client.st_request.r;
+	request_parser * pr = d->pr;
+	buffer * buff_r = d->r;
+
+
 	bool errored;
     long valread = 0;
 	size_t nbytes = buff_r->limit - buff_r->write;
 	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
 		print_log(INFO, "Host disconnected\n");
-		selector_unregister_fd(key->s, key->fd);
+		socks5_done(key);
 	} else {
-		// print_log(INFO, "Recieved %ld bytes from socket = %d\n", valread, key->fd);
+
 		buffer_write_adv(buff_r, valread);
 		enum request_state st = request_consume(buff_r, pr, &errored);
-		if(st == request_done) {
+
+		if(request_is_done(pr, &errored) && !errored) {
 			currClient->client.st_request.request = pr->request;
 			enum client_state state = process_request(key);
 			change_state(currClient, state);
 		}
+
+		
+
 	}
 }
 enum client_state process_request(struct selector_key *key){ //procesamiento del request
