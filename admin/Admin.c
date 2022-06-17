@@ -249,6 +249,10 @@ void processParser(struct admin_parser * adminParser){
 			case SSEMD_ERROR_BIGTIMEOUT:
 				print_log(ERROR, "Couldn't execute command, timeout too big");
 				break;
+				
+			case SSEMD_ERROR_NOSPACEUSER:
+				print_log(ERROR, "Couldn't add new user, no space for new users");
+				break;
 
 			case SSEMD_ERROR_UNKNOWNTYPE:
 				print_log(ERROR, "Couldn't execute command, unknown TYPE");

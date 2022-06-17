@@ -213,10 +213,10 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 			}
             break;
 		case SSEMD_ADD_USER: 
-		
+			handleEditUser(request, response, true);
             break;
 		case SSEMD_REMOVE_USER:
-
+			handleEditUser(request, response, false);
 			break;
 		case SSEMD_AUTH_ON: 
 			if(set_auth_ON()){
@@ -256,6 +256,64 @@ void ssemd_incorrect_token(struct ssemd * currAdmin) {
 	marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
+void handleEditUser(struct payload * request, ssemd_response * response, bool isAdd){
+	struct users * users = get_users();
+	bool done = false;
+	char * newName;
+	char * name;
+	char * pass;
+	int dataPointer = 0;
+	int wordPointer = 0;
+	int userNumber;
+	if(isAdd){
+		// struct users * newUser = (struct user*)calloc(1, sizeof(struct users));
+		struct users newUser;
+		newUser.name = (char *)calloc(1, sizeof(uint8_t) * 21);
+		newUser.pass = (char *)calloc(1, sizeof(uint8_t) * 21);
+
+		for(userNumber = 0; userNumber < MAX_USERS; userNumber++){
+			name = users[userNumber].name;
+			pass = users[userNumber].pass;
+			if(! (name != '\0' && pass != '\0')){ //if is not a valid user, write it here
+				while(request->data[dataPointer] != ':'){ //write username
+					// users[userNumber].name[wordPointer++] = request->data[dataPointer++];
+					newUser.name[wordPointer++] = request->data[dataPointer++];
+					// newName[wordPointer++] = request->data[dataPointer++];
+				}
+				newUser.name[wordPointer++] = '\0';
+				// users[userNumber].name[wordPointer] = '\0';
+				wordPointer = 0; dataPointer++;
+
+				// while(request->data[dataPointer] != '\0'){ //write password
+				while(dataPointer < request->data_len){ //write password
+					// users[userNumber].pass[wordPointer++] = request->data[dataPointer++];
+					newUser.pass[wordPointer++] = request->data[dataPointer++];
+				}
+				// users[userNumber].pass[wordPointer] = '\0';
+				newUser.pass[wordPointer++] = '\0';
+
+				users[userNumber] = newUser;
+
+				done=true;
+				break;
+			}
+		}
+		if(!done){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_NOSPACEUSER;
+		} else {
+
+			response->status = SSEMD_RESPONSE;
+			response->code = SSEMD_RESPONSE_OK;
+		}
+		response->size1 = 0x00;
+		response->size2 = 0x00;
+		return;
+	} else { //is remove
+
+	}
+}
+
 void handleGetUserList(struct payload * request, ssemd_response * response){
 	if(request->type == SSEMD_GET && request->CMD == SSEMD_USER_LIST){
 		struct users * users = get_users();
@@ -273,14 +331,11 @@ void handleGetUserList(struct payload * request, ssemd_response * response){
 				// size_t toMalloc = strlen(name) + strlen(pass) +2;
 				response->data = realloc(response->data, sizeof(uint8_t) * (dataPointer + strlen(name) + strlen(pass) + 2)); // + : + \0
 				while(name[wordPointer] != '\0'){
-					print_log(DEBUG, "%c", name[wordPointer]);
 					response->data[dataPointer++] = name[wordPointer++]; 
 				}
 				response->data[dataPointer++] = 0x3A; //es el ":"
-				print_log(DEBUG, "%c", 0x3A);
 				wordPointer = 0;
 				while(pass[wordPointer] != '\0'){
-					print_log(DEBUG, "%c", pass[wordPointer]);
 					response->data[dataPointer++] = pass[wordPointer++]; 
 				}
 				response->data[dataPointer++] = 0x00; //fin de este usuario
