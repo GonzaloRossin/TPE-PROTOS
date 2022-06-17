@@ -5,6 +5,7 @@ static unsigned int current_connections = 0;
 static unsigned int bytes_transferred = 0;
 
 static unsigned int BUFFSIZE = 4096;
+static unsigned int timeout = 1;
 
 static char ADMIN_TOKEN[100];
 
@@ -12,10 +13,8 @@ static bool dissector_status = true;
 static bool auth_status = true;
 
 static struct users myUsers[MAX_USERS];
-static unsigned int userQty;
-// struct users * users = NULL;
 
-void init_users(struct users * new_users) {
+void init_users(struct users * new_users){
     for (int i = 0; i < MAX_USERS; i++) {
         myUsers[i] = new_users[i];
     }
@@ -44,7 +43,7 @@ void unregister_current_connection() {
     current_connections--;
 }
 
-void register_bytes_transferred(ssize_t bytes){
+void register_bytes_transferred(unsigned int bytes){
     bytes_transferred += bytes;
 }
 
@@ -58,6 +57,14 @@ unsigned int get_BUFFSIZE(){
 
 void set_BUFFSIZE(unsigned int newSize){
     BUFFSIZE = newSize;
+}
+
+unsigned int get_timeout(){
+    return timeout;
+}
+
+void set_timeout(unsigned int newSize){
+    timeout = newSize;
 }
 
 char * get_ADMIN_TOKEN(){

@@ -1,23 +1,14 @@
-#ifndef SSEMD_H_
-#define SSEMD_H_
+#ifndef PARSE_UTIL_H
+#define PARSE_UTIL_H
 
-#include "buffer.h"
-#include "hello.h"
-#include "protocolParser.h"
-
-enum ssemd_state {
-    SSEMD_READ_REQUEST = 0,
-    SSEMD_WRITE_REQUEST,
-    SSEMD_ERROR_STATE
-};
-
-enum ssmed_type {
+enum ssemd_type {
     SSEMD_GET       = 0x01,
     SSEMD_EDIT      = 0x02,
     SSEMD_RESPONSE  = 0xAA,
     SSEMD_ERROR     = 0xFF,
 };
-enum ssmed_cmd_get {
+
+enum ssemd_cmd_get {
     SSEMD_HISTORIC_CONNECTIONS  = 0x01,
     SSEMD_CURRENT_CONNECTIONS   = 0x02,
     SSEMD_BYTES_TRANSFERRED     = 0x03,
@@ -28,7 +19,7 @@ enum ssmed_cmd_get {
     SSEMD_GET_TIMEOUT           = 0x08,
 
 };
-enum ssmed_cmd_EDIT {
+enum ssemd_cmd_EDIT {
     SSEMD_BUFFER_SIZE       = 0x01,
     SSEMD_CLIENT_TIMEOUT    = 0x02,
     SSEMD_DISSECTOR_ON      = 0x03,
@@ -38,13 +29,26 @@ enum ssmed_cmd_EDIT {
     SSEMD_AUTH_ON           = 0x07,
     SSEMD_AUTH_OFF          = 0x08,
 };
-enum ssmed_response_code {
+
+enum admin_state {
+    read_status = 0,
+    read_code,
+    read_response_code,
+    read_size1,
+    read_size2,
+    read_data,
+    read_done,
+    read_error_code,
+    read_error,
+    read_close,
+};
+enum ssemd_response_code {
     SSEMD_RESPONSE_OK       = 0x01,
     SSEMD_RESPONSE_LIST     = 0x02,
     SSEMD_RESPONSE_INT      = 0x03,
     SSEMD_RESPONSE_BOOL     = 0x04,
 };
-enum ssmed_error_code {
+enum ssemd_error_code {
     SSEMD_ERROR_SMALLBUFFER     = 0x01,
     SSEMD_ERROR_BIGBUFFER       = 0x02,
     SSEMD_ERROR_SMALLTIMEOUT    = 0x03,
@@ -56,54 +60,42 @@ enum ssmed_error_code {
     SSEMD_ERROR_NOSPACE         = 0xFA,
     SSEMD_ERROR_UNKNOWNERROR    = 0xFF,
 };
-enum ssmed_bool {
+enum ssemd_bool {
     SSEMD_TRUE  = 0x11,
     SSEMD_FALSE = 0x00,
 };
 
-// struct ssemd_hello
-// {
-//     protocol_parser * pr;
-//     buffer * w;
-//     buffer * r;
-// };
-
-struct ssemd_connection_state {
-    int init;
-    enum ssemd_state ssemd_state;
-    void (*on_departure) (struct ssemd * currAdmin);
-    void (*on_arrival) (struct ssemd * currAdmin);
-};
-
-typedef struct ssemd_response {
-    uint8_t status;
-    uint8_t code;
+typedef struct admin_parser{
+    enum ssemd_type type_sent;
+    uint8_t cmd_sent;
+    
+    enum ssemd_type status;
+    uint8_t response_code;
     uint8_t size1;
     uint8_t size2;
-    uint8_t *data;
+    int size; //helper for size
+    uint8_t * data;
 
-} ssemd_response;
+    enum admin_state state;
+    int dataPointer;
+    unsigned int number;
+};
 
-typedef struct ssemd
-{
-    int fd;
 
-    char * admin_token;
+extern void admin_parser_init(struct admin_parser * adminParser);
 
-    buffer * bufferRead;
-    buffer * bufferWrite;
+extern enum admin_state admin_parser_feed(struct admin_parser * parser, const uint8_t byte);
 
-    protocol_parser * pr;
-    ssemd_response * response;
+extern bool admin_is_done(const enum admin_state state, bool * errored);
+extern const char * admin_error_handler(const struct admin_parser * parser);
 
-    struct ssemd_connection_state connection_state;
+extern void admin_parser_close(struct admin_parser * parser);
+extern enum admin_state admin_consume(buffer * buffer, struct admin_parser * parser, bool *errored);
 
-    bool isAvailable;
-} ssemd;
 
-void
-new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE);
+void printInt(struct admin_parser * adminParser);
+void printList(struct admin_parser * adminParser);
+void printBool(struct admin_parser * adminParser);
 
-void removeAdmin(struct ssemd * admin);
 
 #endif
