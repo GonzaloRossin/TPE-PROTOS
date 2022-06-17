@@ -351,8 +351,10 @@ bool findUser(struct users findUser, bool andRemove){
                     if (0 == strcmp((const char *)users[i].pass, findUser.pass)) {
                         found = true;
 						if(andRemove){
-							memset(users[i].name, '\0', sizeof(users[i].name));
-							memset(users[i].pass, '\0', sizeof(users[i].pass));
+							// memset(users[i].name, '\0', sizeof(users[i].name));
+							// memset(users[i].pass, '\0', sizeof(users[i].pass));
+							users[i].name = '\0';
+							users[i].pass = '\0';
 							// memset(users[i], 0, sizeof(users[i]));
 						}
                     }
