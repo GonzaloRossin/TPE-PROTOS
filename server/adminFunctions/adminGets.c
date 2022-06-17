@@ -5,6 +5,7 @@ static unsigned int current_connections = 0;
 static unsigned int bytes_transferred = 0;
 
 static unsigned int BUFFSIZE = 4096;
+static unsigned int timeout;
 
 static char ADMIN_TOKEN[100];
 
@@ -54,6 +55,14 @@ unsigned int get_BUFFSIZE(){
 
 void set_BUFFSIZE(unsigned int newSize){
     BUFFSIZE = newSize;
+}
+
+unsigned int get_timeout(){
+    return timeout;
+}
+
+void set_timeout(unsigned int newSize){
+    timeout = newSize;
 }
 
 char * get_ADMIN_TOKEN(){

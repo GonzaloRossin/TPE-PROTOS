@@ -32,6 +32,10 @@ get_BUFFSIZE();
 void
 set_BUFFSIZE(unsigned int newSize);
 
+unsigned int get_timeout();
+
+void set_timeout(unsigned int newSize);
+
 char *
 get_ADMIN_TOKEN();
 

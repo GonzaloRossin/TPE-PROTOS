@@ -182,10 +182,10 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
 	response->size2 = 0x00;
 	switch(request->CMD) {
 		case SSEMD_BUFFER_SIZE:
-			handleSetBuffSize(request, response);
+			handleSetInt(request, response);
             break;
 		case SSEMD_CLIENT_TIMEOUT: 
-		
+			handleSetInt(request, response);
             break;
 		case SSEMD_DISSECTOR_ON: 
 			if(set_dissector_ON()){
@@ -316,7 +316,7 @@ void handleBoolResponse(struct payload * request, ssemd_response * response){
 	}
 }
 
-void handleSetBuffSize(struct payload * request, ssemd_response * response){
+void handleSetInt(struct payload * request, ssemd_response * response){
 	int i;
 	double ret=0;
 	double power;
@@ -327,7 +327,8 @@ void handleSetBuffSize(struct payload * request, ssemd_response * response){
 		ret +=  number * power;
 	}
 
-	set_BUFFSIZE(ret);
+
+
 	if(ret <= 0){
 		response->status = SSEMD_ERROR;
 		response->code = SSEMD_ERROR_SMALLBUFFER;
@@ -339,6 +340,36 @@ void handleSetBuffSize(struct payload * request, ssemd_response * response){
 	} else {
 		response->status = SSEMD_RESPONSE;
 		response->code = SSEMD_RESPONSE_OK;
+	}
+
+	if(request->CMD == SSEMD_BUFFER_SIZE){
+		if(ret <= 0){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_SMALLBUFFER;
+			free(response->data);
+		} else if(ret > 2048000){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_BIGBUFFER;
+			free(response->data);
+		} else {
+			set_BUFFSIZE(ret);
+			response->status = SSEMD_RESPONSE;
+			response->code = SSEMD_RESPONSE_OK;
+		}
+	} else if(request->CMD == SSEMD_BUFFER_SIZE){
+		if(ret <= 0){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_SMALLTIMEOUT;
+			free(response->data);
+		} else if(ret > 2048000){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_BIGTIMEOUT;
+			free(response->data);
+		} else {
+			set_timeout(ret);
+			response->status = SSEMD_RESPONSE;
+			response->code = SSEMD_RESPONSE_OK;
+		}
 	}
 }
 
