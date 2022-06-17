@@ -276,13 +276,29 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 			pass = users[userNumber].pass;
 			if(! (name != '\0' && pass != '\0')){ //if is not a valid user, write it here
 				while(request->data[dataPointer] != ':'){ //write username
-					newUser.name[wordPointer++] = request->data[dataPointer++];
+					if(wordPointer > 19){
+						retCode = 3;
+						break;
+					} else {
+						newUser.name[wordPointer++] = request->data[dataPointer++];
+					}
+				}
+				if(retCode == 3){
+					break;
 				}
 				newUser.name[wordPointer++] = '\0';
 				wordPointer = 0; dataPointer++;
 
 				while(dataPointer < request->data_len){ //write password
-					newUser.pass[wordPointer++] = request->data[dataPointer++];
+					if(wordPointer > 19){
+						retCode = 3;
+						break;
+					} else {
+						newUser.pass[wordPointer++] = request->data[dataPointer++];
+					}
+				}
+				if(retCode == 3){
+					break;
 				}
 				newUser.pass[wordPointer++] = '\0';
 
@@ -304,6 +320,9 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 		} else if(retCode == 2){
 			response->status = SSEMD_ERROR;
 			response->code = SSEMD_ERROR_NOSPACEUSER;
+		} else if(retCode == 3){
+			response->status = SSEMD_ERROR;
+			response->code = SSEMD_ERROR_USERTOOBIG;
 		}
 		response->size1 = 0x00;
 		response->size2 = 0x00;

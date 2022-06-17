@@ -258,6 +258,10 @@ void processParser(struct admin_parser * adminParser){
 				print_log(ERROR, "Couldn't add new user, repeated [user:pass]");
 				break;
 
+			case SSEMD_ERROR_USERTOOBIG:
+				print_log(ERROR, "Couldn't add new user, username or password is too big, max 20 chars");
+				break;
+
 			case SSEMD_ERROR_UNKNOWNTYPE:
 				print_log(ERROR, "Couldn't execute command, unknown TYPE");
 				break;
