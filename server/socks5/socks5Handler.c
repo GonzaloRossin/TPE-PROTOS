@@ -107,7 +107,7 @@ void socks5_write(struct selector_key *key) {
 		break;
 
 		case UP_WRITE_STATE:
-			up_read(key);
+			up_write(key);
 			break;
 
 		case REQUEST_CONNECTING_STATE:

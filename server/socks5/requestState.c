@@ -60,7 +60,6 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 			currClient->origin_domain = AF_INET;
 			request->dest_addr.ipv4.sin_port = request->dest_port;
 			currClient->origin_addr_len = sizeof(request->dest_addr.ipv4);
-			currClient->protocol_type = identify_protocol_type((uint8_t *) request->dest_port);
 			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv4));
 			ret = request_connect(key);
 			break;
@@ -70,7 +69,6 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 			currClient->origin_domain = AF_INET6;
 			request->dest_addr.ipv6.sin6_port = request->dest_port;
 			currClient->origin_addr_len = sizeof(request->dest_addr.ipv6);
-			currClient->protocol_type = identify_protocol_type((uint8_t *) request->dest_port);
 			memcpy(&currClient->origin_addr, &request->dest_addr, sizeof(request->dest_addr.ipv6));
 			ret = request_connect(key);
 			break;

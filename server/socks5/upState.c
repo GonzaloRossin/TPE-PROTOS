@@ -34,6 +34,7 @@ void up_read(struct selector_key *key) {
             if(auth_valid) {
                 currClient->username = up_s->user;
             }
+            change_state(currClient, UP_WRITE_STATE);
         }
     }
 }
@@ -58,6 +59,27 @@ void userpass_process(struct userpass_st *up_s, bool * auth_valid) {
 }
 
 bool validate_user_proxy(uint8_t *uid, uint8_t *pw) {
+    struct users *users = get_users();
+    bool auth_valid = false;
 
+    int i = 0;
+    while (i < MAX_USERS && !auth_valid) {
+        if (0 == strcmp((const char *)users[i].name, (const char *)uid)) {
+            if (0 == strcmp((const char *)users[i].pass, (const char *)pw)) {
+                auth_valid = true;
+            }
+        }
+        i++;
+    }
+
+    return auth_valid;
+}
+
+void up_write(struct selector_key *key) {
+    struct socks5 * currClient = (struct socks5 *)key->data;
+    if (0 == handleWrite(key->fd, currClient->client.userpass.w)) {
+        selector_set_interest(key->s, key->fd, OP_READ);
+		change_state(currClient, REQUEST_READ_STATE);
+    }
 }
 
