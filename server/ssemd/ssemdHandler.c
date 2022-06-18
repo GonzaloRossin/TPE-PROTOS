@@ -88,19 +88,51 @@ void ssemd_read_request(struct selector_key *key) {
 		if (protocol_is_done(st, &error) && !error) {
 			if (SELECTOR_SUCCESS == selector_set_interest_key(key, OP_WRITE)) {
 				ssemd_request_process(currAdmin);
+				marshall(currAdmin->bufferWrite, currAdmin->response);
 				currAdmin->connection_state.ssemd_state = SSEMD_WRITE_REQUEST;
 				selector_set_interest(key->s, key->fd, OP_WRITE);
 			} else {
 				ret = SSEMD_ERROR_STATE;
 			}
 		} else {
-			// TODO: Enviar el error response_marshall();
+			if(error){ //is always error here
+				ssemd_process_error(currAdmin, st);
+				marshall(currAdmin->bufferWrite, currAdmin->response);
+				currAdmin->connection_state.ssemd_state = SSEMD_WRITE_REQUEST;
+				selector_set_interest(key->s, key->fd, OP_WRITE);
+			}
 		}
 	} else {
 		ret = SSEMD_ERROR_STATE;
 	}
 	// return error ? SSEMD_ERROR_STATE : ret;
 }
+
+void ssemd_process_error(struct ssemd * currAdmin, const enum protocol_state st){
+	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
+	currAdmin->response = response;
+	response->status = SSEMD_ERROR;
+	response->size1 = 0x00;
+	response->size2 = 0x00;
+	switch (st)
+	{
+	case protocol_error_type:
+		response->code = SSEMD_ERROR_UNKNOWNTYPE;
+		break;
+
+	case protocol_error_cmd:
+		response->code = SSEMD_ERROR_UNKNOWNCMD;
+		break;
+
+	case protocol_error_size:
+		response->code = SSEMD_ERROR_INCORRECTSIZE;
+		break;
+	
+	default:
+		break;
+	}
+}
+
 
 void ssemd_request_process(struct ssemd * currAdmin) {
 	payload * request = currAdmin->pr->data;
@@ -176,7 +208,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			setResponse(response, 0x00);
 			break;
 	}
-	marshall(currAdmin->bufferWrite, currAdmin->response);
+	// marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
 
@@ -243,7 +275,7 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
         default:
 			break;
 	}
-	marshall(currAdmin->bufferWrite, currAdmin->response);
+	// marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
 void ssemd_incorrect_token(struct ssemd * currAdmin) {
@@ -254,7 +286,7 @@ void ssemd_incorrect_token(struct ssemd * currAdmin) {
 	response->code = SSEMD_ERROR_INCORRECT_TOKEN;
 	response->size1 = 0x00;
 	response->size2 = 0x00;
-	marshall(currAdmin->bufferWrite, currAdmin->response);
+	// marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
 void handleEditUser(struct payload * request, ssemd_response * response, bool isRemove){
