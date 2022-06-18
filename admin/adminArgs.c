@@ -140,6 +140,17 @@ void checkRequiredParams(struct ssemd_args *args){
         fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
         exit(1);
     }
+    if(args->type == 0x02 && (args->cmd == 0x05 || args->cmd == 0x06)){ //data must be of user:pass
+        if(args->data == NULL){
+            fprintf(stderr, "Argument requires data of style [user:pass]\n");
+            exit(1);
+        }
+        char *p = strchr(args->data, ':');
+        if(p == NULL) {
+            fprintf(stderr, "Argument requires data of style [user:pass]\n");
+            exit(1);
+        }
+    }
 }
 
 void handleRepeatedTYPE(struct ssemd_args *args, char newType){
