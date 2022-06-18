@@ -49,6 +49,7 @@ usage(const char *progname) {
         "Usage: %s [OPTION]...\n"
         "\n"
         "   -h               Imprime la ayuda y termina.\n"
+        "   -N               Deshabilita los passwords dissectors.\n"
         "   -l <SOCKS addr>  Dirección donde servirá el proxy SOCKS.\n"
         "   -L <conf  addr>  Dirección donde servirá el servicio de management.\n"
         "   -p <SOCKS port>  Puerto entrante conexiones SOCKS.\n"
@@ -69,7 +70,7 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
     args->socks_port = 1080;
 
     args->mng_addr   = "127.0.0.1";
-    args->mng_port   = 8889;
+    args->mng_port   = 8080;
 
     args->disectors_enabled = true;
 

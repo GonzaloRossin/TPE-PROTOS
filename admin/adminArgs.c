@@ -48,7 +48,7 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     char            cmd;
 
     args->mng_addr   = "127.0.0.1";
-    args->mng_port   = "8889";
+    args->mng_port   = "8080";
 
     args->admin_token = NULL;
     args->type        = 0x00;

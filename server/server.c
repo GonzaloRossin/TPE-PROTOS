@@ -55,6 +55,9 @@ int main(int argc , char *argv[])
     sprintf(ADMIN_PORT, "%d", args->mng_port); //sets admin port
     set_ADMIN_TOKEN(args->admin_token);
     init_users(args->users);
+    if(! args->disectors_enabled){
+        set_dissector_OFF();
+    }
 
 
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
