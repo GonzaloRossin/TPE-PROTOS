@@ -147,7 +147,8 @@ void socks5_close(struct selector_key *key) {
 
 		memset(currClient, 0, sizeof(struct socks5));
 		currClient->isAvailable = true;
-
+		currClient->client_socket = -1;
+		currClient->remote_socket = -1;
 		unregister_current_connection();
 
 	}

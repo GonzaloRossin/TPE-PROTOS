@@ -201,7 +201,7 @@ void request_connecting(struct selector_key *key) {
 					return ;
 				}
 			} else {
-				// Si no pudimos conecter y no hay mas ips para intentar mando el reply de error
+				// Si no pudimos conectar y no hay mas ips para intentar mando el reply de error
 				currClient->client.st_request.state = errno_to_socks(error);
 				request_error_marshall(currClient);
 				selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
@@ -303,6 +303,7 @@ void request_write(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
 	// Envio el reply
+
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0) {
 
 		// Si todo salio bien paso al estado connected
