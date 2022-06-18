@@ -75,7 +75,7 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
                 parser->data->type= byte;
                 parser->state = protocol_cmd_edit;
             }else{
-                parser->state =protocol_error;
+                parser->state =protocol_error_type;
             }
             break;
 
@@ -85,7 +85,7 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
                 parser->state = protocol_size1;
             }
             else{
-                parser->state = protocol_error;
+                parser->state = protocol_error_cmd;
             }
             break;
 
@@ -95,27 +95,25 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
                 parser->state = protocol_size1;
             }
             else{
-                parser->state = protocol_error;
+                parser->state = protocol_error_cmd;
             }
             break;
 
         case protocol_size1:
             if(parser->has_appropiate_size != NULL ) {
                 if(! parser->has_appropiate_size(parser, byte)){
-                    parser->state = protocol_error; //devuelve falso si el size no matchea con el comando
+                    parser->state = protocol_error_size; //devuelve falso si el size no matchea con el comando
                     break;
                 }
             }
             parser->size1 = byte;
-            // memset(&(parser->data->data), 0, parser->size);
-            // parser->data->data = calloc(1,parser->size);
             parser->state = protocol_size2;
             break;
         
         case protocol_size2:
             if(parser->has_appropiate_size != NULL ) {
                 if(! parser->has_appropiate_size(parser, byte)){
-                    parser->state = protocol_error; //devuelve falso si el size no matchea con el comando
+                    parser->state = protocol_error_size; //devuelve falso si el size no matchea con el comando
                     break;
                 }
             }
@@ -146,12 +144,14 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             }
 
         case protocol_done:
+        case protocol_error_type:
+        case protocol_error_cmd:
+        case protocol_error_size:
         case protocol_error:
             //nada que hacer
             break;
 
         default:
-            //log(ERROR, "unknown state %d", parser->state);
             abort();
             break;
     }
@@ -162,6 +162,9 @@ extern bool protocol_is_done(const enum protocol_state state, bool * errored){
     bool ret;
     switch (state)
     {
+        case protocol_error_type:
+        case protocol_error_cmd:
+        case protocol_error_size:
         case protocol_error:
             if (0 != errored){
                 *errored = true;
@@ -194,8 +197,10 @@ extern const char * protocol_error_handler(const struct protocol_parser * parser
 }
 
 extern void protocol_parser_close(struct protocol_parser * parser){
+    free(parser->data->token);
     free(parser->data->data);
     free(parser->data);
+    free(parser);
 }
 
 extern enum protocol_state protocol_consume(buffer * buffer, struct protocol_parser * parser, bool *errored){

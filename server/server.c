@@ -55,6 +55,9 @@ int main(int argc , char *argv[])
     sprintf(ADMIN_PORT, "%d", args->mng_port); //sets admin port
     set_ADMIN_TOKEN(args->admin_token);
     init_users(args->users);
+    if(! args->disectors_enabled){
+        set_dissector_OFF();
+    }
 
 
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
@@ -77,6 +80,7 @@ int main(int argc , char *argv[])
     //initialise Admin
     admin = (struct ssemd*)calloc(1, sizeof(struct ssemd));
     admin->isAvailable = true;
+    admin->pr = NULL;
 
 
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
@@ -206,6 +210,8 @@ finally:
     }
     selector_close();
 
+
+    // free(admin->pr);
     free(admin);
     free(clients);
 	for (int i = 0; i < master_socket_size; i++) {
@@ -214,6 +220,9 @@ finally:
     	}
 	}
     free(args);
+    free(clients_struct);
+
+    free_users();
     
     return ret;
 }

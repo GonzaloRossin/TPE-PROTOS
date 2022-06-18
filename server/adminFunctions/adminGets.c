@@ -16,7 +16,25 @@ static struct users myUsers[MAX_USERS];
 
 void init_users(struct users * new_users){
     for (int i = 0; i < MAX_USERS; i++) {
-        myUsers[i] = new_users[i];
+        if(new_users[i].name != '\0'){
+            myUsers[i].name = (char *)calloc(1, sizeof(uint8_t) * 21);
+            memcpy(myUsers[i].name, new_users[i].name, strlen(new_users[i].name) + 1);
+        }
+        if(new_users[i].pass != '\0'){
+            myUsers[i].pass = (char *)calloc(1, sizeof(uint8_t) * 21);
+            memcpy(myUsers[i].pass, new_users[i].pass, strlen(new_users[i].pass) + 1);
+        }
+    }
+}
+
+void free_users(){
+    for (int i = 0; i < MAX_USERS; i++) {
+        if(myUsers[i].name != '\0'){
+            free(myUsers[i].name);
+        }
+        if(myUsers[i].pass != '\0'){
+            free(myUsers[i].pass);
+        }
     }
 }
 

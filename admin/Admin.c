@@ -108,10 +108,23 @@ void handleRecv(int sock, struct buffer * Buffer, struct admin_parser * adminPar
 }
 
 void processParser(struct admin_parser * adminParser){
-	if(adminParser->status == SSEMD_ERROR && adminParser->response_code == SSEMD_ERROR_INCORRECT_TOKEN){
-		print_log(ERROR, "Wrong token");
-		return;
+	if(adminParser->status == SSEMD_ERROR){ //big errors
+		if(adminParser->response_code == SSEMD_ERROR_INCORRECT_TOKEN){
+			print_log(ERROR, "Wrong token");
+			return;
+		} else if(adminParser->response_code == SSEMD_ERROR_UNKNOWNTYPE){
+			print_log(ERROR, "Unknown type");
+			return;
+		} else if(adminParser->response_code == SSEMD_ERROR_UNKNOWNCMD){
+			print_log(ERROR, "Unknown command");
+			return;
+		} else if(adminParser->response_code == SSEMD_ERROR_INCORRECTSIZE){
+			print_log(ERROR, "Wrong size, this command should not contain DATA");
+			return;
+		}
+
 	}
+
 	switch (adminParser->type_sent)
 	{
 	case SSEMD_GET:

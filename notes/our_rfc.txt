@@ -151,13 +151,15 @@ The values currently defined for CODE for ERROR TYPE are:
 	- X'02' : Buffer size too big
 	- X'03' : Timeout too small
 	- X'04' : Timeout too big
-	- X'05' : 
-	- X'06' : 
-	- X'07' : 
+	- X'05' : No space for more users
+	- X'06' : Repeated [username:password]
+	- X'07' : Username or passord is too big
 	- X'08' : 
 	- X'09' : 
 	- X'A0' : Unkown type
 	- X'A1'	: Unknown command
+	- X'A2' : Incorrect token
+	- X'A3' : Incorrect size
 	- X'FA' : No space to process request
 	- X'FF' : Unknown error
 

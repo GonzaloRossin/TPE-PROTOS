@@ -43,6 +43,9 @@ enum protocol_state {
     protocol_page,
     protocol_data,
     protocol_done,
+    protocol_error_type,
+    protocol_error_cmd,
+    protocol_error_size,
     protocol_error,
 };
 typedef struct payload{

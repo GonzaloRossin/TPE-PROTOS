@@ -61,10 +61,11 @@ void handleGetUserList(struct payload * request, ssemd_response * response);
 
 void handleEditUser(struct payload * request, ssemd_response * response, bool isRemove);
 
-// void handleAddUser(struct payload * request, ssemd_response * response, bool isAdd);
-
 
 bool findUser(struct users findUser, bool andRemove);
+
+void ssemd_process_error(struct ssemd * currAdmin, const enum protocol_state st);
+
 #endif
 
 

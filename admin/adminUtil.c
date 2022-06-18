@@ -12,8 +12,8 @@ int tcpClientSocket(const char *host, const char *service) {
 
 	// Get address(es)
 	struct addrinfo *servAddr; // Holder for returned list of server addrs
-	// int rtnVal = getaddrinfo(host, service, &addrCriteria, &servAddr); //es bloqueante, ojo, hacerlo en un hijo/thread
-	int rtnVal = getaddrinfo("127.0.0.1", "8889", &addrCriteria, &servAddr);
+	int rtnVal = getaddrinfo(host, service, &addrCriteria, &servAddr); //es bloqueante, ojo, hacerlo en un hijo/thread
+	// int rtnVal = getaddrinfo("127.0.0.1", "8889", &addrCriteria, &servAddr);
 
 	if (rtnVal != 0) {
 		print_log(ERROR, "getaddrinfo() failed %s", gai_strerror(rtnVal));
