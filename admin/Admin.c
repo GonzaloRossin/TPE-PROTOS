@@ -119,7 +119,7 @@ void processParser(struct admin_parser * adminParser){
 			print_log(ERROR, "Unknown command");
 			return;
 		} else if(adminParser->response_code == SSEMD_ERROR_INCORRECTSIZE){
-			print_log(ERROR, "Wrong size");
+			print_log(ERROR, "Wrong size, this command should not contain DATA");
 			return;
 		}
 

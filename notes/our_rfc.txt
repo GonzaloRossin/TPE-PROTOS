@@ -159,6 +159,7 @@ The values currently defined for CODE for ERROR TYPE are:
 	- X'A0' : Unkown type
 	- X'A1'	: Unknown command
 	- X'A2' : Incorrect token
+	- X'A3' : Incorrect size
 	- X'FA' : No space to process request
 	- X'FF' : Unknown error
 

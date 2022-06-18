@@ -3,14 +3,41 @@
 static void
 usage(const char *progname) {
     fprintf(stderr,
-        "Usage: %s [OPTION]...\n"
+        "Usage: %s [OPTIONS]...\n"
         "\n"
-        "   -h               Imprime la ayuda y termina.\n"
-        "   -L <conf  addr>  Dirección donde se encuentra el servidor.\n"
-        "   -p <SOCKS port>  Puerto donde se encuentra el servidor.\n"
-        "   -v               Imprime información sobre la versión versión y termina.\n"
+        "   -h               Prints help and exits.\n"
+        "   -t <token>       REQUIRED to specify Server Admin Token"
+        "   -G or -E         For a GET or EDIT type command \n"
+        "   -d               To specify DATA to send \n"
+        "   -#               Number to specify which command of current type:\n"
+        "       -G1                 Get historic quantity of connections\n"
+        "       -G2                 Get quantity of current connections\n"
+        "       -G3                 Get quantity of bytes transferred\n"
+        "       -G4                 Get list of Users\n"
+        "       -G5                 Get current password dissector status\n"
+        "       -G6                 Get Server authentication status\n"
+        "       -G7                 Get Server BUFFER SIZE\n"
+        "       -G8                 Get Server timeout\n"
+        "       -H1 -d <#>          Edit Client buffer size\n"
+        "       -H2 -d <#>          Edit Client timeout\n"
+        "       -H3                 Turn ON password dissector\n"
+        "       -H4                 Turn OFF password dissector\n"
+        "       -H5 -d <user:pass>  Add a User\n"
+        "       -H6 -d <user:pass>  Remove a User\n"
+        "       -H7                 Turn ON password authentication\n"
+        "       -H8                 Turn OFF password authentication\n"
+        "   -L <conf  addr>  Current Server direction.\n"
+        "   -p <SOCKS port>  Current Server port.\n"
+        "   -v               Prints info about version and exits\n"
         "\n",
         progname);
+    exit(1);
+}
+
+static void
+version(const char *progname) {
+    fprintf(stderr,
+        "This program currently implements SSEMD protocol Version 1.0, run with -h for more info\n");
     exit(1);
 }
 
@@ -34,7 +61,7 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
     int c;
 
     while (true) {
-        c = getopt (argc, argv, "t:GE12345678d:");
+        c = getopt (argc, argv, "t:GE12345678d:hvL:P:");
 
         if (c == -1)
             break;
@@ -64,6 +91,16 @@ parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
                 break;
             case 'd':
                 args->data = optarg;
+                break;
+            case 'L':
+                args->mng_addr = optarg;
+                break;
+            case 'P':
+                args->mng_port = optarg;
+                break;
+
+            case 'v':
+                version(argv[0]);
                 break;
             default:
                 fprintf(stderr, "unknown argument %d.\n", c);
