@@ -107,8 +107,6 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
                 }
             }
             parser->size1 = byte;
-            // memset(&(parser->data->data), 0, parser->size);
-            // parser->data->data = calloc(1,parser->size);
             parser->state = protocol_size2;
             break;
         
@@ -151,7 +149,6 @@ extern enum protocol_state protocol_parser_feed(struct protocol_parser * parser,
             break;
 
         default:
-            //log(ERROR, "unknown state %d", parser->state);
             abort();
             break;
     }
@@ -194,8 +191,10 @@ extern const char * protocol_error_handler(const struct protocol_parser * parser
 }
 
 extern void protocol_parser_close(struct protocol_parser * parser){
+    free(parser->data->token);
     free(parser->data->data);
     free(parser->data);
+    free(parser);
 }
 
 extern enum protocol_state protocol_consume(buffer * buffer, struct protocol_parser * parser, bool *errored){

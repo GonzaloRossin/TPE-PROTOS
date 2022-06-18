@@ -66,6 +66,8 @@ init_users(struct users* new_users);
 struct 
 users * get_users();
 
+void free_users();
+
 //EDIT:
 
 

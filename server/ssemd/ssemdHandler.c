@@ -114,6 +114,7 @@ void ssemd_request_process(struct ssemd * currAdmin) {
 	} else { //incorrect token
 		ssemd_incorrect_token(currAdmin);
 	}
+	protocol_parser_close(currAdmin->pr);
 }
 
 void ssemd_process_get(struct ssemd * currAdmin) {
@@ -535,8 +536,10 @@ int marshall(buffer * buffer, ssemd_response * response){
 		while(n<size){
 			buff[i++] = response->data[n++];
 		}
+		free(response->data);
 	}
 	buffer_write_adv(buffer, 4+size);
+	free(response);
 	return 4+size;
 }
 
