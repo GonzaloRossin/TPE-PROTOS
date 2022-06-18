@@ -87,7 +87,9 @@ void write_connected_state(struct selector_key *key) {
     ptr = buffer_read_ptr(b, &count);
 
 	n = send(key->fd, ptr, count, MSG_NOSIGNAL);
-    register_bytes_transferred((unsigned int)n);
+    if(n>0){
+        register_bytes_transferred((unsigned int)n);
+    }
 
 	if (n != -1) {
 		buffer_read_adv(b, n);
