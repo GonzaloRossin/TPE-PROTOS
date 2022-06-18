@@ -187,7 +187,7 @@ extern enum request_state request_parser_feed(struct request_parser * p, const u
 }
 #include <errno.h>
 
-enum socks_response_status errno_to_socks(const int e){
+enum socks_response_status errno_to_socks(const int e) { 
     enum socks_response_status ret = status_general_SOCKLS_server_failure;
     switch (e)
     {
@@ -200,6 +200,9 @@ enum socks_response_status errno_to_socks(const int e){
     case EHOSTUNREACH:
         ret = status_host_unreachable;
         break;
+    case ENETUNREACH:
+        ret = status_network_unreachable;
+        break;
     case ETIMEDOUT:
         ret = status_ttl_expired;
         break;
@@ -207,4 +210,4 @@ enum socks_response_status errno_to_socks(const int e){
     return ret;
 }
 
-//hay mas acá abajo que se ve en el video (tipo 2:50:00) pero no doy más bro
+// hay mas acá abajo que se ve en el video (tipo 2:50:00) pero no doy más bro

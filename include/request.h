@@ -89,8 +89,6 @@ extern const char * request_error_handler(const struct request_parser * parser);
 //libera recursos internos del parser
 void request_close(struct request_parser * parser);
 
-
-
 //convierte a errno en socks_response_status
 enum socks_response_status errno_to_socks(int e);
 

@@ -15,25 +15,26 @@ void request_departure(struct socks5 * currClient) {
 }
 
 void request_read_init(struct socks5 * currClient) {
-	hello_st *d = &currClient->client.hello;
+	st_request *d = &currClient->client.st_request;
 	struct connection_state *c = currClient->connection_state;
 
 	d->pr = (request_parser *) calloc(1, sizeof(request_parser));
 	d->r = currClient->bufferFromClient;
 	d->w = currClient->bufferFromRemote;
 
+	request_parser_init(d->pr);
 	c->init = true;
 }
 
 void request_read(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
-	hello_st *d = &currClient->client.hello;
+	st_request *d = &currClient->client.st_request;
 
 	request_parser * pr = d->pr;
 	buffer * buff_r = d->r;
 
 
-	bool errored;
+	bool errored = false;
     long valread = 0;
 	size_t nbytes = buff_r->limit - buff_r->write;
 	if ((valread = read( key->fd , buff_r->data, nbytes)) <= 0) {
@@ -44,17 +45,29 @@ void request_read(struct selector_key *key) {
 		buffer_write_adv(buff_r, valread);
 		enum request_state st = request_consume(buff_r, pr, &errored);
 
-		if(request_is_done(pr, &errored) && !errored) {
-			currClient->client.st_request.request = pr->request;
+		if(request_is_done(st, &errored) && !errored) {
+			d->request = pr->request;
 			enum client_state state = process_request(key);
 			change_state(currClient, state);
 		}
-
-		
-
+		if (errored) {
+			switch (st) {
+				case request_error_unsupported_version:
+				case request_error_unsupported_atyp:
+				case request_error:
+					currClient->client.st_request.state = status_general_SOCKLS_server_failure;
+					break;
+				/** TODO: El parser tiene que reconocer DestAddr invalida y comando invalido para reportar el error */
+				default:
+					break;
+			}
+			request_error_marshall(currClient);
+			selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
+			change_state(currClient, REQUEST_WRITE_STATE);
+		}
 	}
 }
-enum client_state process_request(struct selector_key *key){ //procesamiento del request
+enum client_state process_request(struct selector_key *key) { //procesamiento del request
 	struct socks5 * currClient = (struct socks5 *)key->data;
 	struct request* request = currClient->client.st_request.request;
 	enum client_state ret;
@@ -63,8 +76,8 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 	switch (request->cmd)
 	{
 	case socks_req_cmd_connect:
-		switch (request->dest_addr_type)
-		{
+		switch (request->dest_addr_type) {
+
 		case socks_req_addrtype_ipv4:{
 			currClient->origin_domain = AF_INET;
 			request->dest_addr.ipv4.sin_port = request->dest_port;
@@ -101,15 +114,14 @@ enum client_state process_request(struct selector_key *key){ //procesamiento del
 				}
 			}
 			break;
-		
-		}	default:
+		}	
+		default:
 			status = status_address_type_not_supported;
 			ret = REQUEST_WRITE_STATE;
 			break;
 		}
 		break;
 	case socks_req_cmd_bind:
-		break;
 	case socks_req_cmd_associate:
     default:
     	status = status_command_not_supported;
@@ -188,7 +200,14 @@ void request_connecting(struct selector_key *key) {
 					change_state(currClient, state);
 					return ;
 				}
-			}				
+			} else {
+				// Si no pudimos conecter y no hay mas ips para intentar mando el reply de error
+				currClient->client.st_request.state = errno_to_socks(error);
+				request_error_marshall(currClient);
+				selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
+				change_state(currClient, REQUEST_WRITE_STATE);
+				return ;
+			}			
 		}
 	}
 
@@ -227,7 +246,25 @@ enum socks_addr_type family_to_socks_addr_type(int family) {
 	return status_general_SOCKLS_server_failure;
 }
 
-int request_marshall(struct socks5 * currClient){
+int request_error_marshall(struct socks5 * currClient) {
+	size_t n;
+    uint8_t * buff = buffer_write_ptr(currClient->client.st_request.w, &n);
+
+    if(n<2){
+        return -1;
+    }
+    buff[0] = 0x05;
+    buff[1] = currClient->client.st_request.state;
+	buff[2] = 0x00;  
+    buff[3] = 0x00;
+    buff[4] = 0x00;
+    buff[5] = 0x00;
+    buff[6] = 0x00;
+
+	buffer_write_adv(currClient->client.st_request.w, 7);
+}
+
+int request_marshall(struct socks5 * currClient) {
     size_t n;
     uint8_t * buff = buffer_write_ptr(currClient->client.st_request.w, &n);
 	int addr_size = 0;
@@ -265,11 +302,20 @@ int request_marshall(struct socks5 * currClient){
 void request_write(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
-	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0){
-		selector_set_interest(key->s, key->fd, OP_READ);
-        currClient->connection_state->on_departure = request_departure;
-		currClient->connection_state->on_arrival = connected_init;
-		change_state(currClient, CONNECTED_STATE);
+	// Envio el reply
+	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0) {
+
+		// Si todo salio bien paso al estado connected
+		if (currClient->client.st_request.state == status_succeeded) {
+			selector_set_interest(key->s, key->fd, OP_READ);
+			currClient->connection_state->on_departure = request_departure;
+			currClient->connection_state->on_arrival = connected_init;
+			change_state(currClient, CONNECTED_STATE);
+
+		// Si hubo algun error finalizo conexion
+		} else {
+			socks5_done(key);
+		}
 	}
 }
 

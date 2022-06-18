@@ -99,7 +99,7 @@ int main(int argc , char *argv[])
 
     // Master sockets para atender admins IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
-    if(true){ //so that i can compact this part of the code
+    if(true) { //so that i can compact this part of the code
         if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET)) < 0) {
             print_log(ERROR, "socket IPv4 failed");
         } else {

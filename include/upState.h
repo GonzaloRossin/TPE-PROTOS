@@ -5,7 +5,7 @@
 #include "selector.h"
 #include "adminFunctions.h"
 #include "socks5Handler.h"
-#include "request.h"
+// #include "request.h"
 
 void up_read_close(struct socks5 * currClient);
 

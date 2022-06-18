@@ -72,7 +72,7 @@ typedef struct userpass_st {
     uint8_t * password;
 } userpass_st;
 
-struct st_request
+typedef struct st_request
 {
     request_parser * pr;
     buffer * r;
@@ -80,7 +80,7 @@ struct st_request
     enum socks_response_status state;
     struct request * request;
     int origin_fd;
-};
+} st_request;
 
 typedef struct connected {
   int fd;
