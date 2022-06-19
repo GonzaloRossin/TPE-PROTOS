@@ -1,0 +1,170 @@
+Rfc of SSEMD, Socks Server Editor Monitor & Dissector
+
+	Intro
+This document describes a Client-Server protocol to edit the sock5 proxy Server implemented on de "Protocolos de Comunicación" class of 2022-1Q, which stores different statistics of usage and works as a POP3 password dissector.
+It is NOT session based and uses TCP connection between the Client and the Server.
+It is has a Request-Response dynamic.
+Note: when clarifying a [format]', [] will be used to encompass the expected format, but they do not form part of the expected format.
+
+Different data types used in this protocol:
+INT	-> a 4 byte big endian unsigned int.
+BOOL	-> 1 byte, either X'00' (false), or X'11' (true).
+LIST	-> a list of UTF-8 strings, separated by \0.
+
+SIZE is a 2 byte unsigned number in big endian.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	Client Request
+The Client is expected to send the following request message:
+
+	+-------+---------+--------+-------+--------+---------+
+	|  VER	|  TOKEN  |  TYPE  |  CMD  |  SIZE  |  DATA   |
+	+-------+---------+--------+-------+--------+---------+
+	|   1   |    n    |   1    |   1   |   2    | 0-65535 |
+	+-------+---------+--------+-------+--------+---------+
+
+The VER field is the version of the current protocol being used. Currently set to X'01'.
+
+The TOKEN field must be n bytes long and should correspond to a Server authentication token, ending with \0.
+
+The TYPE field is to identify which TYPE of command is requested.
+The values currently defined for TYPE are:
+	- X'01' : GET. The current Client Tequest corresponds to a 'GET' command type.
+	- X'02' : EDIT. The current Client Request corresponds to an 'EDIT' command type.
+
+
+Knowing which TYPE of command is being requested, the Server must know which command is being executed by the Client.
+
+The CMD field is to identify which COMMAND is being requested by the Client.
+The values currently defined for CMD for GET TYPE are:
+	- X'01' : Get historic quantity of connections;
+		Returns INT if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'02' : Get quantity of current connections
+		Returns INT if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'03' : Get quantity of bytes transferred
+		Returns INT if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'04' : Get list of Users
+		Returns LIST if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'05' : Get current password dissector status
+		Returns BOOL if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'06' : Get Server authentication status
+		Returns BOOL if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'07' : Get Server BUFFER SIZE
+		Returns INT if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'08' : Get Server timeout
+		Returns INT if OK, ERROR status otherwise.
+		SIZE must be X'0000'
+
+The values currently defined for CMD for EDIT TYPE are:
+	- X'01' : Edit Client buffer size
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'0000' to X'FFFF'.
+		Data must contain an unsigned number in little endian representing new desired buffer size.
+
+	- X'02' : Edit Client timeout
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'0000' to X'FFFF'.
+		Data must contain an unsigned number representing new desired timeout.
+
+	- X'03' : Turn ON password dissector
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'04' : Turn OFF password dissector
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'05' : Add a User
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'0000' to X'FFFF'.
+		Data must contain a series of UTF-8 chars representing the new desired user, with format: [user:password\r\n]
+
+	- X'06' : Remove a User
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE can range from X'0000' to X'FFFF'.
+		Data must contain a series of UTF-8 chars representing desired user to be removed, with format: [user\r\n]
+
+	- X'07' : Turn ON password authentication
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'0000'
+
+	- X'08' : Turn OFF password authentication
+		Returns OK status if ok, ERROR status otherwise.
+		SIZE must be X'0000'
+
+
+--------
+
+	Server Response
+
+After recieving the command, the Server is expected to process the request and deliver the following respond message:
+
+	+--------+-------+--------+---------+
+	| STATUS |  CODE |  SIZE  |  DATA   |
+	+--------+-------+--------+---------+
+	|   1    |   1   |   2    | 0-65535 |
+	+-- -----+-------+--------+---------+
+
+The STATUS field is to identify what STATUS of response is the Server sending.
+The values currently defined for STATUS are:
+	- X'AA' : RESPONSE. The current package corresponds to a Server response.
+	- X'FF' : ERROR. The current package corresponds to a Server ERROR response.
+
+
+The CODE field is so that the Client can identify what status CODE has the Server responded.
+Each CODE has its own SIZE field value that is being expected by the Client. This size corresponds to the amount of bytes being transferred in the DATA field.
+
+The values currently defined for CODE for RESPONSE STATUS are:
+	- X'01' : OK, The requested command was processed succesfully.
+		SIZE must be X'0000'
+
+	- X'02' : The response is a LIST.
+		SIZE can range from X'0000' to X'FFFF'.
+
+	- X'03' : The response is an INT.
+		SIZE must be X'0004'
+
+	- X'04' : The response is a BOOL.
+		SIZE must be X'0001'
+ 		DATA can be either X'00' (false) or X'11' (true)
+
+
+The Server can also respond with a ERROR STATUS if an error was encountered processing the client's request.
+All ERROR STATUS must have a SIZE of X'0000'.
+The values currently defined for CODE for ERROR TYPE are:
+	- X'01' : Buffer size too small
+	- X'02' : Buffer size too big
+	- X'03' : Timeout too small
+	- X'04' : Timeout too big
+	- X'05' : No space for more users
+	- X'06' : Repeated [username:password]
+	- X'07' : Username or passord is too big
+	- X'08' : 
+	- X'09' : 
+	- X'A0' : Unkown type
+	- X'A1'	: Unknown command
+	- X'A2' : Incorrect token
+	- X'A3' : Incorrect size
+	- X'FA' : No space to process request
+	- X'FF' : Unknown error
+
+
+
+
+
+
