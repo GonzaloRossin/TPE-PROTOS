@@ -23,4 +23,5 @@ int create_master_sockets(int * master_socket, int * master_socket_6, struct soc
 int create_master_socket_4(struct sockaddr_in * addr);
 int create_master_socket_6(struct sockaddr_in6 * addr);
 
+void create_admin_sockets(int *management_socket_4, int *management_socket_6, struct socks5args * args);
 #endif

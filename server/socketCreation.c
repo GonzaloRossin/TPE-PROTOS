@@ -92,3 +92,26 @@ int create_master_socket_6(struct sockaddr_in6 * addr) {
     }
     return master_socket6;
 }
+
+void create_admin_sockets(int *admin_socket_4, int *admin_socket_6, struct socks5args * args) {
+    // Address for sctp socket binding
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = inet_addr(args->mng_addr);
+    address.sin_port = htons(args->mng_port);
+
+    // Generating the IPv6 address structure
+    struct in6_addr in6addr;
+    inet_pton(AF_INET6, args->mng_addr6, &in6addr);
+
+    // Address for IPv6 socket binding
+    struct sockaddr_in6 address6;
+    memset(&address6, 0, sizeof(address6));
+    address6.sin6_family = AF_INET6;
+    address6.sin6_addr = in6addr;
+    address6.sin6_port = htons(args->mng_port);
+
+    *admin_socket_4 = create_master_socket_4(&address);
+    *admin_socket_6 = create_master_socket_6(&address6);
+}   

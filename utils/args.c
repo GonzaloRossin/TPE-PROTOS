@@ -99,22 +99,24 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
                 usage(argv[0]);
                 break;
             case 'l':
-                args->socks_addr = optarg;
-                args->socks_family = get_addr_type(args->socks_addr);
+                args->socks_family = get_addr_type(optarg);
                 if (args->socks_family == AF_INET) {
+                    args->socks_addr = optarg;
                     address(args->socks_addr, args->socks_port, &args->socks_addr_info);
                 } else if (args->socks_family == AF_INET6) {
-                    address6(args->socks_addr, args->socks_port, &args->socks_addr_info6);
+                    args->socks_addr6 = optarg;
+                    address6(args->socks_addr6, args->socks_port, &args->socks_addr_info6);
                 }
                 break;
             case 'L':
-                args->mng_addr = optarg;
-                args->mng_family = get_addr_type(args->mng_addr);
+                args->mng_family = get_addr_type(optarg);
                 if (args->mng_family == AF_INET) {
+                    args->mng_addr = optarg;
                     address(args->mng_addr, args->mng_port, &args->mng_addr_info);
                 }
                 else if (args->mng_family == AF_INET6){
-                    address6(args->mng_addr, args->mng_port, &args->mng_addr_info6);
+                    args->mng_addr6 = optarg;
+                    address6(args->mng_addr6, args->mng_port, &args->mng_addr_info6);
                 }
                 break;
             case 'N':

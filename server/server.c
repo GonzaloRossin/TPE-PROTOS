@@ -97,52 +97,11 @@ int main(int argc , char *argv[])
     // createSocks5MasterSockets();
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
-
     create_master_sockets(&masterSocket, &masterSocket_6, args);
-
-
-    // if(true) { //so that i can compact this part of the code
-    //     if ((masterSocket = setupTCPServerSocket(PORT, AF_INET, SOCKS_ADDR)) < 0) {
-    //         print_log(ERROR, "socket IPv4 failed");
-    //     } else {
-    //         print_log(DEBUG, "\nWaiting for TCP IPv4 connections on socket %d", masterSocket);
-    //         selector_fd_set_nio(masterSocket);
-    //     }
-
-    //     if ((masterSocket_6 = setupTCPServerSocket(PORT, AF_INET6, SOCKS_ADDR)) < 0) {
-    //         print_log(ERROR, "socket IPv6 failed");
-    //     } else {
-    //         print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", masterSocket_6);
-    //         selector_fd_set_nio(masterSocket_6);
-    //     }
-    // }
-
-    // Master sockets para atender admins IPv4 y para IPv6 (si estan disponibles)
-	/////////////////////////////////////////////////////////////
-    if(true) { //so that i can compact this part of the code
-        if ((adminSocket = setupTCPServerSocket(ADMIN_PORT, AF_INET, ADMIN_ADDR)) < 0) {
-            print_log(ERROR, "socket IPv4 failed");
-        } else {
-            print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d FOR ADMIN ONLY", adminSocket);
-            selector_fd_set_nio(adminSocket);
-        }
-        if ((adminSocket_6 = setupTCPServerSocket(ADMIN_PORT, AF_INET6, ADMIN_ADDR)) < 0) {
-            print_log(ERROR, "socket IPv6 failed");
-        } else {
-            print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d FOR ADMIN ONLY\n", adminSocket_6);
-            selector_fd_set_nio(adminSocket_6);
-        }
-    }
-
+    create_admin_sockets(&adminSocket, &adminSocket_6, args);
 
 	signal(SIGTERM, sigterm_handler);
     signal(SIGINT,  sigterm_handler);
-	// for (int i = 0; i < master_socket_size; i++) {
-	// 	if(selector_fd_set_nio(master_socket[i]) == -1) {
-	// 		err_msg = "getting server socket flags";
-	// 		goto finally;
-	// 	}
-	// }
     
     const struct selector_init conf = {
         .signal = SIGALRM,
@@ -167,10 +126,7 @@ int main(int argc , char *argv[])
 	    clients_struct->clients = clients;
         clients_struct->clients_size = max_clients;
 
-    // struct clients_data clients_struct = {
-	// 	.clients = clients,
-	// 	.clients_size = max_clients
-	// };
+
     printf("Waiting for proxy connections on: \n");
     if (masterSocket > 0) {
 
@@ -191,29 +147,24 @@ int main(int argc , char *argv[])
         printf("IP: %s PORT: %d \n", args->socks_addr6, args->socks_port);
     }
     
-    ss = selector_register(selector, adminSocket, &ssemdf, OP_READ, admin);
-    if(ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd";
-        goto finally;
-    	}
-    ss = selector_register(selector, adminSocket_6, &ssemdf, OP_READ, admin);
-    if(ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd";
-        goto finally;
-    	}
-
-	// for (int i = 0; i < master_socket_size; i++) {
-    //     if(i < 2) { //1080 socks debe ser <2
-	// 	    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, clients_struct);
-    //     } else { //8889 ssemd
-    //         ss = selector_register(selector, master_socket[i], &ssemdf, OP_READ, admin);
-    //     }
-
-	// 	if(ss != SELECTOR_SUCCESS) {
-    //     err_msg = "registering fd";
-    //     goto finally;
-    // 	}
-	// }
+    printf("Waiting for ADMIN connections on: \n");
+    if (adminSocket > 0) {
+        ss = selector_register(selector, adminSocket, &ssemdf, OP_READ, admin);
+        if(ss != SELECTOR_SUCCESS) {
+            err_msg = "registering fd";
+            goto finally;
+        }
+        printf("IP: %s PORT: %d \n", args->mng_addr, args->mng_port);
+    }
+    
+    if (adminSocket_6 > 0) {
+        ss = selector_register(selector, adminSocket_6, &ssemdf, OP_READ, admin);
+        if(ss != SELECTOR_SUCCESS) {
+            err_msg = "registering fd";
+            goto finally;
+        }
+        printf("IP: %s PORT: %d \n", args->mng_addr6, args->mng_port);
+    }
     
     for(;!done;) {
         err_msg = NULL;
