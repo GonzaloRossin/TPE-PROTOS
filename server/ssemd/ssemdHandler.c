@@ -14,17 +14,19 @@ void masterssemdHandler(struct selector_key *key) {
 	const int new_admin_socket = acceptTCPConnection(key->fd, adminAddr);
 	selector_fd_set_nio(new_admin_socket);
 
-    struct ssemd * admin = (struct ssemd *)key->data;
+	int i;
+	struct admins_data * admin_data = (struct admins_data *)key->data;
+    struct ssemd * admin = admin_data->admins;
 
-    if(admin->isAvailable) {
-        new_admin(admin, new_admin_socket, get_BUFFSIZE(), adminAddr);
+	for (i = 0; i < admin_data->admins_size; i++) {
+		if(admin[i].isAvailable) {
+			new_admin(&admin[i], new_admin_socket, get_BUFFSIZE(), adminAddr);
 
-        selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, admin);
-		print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
-
-    } else {
-        print_log(DEBUG, "error adminn\n");
-    }
+			selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, &admin[i]);
+			print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
+			break;
+		}
+	}
 }
 
 void ssemd_read(struct selector_key *key) {
