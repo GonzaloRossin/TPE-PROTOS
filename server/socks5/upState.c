@@ -1,6 +1,7 @@
 #include "../../include/upState.h"
 
 void up_departure(struct socks5 * currClient) {
+    free_up_req_parser(currClient->client.userpass.parser);
     free(currClient->client.userpass.parser);
 }
 
@@ -44,6 +45,7 @@ void up_read(struct selector_key *key) {
                 currClient->username = up_s->user;
             }
             change_state(currClient, UP_WRITE_STATE);
+            free(up_s->user);
         }
     }
 }
