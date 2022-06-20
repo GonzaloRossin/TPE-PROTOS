@@ -71,9 +71,9 @@ int main(int argc , char *argv[])
     char * SOCKS_ADDR = args->socks_addr;
     char * ADMIN_ADDR = args->mng_addr;
 
-
-	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
-	int master_socket_size=0;
+    int masterSocket = -1, masterSocket_6 = -1, adminSocket = -1, adminSocket_6 = -1;
+	// int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
+	// int master_socket_size=0;
 	int max_clients = MAX_SOCKETS/2 , i;
 	struct socks5 * clients;
     struct ssemd * admin;
@@ -94,52 +94,51 @@ int main(int argc , char *argv[])
     admin->isAvailable = true;
     admin->pr = NULL;
 
-
+    // createSocks5MasterSockets();
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
-    if(true){ //so that i can compact this part of the code
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET, SOCKS_ADDR)) < 0) {
+    if(true) { //so that i can compact this part of the code
+        if ((masterSocket = setupTCPServerSocket(PORT, AF_INET, SOCKS_ADDR)) < 0) {
             print_log(ERROR, "socket IPv4 failed");
         } else {
-            print_log(DEBUG, "\nWaiting for TCP IPv4 connections on socket %d", master_socket[master_socket_size]);
-            master_socket_size++;
+            print_log(DEBUG, "\nWaiting for TCP IPv4 connections on socket %d", masterSocket);
+            selector_fd_set_nio(masterSocket);
         }
 
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET6, SOCKS_ADDR)) < 0) {
+        if ((masterSocket_6 = setupTCPServerSocket(PORT, AF_INET6, SOCKS_ADDR)) < 0) {
             print_log(ERROR, "socket IPv6 failed");
         } else {
-            print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
-            master_socket_size++;
+            print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", masterSocket_6);
+            selector_fd_set_nio(masterSocket_6);
         }
     }
 
     // Master sockets para atender admins IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
     if(true) { //so that i can compact this part of the code
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET, ADMIN_ADDR)) < 0) {
+        if ((adminSocket = setupTCPServerSocket(ADMIN_PORT, AF_INET, ADMIN_ADDR)) < 0) {
             print_log(ERROR, "socket IPv4 failed");
         } else {
-            print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d FOR ADMIN ONLY", master_socket[master_socket_size]);
-            master_socket_size++;
+            print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d FOR ADMIN ONLY", adminSocket);
+            selector_fd_set_nio(adminSocket);
         }
-
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET6, ADMIN_ADDR)) < 0) {
+        if ((adminSocket_6 = setupTCPServerSocket(ADMIN_PORT, AF_INET6, ADMIN_ADDR)) < 0) {
             print_log(ERROR, "socket IPv6 failed");
         } else {
-            print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d FOR ADMIN ONLY\n", master_socket[master_socket_size]);
-            master_socket_size++;
+            print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d FOR ADMIN ONLY\n", adminSocket_6);
+            selector_fd_set_nio(adminSocket_6);
         }
     }
 
 
 	signal(SIGTERM, sigterm_handler);
     signal(SIGINT,  sigterm_handler);
-	for (int i = 0; i < master_socket_size; i++) {
-		if(selector_fd_set_nio(master_socket[i]) == -1) {
-			err_msg = "getting server socket flags";
-			goto finally;
-		}
-	}
+	// for (int i = 0; i < master_socket_size; i++) {
+	// 	if(selector_fd_set_nio(master_socket[i]) == -1) {
+	// 		err_msg = "getting server socket flags";
+	// 		goto finally;
+	// 	}
+	// }
     
     const struct selector_init conf = {
         .signal = SIGALRM,
@@ -169,19 +168,39 @@ int main(int argc , char *argv[])
 	// 	.clients_size = max_clients
 	// };
     
-
-	for (int i = 0; i < master_socket_size; i++) {
-        if(i < 2) { //1080 socks debe ser <2
-		    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, clients_struct);
-        } else { //8889 ssemd
-            ss = selector_register(selector, master_socket[i], &ssemdf, OP_READ, admin);
-        }
-
-		if(ss != SELECTOR_SUCCESS) {
+    ss = selector_register(selector, masterSocket, &socksv5, OP_READ, clients_struct);
+    if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";
         goto finally;
     	}
-	}
+    ss = selector_register(selector, masterSocket_6, &socksv5, OP_READ, clients_struct);
+    if(ss != SELECTOR_SUCCESS) {
+        err_msg = "registering fd";
+        goto finally;
+    	}
+    ss = selector_register(selector, adminSocket, &ssemdf, OP_READ, admin);
+    if(ss != SELECTOR_SUCCESS) {
+        err_msg = "registering fd";
+        goto finally;
+    	}
+    ss = selector_register(selector, adminSocket_6, &ssemdf, OP_READ, admin);
+    if(ss != SELECTOR_SUCCESS) {
+        err_msg = "registering fd";
+        goto finally;
+    	}
+
+	// for (int i = 0; i < master_socket_size; i++) {
+    //     if(i < 2) { //1080 socks debe ser <2
+	// 	    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, clients_struct);
+    //     } else { //8889 ssemd
+    //         ss = selector_register(selector, master_socket[i], &ssemdf, OP_READ, admin);
+    //     }
+
+	// 	if(ss != SELECTOR_SUCCESS) {
+    //     err_msg = "registering fd";
+    //     goto finally;
+    // 	}
+	// }
     
     for(;!done;) {
         err_msg = NULL;
@@ -216,11 +235,15 @@ finally:
     // free(admin->pr);
     free(admin);
     free(clients);
-	for (int i = 0; i < master_socket_size; i++) {
-		if(master_socket[i] >= 0) {
-        	close(master_socket[i]);
-    	}
-	}
+	// for (int i = 0; i < master_socket_size; i++) {
+	// 	if(master_socket[i] >= 0) {
+    //     	close(master_socket[i]);
+    // 	}
+	// }
+    close(masterSocket);
+    close(masterSocket_6);
+    close(adminSocket);
+    close(adminSocket_6);
     free(args);
     free(clients_struct);
 
