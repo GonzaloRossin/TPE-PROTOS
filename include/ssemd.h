@@ -5,6 +5,8 @@
 #include "hello.h"
 #include "protocolParser.h"
 
+typedef struct ssemd ssemd;
+
 enum ssemd_state {
     SSEMD_READ_REQUEST = 0,
     SSEMD_WRITE_REQUEST,
