@@ -68,6 +68,8 @@ int main(int argc , char *argv[])
     if(! args->disectors_enabled){
         set_dissector_OFF();
     }
+    char * SOCKS_ADDR = args->socks_addr;
+    char * ADMIN_ADDR = args->mng_addr;
 
 
 	int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
@@ -96,14 +98,14 @@ int main(int argc , char *argv[])
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
     if(true){ //so that i can compact this part of the code
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET)) < 0) {
+        if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET, SOCKS_ADDR)) < 0) {
             print_log(ERROR, "socket IPv4 failed");
         } else {
             print_log(DEBUG, "\nWaiting for TCP IPv4 connections on socket %d", master_socket[master_socket_size]);
             master_socket_size++;
         }
 
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET6)) < 0) {
+        if ((master_socket[master_socket_size] = setupTCPServerSocket(PORT, AF_INET6, SOCKS_ADDR)) < 0) {
             print_log(ERROR, "socket IPv6 failed");
         } else {
             print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", master_socket[master_socket_size]);
@@ -114,14 +116,14 @@ int main(int argc , char *argv[])
     // Master sockets para atender admins IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
     if(true) { //so that i can compact this part of the code
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET)) < 0) {
+        if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET, ADMIN_ADDR)) < 0) {
             print_log(ERROR, "socket IPv4 failed");
         } else {
             print_log(DEBUG, "Waiting for TCP IPv4 connections on socket %d FOR ADMIN ONLY", master_socket[master_socket_size]);
             master_socket_size++;
         }
 
-        if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET6)) < 0) {
+        if ((master_socket[master_socket_size] = setupTCPServerSocket(ADMIN_PORT, AF_INET6, ADMIN_ADDR)) < 0) {
             print_log(ERROR, "socket IPv6 failed");
         } else {
             print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d FOR ADMIN ONLY\n", master_socket[master_socket_size]);
