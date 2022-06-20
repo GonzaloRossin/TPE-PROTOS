@@ -89,6 +89,8 @@ typedef struct ssemd
 {
     int fd;
 
+    char * adminAddr;
+
     char * admin_token;
 
     buffer * bufferRead;
@@ -103,7 +105,7 @@ typedef struct ssemd
 } ssemd;
 
 void
-new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE);
+new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE, char * adminAddr);
 
 void removeAdmin(struct ssemd * admin);
 

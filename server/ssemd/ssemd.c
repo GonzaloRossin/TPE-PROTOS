@@ -1,7 +1,7 @@
 #include "./../../include/ssemd.h"
 
 void
-new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE){
+new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE, char * adminAddr){
     newAdmin->fd = adminSocket;
 
     buffer * readBuffer = (buffer*)malloc(sizeof(buffer));
@@ -20,6 +20,8 @@ new_admin(struct ssemd * newAdmin, int adminSocket, int BUFFSIZE){
     newAdmin->bufferWrite = writeBuffer;
 
     newAdmin->isAvailable = false;
+
+    newAdmin->adminAddr = adminAddr;
 }
 
 void removeAdmin(struct ssemd * admin) {
