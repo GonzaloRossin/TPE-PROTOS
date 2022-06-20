@@ -19,6 +19,7 @@
 #include "../include/args.h"
 #include "../include/ssemdHandler.h"
 #include "../include/adminFunctions.h"
+#include "../include/socketCreation.h"
 
 static bool done = false;
 
@@ -97,6 +98,9 @@ int main(int argc , char *argv[])
     // createSocks5MasterSockets();
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
+
+    create_master_sockets(&masterSocket, &masterSocket_6);
+
     if(true) { //so that i can compact this part of the code
         if ((masterSocket = setupTCPServerSocket(PORT, AF_INET, SOCKS_ADDR)) < 0) {
             print_log(ERROR, "socket IPv4 failed");
