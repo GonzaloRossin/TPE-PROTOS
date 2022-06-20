@@ -103,11 +103,11 @@ typedef struct connection_state {
     void (*on_arrival) (struct socks5 * currClient);
 } connection_state;
 
-struct connecting {
+typedef struct connecting {
     buffer *w;
     enum client_state client_state;
     int origin_fd;
-};
+} connecting;
 
 struct socks5
 {
@@ -137,13 +137,13 @@ struct socks5
 
     union {
         hello_st hello;
-        struct userpass_st userpass;
-        struct st_request st_request;
-        struct connected st_connected;
+        userpass_st userpass;
+        st_request st_request;
+        connected st_connected;
     } client;
 
     union {
-        struct connecting conn;
+        connecting conn;
         connected st_connected;
     } remote;
 

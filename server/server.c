@@ -34,6 +34,7 @@ sigterm_handler(const int signal) {
 #define TRUE   1
 #define FALSE  0
 #define MAX_SOCKETS 1000  // un valor bajo, para realizar pruebas
+#define MAX_ADMINS 10
 
 static const struct fd_handler socksv5 = {
     .handle_read       = masterSocks5Handler,
@@ -76,7 +77,8 @@ int main(int argc , char *argv[])
 	// int master_socket_size=0;
 	int max_clients = MAX_SOCKETS/2 , i;
 	struct socks5 * clients;
-    struct ssemd * admin;
+    struct ssemd * admins;
+    int max_admins = MAX_ADMINS;
 
 	const char       *err_msg = NULL;
 	selector_status   ss      = SELECTOR_SUCCESS;
@@ -90,10 +92,11 @@ int main(int argc , char *argv[])
 	}
 
     //initialise Admin
-    admin = (struct ssemd*)calloc(1, sizeof(struct ssemd));
-    admin->isAvailable = true;
-    admin->pr = NULL;
-
+    admins = (struct ssemd*)calloc(MAX_ADMINS, sizeof(struct ssemd));
+    for (i = 0; i < max_admins; i++) {
+        admins[i].isAvailable = true;
+        admins[i].pr = NULL;
+    }
     // createSocks5MasterSockets();
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
@@ -126,6 +129,9 @@ int main(int argc , char *argv[])
 	    clients_struct->clients = clients;
         clients_struct->clients_size = max_clients;
 
+    struct admins_data *admins_struct = (struct admins_data *)calloc(1, sizeof(struct admins_data));
+	    admins_struct->admins = admins;
+        admins_struct->admins_size = max_admins;
 
     printf("Waiting for proxy connections on: \n");
     if (masterSocket > 0) {
@@ -149,7 +155,7 @@ int main(int argc , char *argv[])
     
     printf("Waiting for ADMIN connections on: \n");
     if (adminSocket > 0) {
-        ss = selector_register(selector, adminSocket, &ssemdf, OP_READ, admin);
+        ss = selector_register(selector, adminSocket, &ssemdf, OP_READ, admins_struct);
         if(ss != SELECTOR_SUCCESS) {
             err_msg = "registering fd";
             goto finally;
@@ -158,7 +164,7 @@ int main(int argc , char *argv[])
     }
     
     if (adminSocket_6 > 0) {
-        ss = selector_register(selector, adminSocket_6, &ssemdf, OP_READ, admin);
+        ss = selector_register(selector, adminSocket_6, &ssemdf, OP_READ, admins_struct);
         if(ss != SELECTOR_SUCCESS) {
             err_msg = "registering fd";
             goto finally;
@@ -197,7 +203,8 @@ finally:
 
 
     // free(admin->pr);
-    free(admin);
+    
+    free(admins);
     free(clients);
 	// for (int i = 0; i < master_socket_size; i++) {
 	// 	if(master_socket[i] >= 0) {
@@ -210,6 +217,7 @@ finally:
     close(adminSocket_6);
     free(args);
     free(clients_struct);
+    free(admins_struct);
 
     free_users();
     

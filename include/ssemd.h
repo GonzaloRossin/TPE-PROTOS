@@ -85,6 +85,12 @@ typedef struct ssemd_response {
 
 } ssemd_response;
 
+struct admins_data
+{
+    struct ssemd * admins;
+    int admins_size;
+};
+
 typedef struct ssemd
 {
     int fd;
