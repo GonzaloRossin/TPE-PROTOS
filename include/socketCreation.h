@@ -15,7 +15,12 @@
 #include <netinet/sctp.h>
 #include <sys/time.h>
 #include <sys/signal.h>
+#include "logger.h"
 
-int create_master_sockets(int * master_socket, int * master_socket_6);
+#define MAX_PENDING_CONNECTIONS   10 
+
+int create_master_sockets(int * master_socket, int * master_socket_6, struct socks5args * args);
+int create_master_socket_4(struct sockaddr_in * addr);
+int create_master_socket_6(struct sockaddr_in6 * addr);
 
 #endif

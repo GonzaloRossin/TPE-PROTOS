@@ -33,8 +33,7 @@ sigterm_handler(const int signal) {
 
 #define TRUE   1
 #define FALSE  0
-#define MAX_SOCKETS 1000
-#define MAX_PENDING_CONNECTIONS   10   // un valor bajo, para realizar pruebas
+#define MAX_SOCKETS 1000  // un valor bajo, para realizar pruebas
 
 static const struct fd_handler socksv5 = {
     .handle_read       = masterSocks5Handler,
@@ -99,23 +98,24 @@ int main(int argc , char *argv[])
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
 
-    create_master_sockets(&masterSocket, &masterSocket_6);
+    create_master_sockets(&masterSocket, &masterSocket_6, args);
 
-    if(true) { //so that i can compact this part of the code
-        if ((masterSocket = setupTCPServerSocket(PORT, AF_INET, SOCKS_ADDR)) < 0) {
-            print_log(ERROR, "socket IPv4 failed");
-        } else {
-            print_log(DEBUG, "\nWaiting for TCP IPv4 connections on socket %d", masterSocket);
-            selector_fd_set_nio(masterSocket);
-        }
 
-        if ((masterSocket_6 = setupTCPServerSocket(PORT, AF_INET6, SOCKS_ADDR)) < 0) {
-            print_log(ERROR, "socket IPv6 failed");
-        } else {
-            print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", masterSocket_6);
-            selector_fd_set_nio(masterSocket_6);
-        }
-    }
+    // if(true) { //so that i can compact this part of the code
+    //     if ((masterSocket = setupTCPServerSocket(PORT, AF_INET, SOCKS_ADDR)) < 0) {
+    //         print_log(ERROR, "socket IPv4 failed");
+    //     } else {
+    //         print_log(DEBUG, "\nWaiting for TCP IPv4 connections on socket %d", masterSocket);
+    //         selector_fd_set_nio(masterSocket);
+    //     }
+
+    //     if ((masterSocket_6 = setupTCPServerSocket(PORT, AF_INET6, SOCKS_ADDR)) < 0) {
+    //         print_log(ERROR, "socket IPv6 failed");
+    //     } else {
+    //         print_log(DEBUG, "Waiting for TCP IPv6 connections on socket %d\n", masterSocket_6);
+    //         selector_fd_set_nio(masterSocket_6);
+    //     }
+    // }
 
     // Master sockets para atender admins IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
@@ -171,17 +171,26 @@ int main(int argc , char *argv[])
 	// 	.clients = clients,
 	// 	.clients_size = max_clients
 	// };
+    printf("Waiting for proxy connections on: \n");
+    if (masterSocket > 0) {
+
+        ss = selector_register(selector, masterSocket, &socksv5, OP_READ, clients_struct);
+        if(ss != SELECTOR_SUCCESS) {
+            err_msg = "registering fd";
+            goto finally;
+        }
+        printf("IP: %s PORT: %d \n", args->socks_addr, args->socks_port);
+    }
     
-    ss = selector_register(selector, masterSocket, &socksv5, OP_READ, clients_struct);
-    if(ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd";
-        goto finally;
-    	}
-    ss = selector_register(selector, masterSocket_6, &socksv5, OP_READ, clients_struct);
-    if(ss != SELECTOR_SUCCESS) {
-        err_msg = "registering fd";
-        goto finally;
-    	}
+    if (masterSocket_6 > 0) {
+        ss = selector_register(selector, masterSocket_6, &socksv5, OP_READ, clients_struct);
+        if(ss != SELECTOR_SUCCESS) {
+            err_msg = "registering fd";
+            goto finally;
+            }
+        printf("IP: %s PORT: %d \n", args->socks_addr6, args->socks_port);
+    }
+    
     ss = selector_register(selector, adminSocket, &ssemdf, OP_READ, admin);
     if(ss != SELECTOR_SUCCESS) {
         err_msg = "registering fd";
