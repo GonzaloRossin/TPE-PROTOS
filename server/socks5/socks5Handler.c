@@ -139,6 +139,8 @@ void socks5_close(struct selector_key *key) {
 	if (currClient->client_socket == -1 || currClient->remote_socket == -1) {
 		// currClient->client.st_connected.init = 0;
 		// currClient->remote.st_connected.init = 0;
+
+		free(currClient->clientAddr);
 		
 		free(currClient->connection_state);
 
