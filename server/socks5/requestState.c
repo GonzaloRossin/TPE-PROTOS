@@ -191,6 +191,7 @@ void request_connecting(struct selector_key *key) {
 			currClient->client.st_request.state = status_succeeded;
 			currClient->protocol_type = identify_protocol_type(get_port(currClient));
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
+			freeaddrinfo(currClient->origin_resolution);
 		} else {
 			if (currClient->origin_resolution_current) {
 				if (currClient->origin_resolution_current->ai_next) {
@@ -199,23 +200,23 @@ void request_connecting(struct selector_key *key) {
 					enum client_state state = request_connect(key);
 					change_state(currClient, state);
 					return ;
-				}
-			} else {
-				// Si no pudimos conectar y no hay mas ips para intentar mando el reply de error
-				currClient->client.st_request.state = errno_to_socks(error);
-				request_error_marshall(currClient);
-				selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
-				change_state(currClient, REQUEST_WRITE_STATE);
-				return ;
-			}			
+				} else {
+					// Si no pudimos conectar y no hay mas ips para intentar mando el reply de error
+					freeaddrinfo(currClient->origin_resolution);
+					currClient->client.st_request.state = errno_to_socks(error);
+					request_error_marshall(currClient);
+					selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
+					change_state(currClient, REQUEST_WRITE_STATE);
+					return ;
+				}			
+			}
 		}
-	}
-
-	if (-1 == request_marshall(currClient)) {
-		
-	} else {
-		change_state(currClient, REQUEST_WRITE_STATE);
-		selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
+		if (-1 == request_marshall(currClient)) {
+			
+		} else {
+			change_state(currClient, REQUEST_WRITE_STATE);
+			selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
+		}
 	}
 }
 
@@ -328,10 +329,7 @@ void request_resolve(struct selector_key *key) {
 	} else {
 		currClient->origin_resolution_current = currClient->origin_resolution;
         set_next_ip(currClient, currClient->origin_resolution_current);
-		freeaddrinfo(currClient->origin_resolution);
-		currClient->origin_resolution = 0;
 	}
-
 	enum client_state state =  request_connect(key);
 	change_state(currClient, state);
 }
