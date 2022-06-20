@@ -43,9 +43,9 @@ version(const char *progname) {
 
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
-    char           *admin_token;
-    char            type;
-    char            cmd;
+    // char           *admin_token;
+    // char            type;
+    // char            cmd;
 
     args->mng_addr   = "127.0.0.1";
     args->mng_port   = "8080";

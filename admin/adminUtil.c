@@ -42,8 +42,8 @@ int tcpClientSocket(const char *host, const char *service) {
 	return sock;
 }
 
-size_t getSize(struct ssemd_args *args){
-	size_t toRet = 0;
+ssize_t getSize(struct ssemd_args *args){
+	ssize_t toRet = 0;
 	toRet++; //1 byte for VER
 	int n=0;
 	while(args->admin_token[n]!=0x00){

@@ -67,13 +67,6 @@ enum ssmed_bool {
     SSEMD_FALSE = 0x00,
 };
 
-// struct ssemd_hello
-// {
-//     protocol_parser * pr;
-//     buffer * w;
-//     buffer * r;
-// };
-
 struct ssemd_connection_state {
     int init;
     enum ssemd_state ssemd_state;

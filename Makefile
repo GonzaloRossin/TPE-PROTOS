@@ -3,7 +3,7 @@ CFLAGS = -fsanitize=address -fno-omit-frame-pointer -g --std=c11 -pedantic -peda
 LDFLAGS = -lpthread
 all: socks5d ssemd
 clean:	
-	- rm -f *.o socks5d ssemd
+	- rm -f *.o ./*/*.o ./*/*/*.o socks5d ssemd
 
 COMMON =  ./utils/logger.o ./utils/util.o ./utils/buffer.o ./utils/args.o
 

@@ -25,6 +25,6 @@
 // Create and connect a new TCP client socket
 int tcpClientSocket(const char *server, const char *service);
 
-size_t getSize(struct ssemd_args *args);
+ssize_t getSize(struct ssemd_args *args);
 
 #endif 
