@@ -35,7 +35,17 @@ sigterm_handler(const int signal) {
 #define MAX_SOCKETS 1000
 #define MAX_PENDING_CONNECTIONS   10   // un valor bajo, para realizar pruebas
 
+static const struct fd_handler socksv5 = {
+    .handle_read       = masterSocks5Handler,
+    .handle_write      = NULL,
+    .handle_close      = NULL, // nada que liberar
+};
 
+static const struct fd_handler ssemdf = {
+    .handle_read       = masterssemdHandler,
+    .handle_write      = NULL,
+    .handle_close      = NULL, // nada que liberar
+};
 
 /**
   Lee el datagrama del socket, obtiene info asociado con getaddrInfo y envia la respuesta
@@ -146,11 +156,7 @@ int main(int argc , char *argv[])
         err_msg = "unable to create selector";
         goto finally;
     }
-    const struct fd_handler socksv5 = {
-        .handle_read       = masterSocks5Handler,
-        .handle_write      = NULL,
-        .handle_close      = NULL, // nada que liberar
-    };
+    
 
     struct clients_data *clients_struct = (struct clients_data *)calloc(1, sizeof(struct clients_data));
 	    clients_struct->clients = clients;
@@ -161,18 +167,12 @@ int main(int argc , char *argv[])
 	// 	.clients_size = max_clients
 	// };
     
-    const struct fd_handler ssemd = {
-        .handle_read       = masterssemdHandler,
-        .handle_write      = NULL,
-        .handle_close      = NULL, // nada que liberar
-    };
-    
 
 	for (int i = 0; i < master_socket_size; i++) {
         if(i < 2) { //1080 socks debe ser <2
 		    ss = selector_register(selector, master_socket[i], &socksv5, OP_READ, clients_struct);
         } else { //8889 ssemd
-            ss = selector_register(selector, master_socket[i], &ssemd, OP_READ, admin);
+            ss = selector_register(selector, master_socket[i], &ssemdf, OP_READ, admin);
         }
 
 		if(ss != SELECTOR_SUCCESS) {
