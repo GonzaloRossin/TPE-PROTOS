@@ -85,7 +85,7 @@ typedef struct admin_parser{
     enum admin_state state;
     int dataPointer;
     unsigned int number;
-};
+}admin_parser;
 
 
 extern void admin_parser_init(struct admin_parser * adminParser);

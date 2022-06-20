@@ -263,6 +263,7 @@ int request_error_marshall(struct socks5 * currClient) {
     buff[6] = 0x00;
 
 	buffer_write_adv(currClient->client.st_request.w, 7);
+	return 7;
 }
 
 int request_marshall(struct socks5 * currClient) {
