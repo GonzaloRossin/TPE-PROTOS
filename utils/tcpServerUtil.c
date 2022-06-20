@@ -84,7 +84,7 @@ int setupTCPServerSocket(const char *service, const int family) {
 	return servSock;
 }
 
-int acceptTCPConnection(int servSock) {
+int acceptTCPConnection(int servSock, char * clientAddr) {
 	struct sockaddr_storage clntAddr; // Client address
 	// Set length of client address structure (in-out parameter)
 	socklen_t clntAddrLen = sizeof(clntAddr);
@@ -99,6 +99,7 @@ int acceptTCPConnection(int servSock) {
 	// clntSock is connected to a client!
 	printSocketAddress((struct sockaddr *) &clntAddr, addrBuffer);
 	print_log(INFO, "Handling client %s", addrBuffer);
+	strcpy(clientAddr, addrBuffer);
 
 	return clntSock;
 }

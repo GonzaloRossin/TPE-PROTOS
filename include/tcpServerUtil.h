@@ -9,7 +9,7 @@
 int setupTCPServerSocket(const char *service, const int family);
 
 // Accept a new TCP connection on a server socket
-int acceptTCPConnection(int servSock);
+int acceptTCPConnection(int servSock, char * clientAddr);
 
 // Handle new TCP client
 void handleTCPEchoClient(int clntSocket);

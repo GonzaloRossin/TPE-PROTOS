@@ -10,7 +10,8 @@ static const struct fd_handler ssemdHandler = {
 };
 
 void masterssemdHandler(struct selector_key *key) {
-	const int new_admin_socket = acceptTCPConnection(key->fd);
+	char * clientAddr = (char *)calloc(1, sizeof(char) * 128);
+	const int new_admin_socket = acceptTCPConnection(key->fd, clientAddr);
 	selector_fd_set_nio(new_admin_socket);
 
     struct ssemd * admin = (struct ssemd *)key->data;

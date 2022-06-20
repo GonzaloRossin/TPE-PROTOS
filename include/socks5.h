@@ -114,6 +114,8 @@ struct socks5
     int client_socket;
     int remote_socket;
 
+    char * clientAddr;
+
     int origin_domain;
     
     struct addrinfo *origin_resolution;
@@ -152,7 +154,7 @@ struct socks5
 
 //creates new client
 void
-new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE);
+new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE, char * clientAddre);
 
 //frees client resources
 void removeClient(struct socks5 * client);

@@ -2,7 +2,7 @@
 
 
 void
-new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE){
+new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE, char * clientAddr){
     newClient->client_socket = clientSocket;
 
     buffer * newClientBuffer = (buffer*)malloc(sizeof(buffer));
@@ -24,6 +24,9 @@ new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE){
     newClient->connection_state->client_state = HELLO_READ_STATE;
     newClient->isAvailable = false;
     newClient->remote_socket = -1;
+
+    newClient->clientAddr = clientAddr;
+    // newClient->clientAddr[strlen(clientAddr)] = '\0';
 }
 
 void
