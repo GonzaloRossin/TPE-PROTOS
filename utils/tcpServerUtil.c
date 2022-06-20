@@ -18,7 +18,7 @@ static char addrBuffer[MAX_ADDR_BUFFER];
  ** Se encarga de resolver el número de puerto para service (puede ser un string con el numero o el nombre del servicio)
  ** y crear el socket pasivo, para que escuche en cualquier IP, ya sea v4 o v6
  */
-int setupTCPServerSocket(const char *service, const int family) {
+int setupTCPServerSocket(const char *service, const int family, char * bindAddr) {
 	int opt = TRUE;
 	// Construct the server address structure
 	struct addrinfo addrCriteria;                   // Criteria for address match
@@ -84,7 +84,7 @@ int setupTCPServerSocket(const char *service, const int family) {
 	return servSock;
 }
 
-int acceptTCPConnection(int servSock) {
+int acceptTCPConnection(int servSock, char * clientAddr) {
 	struct sockaddr_storage clntAddr; // Client address
 	// Set length of client address structure (in-out parameter)
 	socklen_t clntAddrLen = sizeof(clntAddr);
@@ -99,6 +99,7 @@ int acceptTCPConnection(int servSock) {
 	// clntSock is connected to a client!
 	printSocketAddress((struct sockaddr *) &clntAddr, addrBuffer);
 	print_log(INFO, "Handling client %s", addrBuffer);
+	strcpy(clientAddr, addrBuffer);
 
 	return clntSock;
 }

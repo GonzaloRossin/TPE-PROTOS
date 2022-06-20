@@ -1,5 +1,7 @@
 #include "./../../include/ssemdHandler.h"
 
+
+
 static const struct fd_handler ssemdHandler = {
 	.handle_read       = ssemd_read,
 	.handle_write      = ssemd_write,
@@ -8,20 +10,23 @@ static const struct fd_handler ssemdHandler = {
 };
 
 void masterssemdHandler(struct selector_key *key) {
-	const int new_admin_socket = acceptTCPConnection(key->fd);
+	char * adminAddr = (char *)calloc(1, sizeof(char) * 128);
+	const int new_admin_socket = acceptTCPConnection(key->fd, adminAddr);
 	selector_fd_set_nio(new_admin_socket);
 
-    struct ssemd * admin = (struct ssemd *)key->data;
+	int i;
+	struct admins_data * admin_data = (struct admins_data *)key->data;
+    struct ssemd * admin = admin_data->admins;
 
-    if(admin->isAvailable) {
-        new_admin(admin, new_admin_socket, get_BUFFSIZE());
+	for (i = 0; i < admin_data->admins_size; i++) {
+		if(admin[i].isAvailable) {
+			new_admin(&admin[i], new_admin_socket, get_BUFFSIZE(), adminAddr);
 
-        selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, admin);
-		print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
-
-    } else {
-        print_log(DEBUG, "error adminn\n");
-    }
+			selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, &admin[i]);
+			print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
+			break;
+		}
+	}
 }
 
 void ssemd_read(struct selector_key *key) {
@@ -74,7 +79,7 @@ void ssemd_read_request(struct selector_key *key) {
 	read_request_init(currAdmin);
 
 	buffer * r = currAdmin->bufferRead;
-	unsigned ret = SSEMD_READ_REQUEST;
+	// unsigned ret = SSEMD_READ_REQUEST;
 	size_t count;
 	ssize_t n;
 	bool error = false;
@@ -92,7 +97,7 @@ void ssemd_read_request(struct selector_key *key) {
 				currAdmin->connection_state.ssemd_state = SSEMD_WRITE_REQUEST;
 				selector_set_interest(key->s, key->fd, OP_WRITE);
 			} else {
-				ret = SSEMD_ERROR_STATE;
+				// ret = SSEMD_ERROR_STATE;
 			}
 		} else {
 			if(error){ //is always error here
@@ -103,7 +108,7 @@ void ssemd_read_request(struct selector_key *key) {
 			}
 		}
 	} else {
-		ret = SSEMD_ERROR_STATE;
+		// ret = SSEMD_ERROR_STATE;
 	}
 	// return error ? SSEMD_ERROR_STATE : ret;
 }
@@ -199,7 +204,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 		
 		case SSEMD_GET_TIMEOUT: 
 			setResponse(response, SSEMD_RESPONSE_INT);
-			c = get_timeout();
+			c = get_timeout()->tv_sec;
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned int));
             break;
@@ -208,7 +213,6 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 			setResponse(response, 0x00);
 			break;
 	}
-	// marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
 
@@ -275,26 +279,24 @@ void ssemd_process_edit(struct ssemd * currAdmin) {
         default:
 			break;
 	}
-	// marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
 void ssemd_incorrect_token(struct ssemd * currAdmin) {
 	ssemd_response * response = (ssemd_response *) calloc(1, sizeof(ssemd_response));
-	payload * request = currAdmin->pr->data;
+	// payload * request = currAdmin->pr->data;
 	currAdmin->response = response;
 	response->status = SSEMD_ERROR;
 	response->code = SSEMD_ERROR_INCORRECT_TOKEN;
 	response->size1 = 0x00;
 	response->size2 = 0x00;
-	// marshall(currAdmin->bufferWrite, currAdmin->response);
 }
 
 void handleEditUser(struct payload * request, ssemd_response * response, bool isRemove){
 	struct users * users = get_users();
 	int retCode = 2;
-	char * newName;
 	char * name;
 	char * pass;
+	char * empty = '\0';
 	int dataPointer = 0;
 	int wordPointer = 0;
 	int userNumber;
@@ -306,7 +308,7 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 	for(userNumber = 0; userNumber < MAX_USERS; userNumber++){
 		name = users[userNumber].name;
 		pass = users[userNumber].pass;
-		if(! (name != '\0' && pass != '\0')){ //if is not a valid user, write it here
+		if(! (name != empty && pass != empty)){ //if is not a valid user, write it here
 			while(request->data[dataPointer] != ':'){ //write username
 				if(wordPointer > 19){
 					retCode = 3;
@@ -375,17 +377,18 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 bool findUser(struct users findUser, bool andRemove){
     struct users *users = get_users();
     bool found = false;
+	char * empty = '\0';
 
     int i = 0;
     while (i < MAX_USERS && !found) {
-        if (users[i].name != '\0') {
+        if (users[i].name != empty) {
             if (0 == strcmp((const char *)users[i].name, findUser.name)) {
-                if (users[i].pass != '\0') {
+                if (users[i].pass != empty) {
                     if (0 == strcmp((const char *)users[i].pass, findUser.pass)) {
                         found = true;
 						if(andRemove){
-							users[i].name = '\0';
-							users[i].pass = '\0';
+							users[i].name = empty;
+							users[i].pass = empty;
 						}
                     }
                 }  
@@ -401,6 +404,7 @@ void handleGetUserList(struct payload * request, ssemd_response * response){
 	if(request->type == SSEMD_GET && request->CMD == SSEMD_USER_LIST){
 		struct users * users = get_users();
 		response->data = (uint8_t *)malloc(sizeof(uint8_t) * (3)); // minimum
+		char * empty = '\0';
 		char * name;
 		char * pass;
 		int dataPointer = 0;
@@ -410,7 +414,7 @@ void handleGetUserList(struct payload * request, ssemd_response * response){
 			wordPointer = 0;
 			name = users[userNumber].name;
 			pass = users[userNumber].pass;
-			if(name != '\0' && pass != '\0'){ //if is a valid user
+			if(name != empty && pass != empty){ //if is a valid user
 				// size_t toMalloc = strlen(name) + strlen(pass) +2;
 				response->data = realloc(response->data, sizeof(uint8_t) * (dataPointer + strlen(name) + strlen(pass) + 2)); // + : + \0
 				while(name[wordPointer] != '\0'){
@@ -544,7 +548,7 @@ void read_request_init(struct ssemd * currAdmin) {
 }
 
 int marshall(buffer * buffer, ssemd_response * response){
-	int size = 0; //bytes for data
+	unsigned int size = 0; //bytes for data
 	size+=response->size2; 
 	if(response->size1 != 0x00){
 		size+=response->size1 + 255;
@@ -564,7 +568,7 @@ int marshall(buffer * buffer, ssemd_response * response){
 	buff[i++] = response->size2; //size2
 
 	if(size > 0){ //DATA
-		int n = 0;
+		unsigned int n = 0;
 		while(n<size){
 			buff[i++] = response->data[n++];
 		}
@@ -614,6 +618,8 @@ void setResponse(ssemd_response * response, uint8_t code){
 
 void ssemd_close(struct selector_key *key) {
 	struct ssemd * currAdmin = (struct ssemd *)key->data;
+
+	free(currAdmin->adminAddr);
 
 	free(currAdmin->bufferRead->data);
 	free(currAdmin->bufferWrite->data);

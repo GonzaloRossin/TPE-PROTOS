@@ -18,14 +18,14 @@ usage(const char *progname) {
         "       -G6                 Get Server authentication status\n"
         "       -G7                 Get Server BUFFER SIZE\n"
         "       -G8                 Get Server timeout\n"
-        "       -H1 -d <#>          Edit Client buffer size\n"
-        "       -H2 -d <#>          Edit Client timeout\n"
-        "       -H3                 Turn ON password dissector\n"
-        "       -H4                 Turn OFF password dissector\n"
-        "       -H5 -d <user:pass>  Add a User\n"
-        "       -H6 -d <user:pass>  Remove a User\n"
-        "       -H7                 Turn ON password authentication\n"
-        "       -H8                 Turn OFF password authentication\n"
+        "       -E1 -d <#>          Edit Client buffer size\n"
+        "       -E2 -d <#>          Edit Client timeout\n"
+        "       -E3                 Turn ON password dissector\n"
+        "       -E4                 Turn OFF password dissector\n"
+        "       -E5 -d <user:pass>  Add a User\n"
+        "       -E6 -d <user:pass>  Remove a User\n"
+        "       -E7                 Turn ON password authentication\n"
+        "       -E8                 Turn OFF password authentication\n"
         "   -L <conf  addr>  Current Server direction.\n"
         "   -p <SOCKS port>  Current Server port.\n"
         "   -v               Prints info about version and exits\n"
@@ -43,9 +43,9 @@ version(const char *progname) {
 
 void 
 parse_ssemd_args(const int argc, char **argv, struct ssemd_args *args) {
-    char           *admin_token;
-    char            type;
-    char            cmd;
+    // char           *admin_token;
+    // char            type;
+    // char            cmd;
 
     args->mng_addr   = "127.0.0.1";
     args->mng_port   = "8080";

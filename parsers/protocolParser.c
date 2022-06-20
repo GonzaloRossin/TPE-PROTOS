@@ -9,6 +9,7 @@ bool has_appropiate_size(struct protocol_parser* p, uint8_t byte){
                 return true;
             }else{
                 return false;
+                
             }
         }
         case 0x02:{

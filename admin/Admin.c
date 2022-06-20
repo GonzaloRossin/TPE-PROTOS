@@ -2,7 +2,7 @@
 
 #define BUFFSIZE 4096
 
-void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend, struct admin_parser * adminParser);
+void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, ssize_t bytesToSend, struct admin_parser * adminParser);
 void handleRecv(int sock, struct buffer * Buffer, struct admin_parser * adminParser);
 void parseResponse(struct buffer * Buffer);
 void processParser(struct admin_parser * adminParser);
@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 	struct ssemd_args * args = (struct ssemd_args *)calloc(1, sizeof(struct ssemd_args));
 	parse_ssemd_args(argc, argv, args);
 
-	size_t bytesToSend = getSize(args);
+	ssize_t bytesToSend = getSize(args);
 
 	// Create a reliable, stream socket using TCP
 	int sock = tcpClientSocket(args->mng_addr,  args->mng_port);
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, size_t bytesToSend, struct admin_parser * adminParser){
+void handleSend(struct ssemd_args *args, int sock, struct buffer * Buffer, ssize_t bytesToSend, struct admin_parser * adminParser){
 	adminParser->type_sent = args->type;
 	adminParser->cmd_sent = args->cmd;
 
@@ -297,6 +297,12 @@ void processParser(struct admin_parser * adminParser){
 				break;
 			}
 		}
+		break;
+	
+	case SSEMD_ERROR:
+	case SSEMD_RESPONSE:
+	default:
+		break;
 	}
 }
 

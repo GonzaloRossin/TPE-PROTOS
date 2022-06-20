@@ -67,10 +67,14 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
     memset(args, 0, sizeof(*args)); // sobre todo para setear en null los punteros de users
 
     args->socks_addr = "0.0.0.0";
+    args->socks_addr6 = "::";
     args->socks_port = 1080;
+    args->socks_family = AF_UNSPEC;
 
     args->mng_addr   = "127.0.0.1";
+    args->mng_addr6 = "::1";
     args->mng_port   = 8080;
+    args->mng_family = AF_UNSPEC;
 
     args->disectors_enabled = true;
 
@@ -95,10 +99,25 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
                 usage(argv[0]);
                 break;
             case 'l':
-                args->socks_addr = optarg;
+                args->socks_family = get_addr_type(optarg);
+                if (args->socks_family == AF_INET) {
+                    args->socks_addr = optarg;
+                    address(args->socks_addr, args->socks_port, &args->socks_addr_info);
+                } else if (args->socks_family == AF_INET6) {
+                    args->socks_addr6 = optarg;
+                    address6(args->socks_addr6, args->socks_port, &args->socks_addr_info6);
+                }
                 break;
             case 'L':
-                args->mng_addr = optarg;
+                args->mng_family = get_addr_type(optarg);
+                if (args->mng_family == AF_INET) {
+                    args->mng_addr = optarg;
+                    address(args->mng_addr, args->mng_port, &args->mng_addr_info);
+                }
+                else if (args->mng_family == AF_INET6){
+                    args->mng_addr6 = optarg;
+                    address6(args->mng_addr6, args->mng_port, &args->mng_addr_info6);
+                }
                 break;
             case 'N':
                 args->disectors_enabled = false;
@@ -142,5 +161,82 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
     if(args->admin_token == NULL){
         fprintf(stderr, "argument required: admin token. \nusage: -t xxx\n");
         exit(1);
+    }
+}
+
+int
+get_addr_type(char *address) {
+    struct in_addr inaddr;
+    struct in6_addr in6addr;
+    int r_4, r_6;
+
+    // Try to match with IPv4
+    r_4 = inet_pton(AF_INET, address, &inaddr);
+
+    // IPv4 unsuccessful, try with IPv6
+    if (r_4 <= 0)
+    {
+        // Try to match with IPv4
+        r_6 = inet_pton(AF_INET6, address, &in6addr);
+
+        // IPv6 error, exit
+        if (r_6 <= 0)
+        {
+            printf("Cannot determine address family %s, please try again with a valid address.\n", address);
+            fprintf(stderr, "Address resolution error\n");
+            // free_memory();
+            // exit(0);
+        }
+        else
+        {
+            return AF_INET6;
+        }
+    }
+    else
+    {
+        return AF_INET;
+    }
+}
+
+void
+address(char *address, int port, struct sockaddr_in *addr)
+{
+    int r_4;
+    // Try to match with IPv4
+    r_4 = inet_pton(AF_INET, address, &addr->sin_addr);
+
+    // IPv4 unsuccessful, try with IPv6
+    if (r_4 <= 0)
+    {
+        printf("Cannot determine address family %s, please try again with a valid address.\n", address);
+        fprintf(stderr, "Address resolution error\n");
+        // free_memory();
+        // exit(0);
+    }
+    else
+    {
+        addr->sin_family = AF_INET;
+        addr->sin_port = htons(port);
+    }
+}
+
+void
+address6(char *address, int port, struct sockaddr_in6 *addr)
+{
+    // Try to match with IPv4
+    int r_6 = inet_pton(AF_INET6, address, &addr->sin6_addr);
+
+    // IPv6 error, exit
+    if (r_6 <= 0)
+    {
+        printf("Cannot determine address family %s, please try again with a valid address.\n", address);
+        fprintf(stderr, "Address resolution error\n");
+        // free_memory();
+        // exit(0);
+    }
+    else
+    {
+        addr->sin6_family = AF_INET6;
+        addr->sin6_port = htons(port);
     }
 }

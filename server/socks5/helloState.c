@@ -1,6 +1,7 @@
 #include "./../../include/helloState.h"
 
 void hello_departure(struct socks5 * currClient) {
+	hello_parser_close(currClient->client.hello.pr);
 	free(currClient->client.hello.pr);
 }
 

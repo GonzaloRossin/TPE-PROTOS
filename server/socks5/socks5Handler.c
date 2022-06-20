@@ -11,7 +11,9 @@ static const struct fd_handler socksv5 = {
 };
 
 void masterSocks5Handler(struct selector_key *key) {
-	const int new_client_socket = acceptTCPConnection(key->fd);
+	char * clientAddr = (char *)calloc(1, sizeof(char) * 128);
+
+	const int new_client_socket = acceptTCPConnection(key->fd, clientAddr);
 	selector_fd_set_nio(new_client_socket);
 	
 	// add new socket to array of sockets
@@ -24,7 +26,7 @@ void masterSocks5Handler(struct selector_key *key) {
 		// if position is empty
 		if(clis[i].isAvailable)
 		{
-			new_client(&clis[i], new_client_socket, get_BUFFSIZE());
+			new_client(&clis[i], new_client_socket, get_BUFFSIZE(), clientAddr);
 			hello_read_init(&clis[i]);
 
 			register_client_connection();
@@ -38,6 +40,7 @@ void masterSocks5Handler(struct selector_key *key) {
   			struct tm tm = *localtime(&t);
  			print_log(INFO, "now: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 			print_log(INFO, "fecha:\tnombre\tip:puerto origen\tip:puerto destino\tstatus code\n");
+			print_log(INFO, "%s", clis[i].clientAddr);
 			break;
 		}
 	}
@@ -102,15 +105,12 @@ void socks5_write(struct selector_key *key) {
 		//Nunca entra aca porque estamos en escritura
 		case HELLO_READ_STATE:
 			break;
-
 		case HELLO_WRITE_STATE:
 			hello_write(key);
 		break;
-
 		case UP_WRITE_STATE:
 			up_write(key);
 			break;
-
 		case REQUEST_CONNECTING_STATE:
 			request_connecting(key);
 		break;
@@ -120,11 +120,9 @@ void socks5_write(struct selector_key *key) {
 		case REQUEST_READ_STATE:
 			// do socks5 request read
 			break;
-
 		case CONNECTED_STATE:
 			write_connected_state(key);
 			break;
-		
 		default:
 			break;
 	}
@@ -136,6 +134,8 @@ void socks5_close(struct selector_key *key) {
 	if (currClient->client_socket == -1 || currClient->remote_socket == -1) {
 		// currClient->client.st_connected.init = 0;
 		// currClient->remote.st_connected.init = 0;
+
+		free(currClient->clientAddr);
 		
 		free(currClient->connection_state);
 

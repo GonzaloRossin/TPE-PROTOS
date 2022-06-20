@@ -1,6 +1,7 @@
 #include "../../include/upState.h"
 
 void up_departure(struct socks5 * currClient) {
+    free_up_req_parser(currClient->client.userpass.parser);
     free(currClient->client.userpass.parser);
 }
 
@@ -44,6 +45,7 @@ void up_read(struct selector_key *key) {
                 currClient->username = up_s->user;
             }
             change_state(currClient, UP_WRITE_STATE);
+            free(up_s->user);
         }
     }
 }
@@ -71,12 +73,13 @@ void userpass_process(struct userpass_st *up_s, bool * auth_valid) {
 bool validate_user_proxy(uint8_t *uid, uint8_t *pw) {
     struct users *users = get_users();
     bool auth_valid = false;
+    char * empty = '\0';
 
     int i = 0;
     while (i < MAX_USERS && !auth_valid) {
-        if (users[i].name != '\0') {
+        if (users[i].name != empty) {
             if (0 == strcmp((const char *)users[i].name, (const char *)uid)) {
-                if (users[i].pass != '\0') {
+                if (users[i].pass != empty) {
                     if (0 == strcmp((const char *)users[i].pass, (const char *)pw)) {
                         auth_valid = true;
                     }
