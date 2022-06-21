@@ -23,7 +23,7 @@ Este comando compila la aplicación servidor y el cliente SSEMD, dejándolos en 
 
 Documentación
 -------------
-El informe se encuentra en la carpeta "Documentación" bajo el nombre "Informe Protocolos de Comunicación".
+El informe se encuentra en la carpeta "Documentación".
 
 Los manfiles conteniendo la información sobre los parámetros que reciben el servidor y el client SSEMD se encuentran también en la carpeta "Documentación" bajo los nombres "socks5d.8" y "ssemd_clientd.8"
 
