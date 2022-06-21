@@ -91,6 +91,7 @@ void request_read(struct selector_key *key) {
 			d->request = pr->request;
 			enum client_state state = process_request(key);
 			change_state(currClient, state);
+			
 		}
 		if (errored) {
 			switch (st) {
