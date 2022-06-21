@@ -49,6 +49,7 @@ usage(const char *progname) {
         "Usage: %s [OPTION]...\n"
         "\n"
         "   -h               Imprime la ayuda y termina.\n"
+        "   -t <token>       REQUERIDO, especifica el Server Admin Token\n"
         "   -N               Deshabilita los passwords dissectors.\n"
         "   -l <SOCKS addr>  Dirección donde servirá el proxy SOCKS.\n"
         "   -L <conf  addr>  Dirección donde servirá el servicio de management.\n"
