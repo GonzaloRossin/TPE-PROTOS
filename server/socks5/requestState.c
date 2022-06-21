@@ -13,7 +13,7 @@ void printConnectionRegister(struct socks5* clientSocket){
 	struct tm timeStamp = clientSocket->timeStamp;
 	StringBuilder * stringBuilder = sb_create();
 	char* strRegister = NULL;
-	char aux[INET6_ADDRSTRLEN];
+	char aux[264];
 	printf("date\t\t\tusername\tregister_type\tOrigin_IP:Origin_port\tDestination:Dest_Port\tstatus\n");
 	sprintf(aux,"%d-%02d-%02d %02d:%02d:%02d", timeStamp.tm_year + 1900, timeStamp.tm_mon + 1, timeStamp.tm_mday, timeStamp.tm_hour, timeStamp.tm_min, timeStamp.tm_sec);
 	sb_append( stringBuilder,aux);
@@ -45,7 +45,7 @@ void printConnectionRegister(struct socks5* clientSocket){
 		default:
 			break;
 	}
-	sprintf(aux,"\t%d",clientSocket->connection_state->client_state);
+	sprintf(aux,"\t%d",clientSocket->client.st_request.state);
 	sb_append(stringBuilder, aux);
 	strRegister = sb_concat(stringBuilder);
 	printf("%s\n",strRegister);
@@ -235,7 +235,6 @@ void request_connecting(struct selector_key *key) {
 			currClient->protocol_type = identify_protocol_type(get_port(currClient));
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
 			memcpy(currClient->requestRegister,currClient->client.st_request.request,sizeof(struct request));
-			printConnectionRegister(currClient);
 			freeaddrinfo(currClient->origin_resolution);
 		} else {
 			if (currClient->origin_resolution_current) {
@@ -349,11 +348,13 @@ int request_marshall(struct socks5 * currClient) {
 void request_write(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
+	// Imprimo por pantalla el registro de la conexion
+	printConnectionRegister(currClient);
 	// Envio el reply
-
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0) {
 
 		// Si todo salio bien paso al estado connected
+
 		if (currClient->client.st_request.state == status_succeeded) {
 			selector_set_interest(key->s, key->fd, OP_READ);
 			currClient->connection_state->on_departure = request_departure;
