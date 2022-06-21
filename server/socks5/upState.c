@@ -40,30 +40,25 @@ void up_read(struct selector_key *key) {
         const enum up_req_state st = up_consume_message(up_s->r, up_s->parser, &error);
         if (up_done_parsing(st, &error) && !error) {
             selector_set_interest_key(key, OP_WRITE);
-            userpass_process(up_s, &auth_valid);
-            if(auth_valid) {
-                currClient->username = up_s->user;
-            }
+            userpass_process(up_s, &auth_valid, currClient);
             change_state(currClient, UP_WRITE_STATE);
-            //free(up_s->user);
         }
     }
 }
-void userpass_process(struct userpass_st *up_s, bool * auth_valid) {
+void userpass_process(struct userpass_st *up_s, bool * auth_valid, struct socks5 * currClient) {
     uint8_t * uid = up_s->parser->uid;
     uint8_t * pw = up_s->parser->pw;
     uint8_t uid_l = up_s->parser->uidLen;
 
     *auth_valid = validate_user_proxy(uid, pw);
     
-    if(*auth_valid){            
-        up_s->user = malloc(uid_l + 1);
+    if(*auth_valid) {   
+        up_s->user = currClient->username;
         memcpy(up_s->user, uid, uid_l);
         up_s->user[uid_l] = 0x00;
         up_s->authenticated = true;
     }           
-            
-
+        
     // Serialize the auth result in the write buffer for the response.
     if(-1 == up_marshall(up_s->w, *auth_valid ? AUTH_SUCCESS : AUTH_FAILURE)){
 
