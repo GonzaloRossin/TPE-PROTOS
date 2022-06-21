@@ -200,7 +200,6 @@ finally:
     selector_close();
 
 
-    
     free(admins);
     free(clients);
     close(masterSocket);

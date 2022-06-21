@@ -124,6 +124,16 @@ void socks5_close(struct selector_key *key) {
 
 	if (currClient->client_socket == -1 || currClient->remote_socket == -1) {
 
+		if(currClient->connection_state->client_state == CONNECTED_STATE && currClient->disector_enabled){
+			free_pop3_parser(currClient->client.st_connected.pop_parser);
+			free(currClient->client.st_connected.aux_b->data);
+			free(currClient->client.st_connected.aux_b);
+		}
+		if(currClient->connection_state->client_state == REQUEST_CONNECTING_STATE || currClient->connection_state->client_state == REQUEST_READ_STATE || currClient->connection_state->client_state == REQUEST_RESOLVE_STATE){
+			free(currClient->client.st_request.pr->request);
+			free(currClient->client.st_request.pr);
+		}
+
 		free(currClient->clientAddr);
 		free(currClient->connection_state);
 
