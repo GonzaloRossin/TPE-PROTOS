@@ -125,7 +125,6 @@ void socks5_close(struct selector_key *key) {
 	if (currClient->client_socket == -1 || currClient->remote_socket == -1) {
 
 		free(currClient->clientAddr);
-		
 		free(currClient->connection_state);
 
 		free(currClient->bufferFromClient->data);
@@ -133,7 +132,9 @@ void socks5_close(struct selector_key *key) {
 
 		free(currClient->bufferFromClient);
 		free(currClient->bufferFromRemote);
-
+		free(currClient->requestRegister);
+		free(currClient->username);
+		
 		memset(currClient, 0, sizeof(struct socks5));
 		currClient->isAvailable = true;
 		currClient->client_socket = -1;

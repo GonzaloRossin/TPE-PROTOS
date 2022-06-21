@@ -48,6 +48,8 @@ void printConnectionRegister(struct socks5* clientSocket){
 	sb_append(stringBuilder, aux);
 	strRegister = sb_concat(stringBuilder);
 	printf("%s\n",strRegister);
+	sb_free(stringBuilder);
+	free(strRegister);
 }
 
 void request_departure(struct socks5 * currClient) {

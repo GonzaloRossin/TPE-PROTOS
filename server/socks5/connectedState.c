@@ -190,7 +190,7 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
 	    sb_append( stringBuilder,aux);
         sprintf(aux,"\t%s\t\t",s->username);
 	    sb_append(stringBuilder, aux);
-        sprintf(aux, "%s\t\t%s\t\t\t%s\t%s\n","p", "POP3", pop3_p->user, pop3_p->pass);
+        sprintf(aux, "%s\t\t%s\t\t\t%s\t%s","p", "POP3", pop3_p->user, pop3_p->pass);
         sb_append(stringBuilder, aux);
         switch (s->requestRegister->dest_addr_type)
         {
@@ -220,5 +220,7 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
 	    }
         toReturn = sb_concat(stringBuilder);
 	    printf("%s\n",toReturn);
+        sb_free(stringBuilder);
+        free(toReturn);
     }
 }
