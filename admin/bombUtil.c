@@ -1,7 +1,5 @@
 #include "./include/bombUtil.h"
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+
 
 static void
 usage(const char *progname) {
@@ -41,28 +39,35 @@ parse_bomb_args(const int argc, char **argv, struct bomb_args *args) {
     args->data        = NULL;
     args->isAdmin     = false;
     args->connections     = false;
+    args->crack         = false;
 
     
     int c;
 
     while (true) {
-        c = getopt (argc, argv, "t:GE12345678d:hvL:P:AC");
+        c = getopt (argc, argv, "t:GE12345678d:hvL:P:ACcn");
 
         if (c == -1)
             break;
 
         switch (c) {
+            case 'h':
+                usage(argv[0]);
+                break;
             case 'A':
                 args->isAdmin = true;
                 break;
             case 'C':
                 args->connections = true;
                 break;
-            case 'h':
-                usage(argv[0]);
+            case 'c':
+                args->crack = true;
                 break;
             case 't':
                 args->admin_token = optarg;
+                break;
+            case 'n':
+                args->number = atoi(optarg);
                 break;
             case 'G':
                 handleRepeatedTYPE(args, 0x01);

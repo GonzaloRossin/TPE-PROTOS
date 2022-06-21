@@ -12,7 +12,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netinet/sctp.h>
 #include <sys/time.h>
 #include <sys/signal.h>
 #include "logger.h"

@@ -620,6 +620,7 @@ void ssemd_close(struct selector_key *key) {
 	struct ssemd * currAdmin = (struct ssemd *)key->data;
 
 	free(currAdmin->adminAddr);
+	free(currAdmin->pr);
 
 	free(currAdmin->bufferRead->data);
 	free(currAdmin->bufferWrite->data);

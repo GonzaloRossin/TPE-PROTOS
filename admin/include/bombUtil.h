@@ -16,6 +16,7 @@
 #include "../../include/logger.h"
 #include "../../include/buffer.h"
 
+
 #define MAX_ADDR_BUFFER 4096
 
 struct bomb_args {
@@ -30,6 +31,8 @@ struct bomb_args {
     char           *data;
     bool            isAdmin;
     bool            connections;
+    int             number;
+    bool            crack;
 };
 
 void parse_bomb_args(const int argc, char **argv, struct bomb_args *args);
