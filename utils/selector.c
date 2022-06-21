@@ -315,9 +315,11 @@ selector_destroy(fd_selector s) {
                 }
             }
             pthread_mutex_destroy(&s->resolution_mutex);
-            for(struct blocking_job *j = s->resolution_jobs; j != NULL;
-                j = j->next) {
-                free(j);
+            struct blocking_job * aux;
+            for(struct blocking_job *j = s->resolution_jobs; j != NULL; ) {
+                aux = j;
+                j = j->next;
+                free(aux);
             }
             free(s->fds);
             s->fds     = NULL;
