@@ -14,7 +14,7 @@ void printConnectionRegister(struct socks5* clientSocket){
 	StringBuilder * stringBuilder = sb_create();
 	char* strRegister = NULL;
 	char aux[INET6_ADDRSTRLEN];
-	printf("date\t\t\tusername\tregister_type\tOrigin_IP:Origin_port\tDestination:Dest_Port\tstatus\n");
+	printf("date\t\t\tusername\tregister_type\tOrigin_IP:Origin_port\tDestination:Dest_Port\t\tstatus\n");
 	sprintf(aux,"%d-%02d-%02d %02d:%02d:%02d", timeStamp.tm_year + 1900, timeStamp.tm_mon + 1, timeStamp.tm_mday, timeStamp.tm_hour, timeStamp.tm_min, timeStamp.tm_sec);
 	sb_append( stringBuilder,aux);
 	sprintf(aux,"\t%s\t\t\tA\t%s\t\t",clientSocket->username,clientSocket->clientAddr);
@@ -233,6 +233,8 @@ void request_connecting(struct selector_key *key) {
 			currClient->client.st_request.state = status_succeeded;
 			currClient->protocol_type = identify_protocol_type(get_port(currClient));
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
+			//memcpy(&currClient->RequestRegister,currClient->client.st_request.request,sizeof(struct request));
+			printConnectionRegister(currClient);
 			freeaddrinfo(currClient->origin_resolution);
 		} else {
 			if (currClient->origin_resolution_current) {
@@ -356,7 +358,6 @@ void request_write(struct selector_key *key) {
 			currClient->connection_state->on_departure = request_departure;
 			currClient->connection_state->on_arrival = connected_init;
 			change_state(currClient, CONNECTED_STATE);
-			printConnectionRegister(currClient);
 		// Si hubo algun error finalizo conexion
 		} else {
 			socks5_done(key);
