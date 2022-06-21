@@ -19,7 +19,7 @@ usage(const char *progname) {
         "       -G7                 Get Server BUFFER SIZE\n"
         "       -G8                 Get Server timeout\n"
         "       -E1 -d <#>          Edit Client buffer size\n"
-        "       -E2 -d <#>          Edit Client timeout\n"
+        "       -E2 -d <#>          Edit Select timeout\n"
         "       -E3                 Turn ON password dissector\n"
         "       -E4                 Turn OFF password dissector\n"
         "       -E5 -d <user:pass>  Add a User\n"

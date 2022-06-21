@@ -9,7 +9,7 @@
 .TH client SSEMD 0.0.0 "21 de junio 2022"
 .LO 8
 .SH NAME
-manClient \- cliente para servidor proxy socks 5
+ssemd \- cliente administrador para servidor proxy socks 5
 
 .SH SINOPSIS
 .HP 10
@@ -62,11 +62,11 @@ Se ocupa de realizar las operaciones de EDIT. Va acompañado de un numero que se
 
     -E1 : Edita el tamaño del buffer del cliente.
 
-            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+            a este comando le sigue el flag -d para indicar el nuevo tamaño de buffer.
 
-    -E2 : Edita el timeout del cliente.
+    -E2 : Edita el timeout del select.
 
-            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+            a este comando le sigue el flag -d para indicar el nuevo timeout del select.
 
     -E3 : Activa el disector de contraseñas.
 
@@ -74,11 +74,11 @@ Se ocupa de realizar las operaciones de EDIT. Va acompañado de un numero que se
 
     -E5 : Agrega un usuario.
 
-            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+            a este comando le sigue el flag -d para indicar el usuario a agregar, con el formato [user:pass].
 
     -E6 : Remueve un usuario.
 
-            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+            a este comando le sigue el flag -d para indicar el usuario a remover, con el formato [user:pass].
 
     -E7 : Activa la autenticacion de contraseñas.
 
