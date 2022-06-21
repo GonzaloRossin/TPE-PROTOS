@@ -225,7 +225,7 @@ void request_connecting(struct selector_key *key) {
 	struct connecting * conn = &currClient->remote.conn;
 
 	if (getsockopt(key->fd, SOL_SOCKET, SO_ERROR, &error, &len)) {
-		conn->client_state = status_general_SOCKLS_server_failure;
+		currClient->client.st_request.state = status_general_SOCKLS_server_failure;
 	} else {
 		if (error == 0) {
 			conn->client_state = status_succeeded;
