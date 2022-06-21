@@ -130,7 +130,7 @@ struct socks5
     t_protocol protocol_type;
 
     struct sockaddr_storage origin_addr;
-    //struct Request RequestRegister;
+    request* requestRegister;
 
     buffer * bufferFromClient;
     buffer * bufferFromRemote;

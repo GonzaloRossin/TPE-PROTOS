@@ -141,6 +141,9 @@ void read_connected_state(struct selector_key *key) {
                     pop3_consume_msg(aux_b, d->pop_parser, &error);
                     if (pop3_done_parsing(d->pop_parser, &error)) {
                         if (!error) {
+                            time_t t = time(NULL);
+  			                struct tm tm = *localtime(&t);
+                            d->pop_parser->popTimeStamp = tm;
                             extract_pop3_auth(d->pop_parser, currClient);
                         }
                         free_pop3_parser(d->pop_parser);
@@ -178,6 +181,17 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
 {
     if (pop3_p->user != NULL && pop3_p->pass != NULL)
     {
-        fprintf(stdout, "%s\t%c\t%s\t%s\t%s\n", "owner", "p", "POP3", pop3_p->user, pop3_p->pass);
+        struct tm timeStamp = pop3_p->popTimeStamp;
+	    StringBuilder * stringBuilder = sb_create();
+	    char* toReturn = NULL;
+	    char aux[INET6_ADDRSTRLEN];
+	    printf("date\t\t\tusername\tregister_type\tprotocol\t\tusr:pwd\n");
+        sprintf(aux,"%d-%02d-%02d %02d:%02d:%02d", timeStamp.tm_year + 1900, timeStamp.tm_mon + 1, timeStamp.tm_mday, timeStamp.tm_hour, timeStamp.tm_min, timeStamp.tm_sec);
+	    sb_append( stringBuilder,aux);
+        sprintf(aux,"\t%s\t\t",s->username);
+	    sb_append(stringBuilder, aux);
+        sprintf(aux, "%s\t%c\t%s\t%s\t%s\n", s->username, "p", "POP3", pop3_p->user, pop3_p->pass);
+        toReturn = sb_concat(stringBuilder);
+	    printf("%s\n",toReturn);
     }
 }

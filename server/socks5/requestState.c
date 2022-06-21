@@ -233,7 +233,7 @@ void request_connecting(struct selector_key *key) {
 			currClient->client.st_request.state = status_succeeded;
 			currClient->protocol_type = identify_protocol_type(get_port(currClient));
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
-			//memcpy(&currClient->RequestRegister,currClient->client.st_request.request,sizeof(struct request));
+			memcpy(currClient->requestRegister,currClient->client.st_request.request,sizeof(struct request));
 			printConnectionRegister(currClient);
 			freeaddrinfo(currClient->origin_resolution);
 		} else {
