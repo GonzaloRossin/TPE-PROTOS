@@ -78,9 +78,6 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
 
     args->disectors_enabled = true;
 
-    // args->admin_token = NULL;
-
-
     int c;
     int nusers = 0;
 

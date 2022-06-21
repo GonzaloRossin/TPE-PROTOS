@@ -34,7 +34,6 @@ void masterSocks5Handler(struct selector_key *key) {
 			selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
 
 			print_log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
-			// print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
 
 			time_t t = time(NULL);
   			struct tm tm = *localtime(&t);
