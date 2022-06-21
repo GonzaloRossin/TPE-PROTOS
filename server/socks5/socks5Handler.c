@@ -38,9 +38,7 @@ void masterSocks5Handler(struct selector_key *key) {
 
 			time_t t = time(NULL);
   			struct tm tm = *localtime(&t);
- 			print_log(INFO, "now: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-			print_log(INFO, "fecha:\tnombre\tip:puerto origen\tip:puerto destino\tstatus code\n");
-			print_log(INFO, "%s", clis[i].clientAddr);
+			clis[i].timeStamp = tm;
 			break;
 		}
 	}
@@ -49,11 +47,9 @@ void masterSocks5Handler(struct selector_key *key) {
 // Escribo buffer en el socket
 int handleWrite(int socket, struct buffer * buffer) {
 	size_t bytesToSend = buffer->write - buffer->read;
-	// print_log(DEBUG, "bytesToSend %zu", bytesToSend);
+
 	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
-		// print_log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
 		ssize_t bytesSent = send(socket, buffer->data, bytesToSend,  MSG_DONTWAIT); 
-		// print_log(INFO, "Sent %zu bytes\n", bytesSent);
 
 		if ( bytesSent < 0) {
 			// Esto no deberia pasar ya que el socket estaba listo para escritura

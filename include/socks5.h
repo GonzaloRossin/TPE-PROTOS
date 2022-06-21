@@ -19,6 +19,7 @@ server has array of clients
 #include <stdlib.h>
 #include "selector.h"
 #include "auth_parser.h"
+#include <time.h>
 
 #define IP_V4_ADDR_SIZE 4
 #define IP_V6_ADDR_SIZE 16
@@ -111,6 +112,7 @@ struct connecting {
 
 struct socks5
 {
+    struct tm timeStamp;
     int client_socket;
     int remote_socket;
 

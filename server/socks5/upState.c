@@ -45,7 +45,7 @@ void up_read(struct selector_key *key) {
                 currClient->username = up_s->user;
             }
             change_state(currClient, UP_WRITE_STATE);
-            free(up_s->user);
+            //free(up_s->user);
         }
     }
 }
