@@ -10,21 +10,23 @@ static const struct fd_handler ssemdHandler = {
 };
 
 void masterssemdHandler(struct selector_key *key) {
-	char * clientAddr = (char *)calloc(1, sizeof(char) * 128);
-	const int new_admin_socket = acceptTCPConnection(key->fd, clientAddr);
+	char * adminAddr = (char *)calloc(1, sizeof(char) * 128);
+	const int new_admin_socket = acceptTCPConnection(key->fd, adminAddr);
 	selector_fd_set_nio(new_admin_socket);
 
-    struct ssemd * admin = (struct ssemd *)key->data;
+	int i;
+	struct admins_data * admin_data = (struct admins_data *)key->data;
+    struct ssemd * admin = admin_data->admins;
 
-    if(admin->isAvailable) {
-        new_admin(admin, new_admin_socket, get_BUFFSIZE());
+	for (i = 0; i < admin_data->admins_size; i++) {
+		if(admin[i].isAvailable) {
+			new_admin(&admin[i], new_admin_socket, get_BUFFSIZE(), adminAddr);
 
-        selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, admin);
-		print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
-
-    } else {
-        print_log(DEBUG, "error adminn\n");
-    }
+			selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, &admin[i]);
+			print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
+			break;
+		}
+	}
 }
 
 void ssemd_read(struct selector_key *key) {
@@ -202,7 +204,7 @@ void ssemd_process_get(struct ssemd * currAdmin) {
 		
 		case SSEMD_GET_TIMEOUT: 
 			setResponse(response, SSEMD_RESPONSE_INT);
-			c = get_timeout();
+			c = get_timeout()->tv_sec;
 			c = htonl(c);
 			memcpy(response->data, &c, sizeof(unsigned int));
             break;
@@ -616,6 +618,8 @@ void setResponse(ssemd_response * response, uint8_t code){
 
 void ssemd_close(struct selector_key *key) {
 	struct ssemd * currAdmin = (struct ssemd *)key->data;
+
+	free(currAdmin->adminAddr);
 
 	free(currAdmin->bufferRead->data);
 	free(currAdmin->bufferWrite->data);

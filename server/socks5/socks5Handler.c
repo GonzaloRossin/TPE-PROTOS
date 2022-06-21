@@ -101,15 +101,12 @@ void socks5_write(struct selector_key *key) {
 		//Nunca entra aca porque estamos en escritura
 		case HELLO_READ_STATE:
 			break;
-
 		case HELLO_WRITE_STATE:
 			hello_write(key);
 		break;
-
 		case UP_WRITE_STATE:
 			up_write(key);
 			break;
-
 		case REQUEST_CONNECTING_STATE:
 			request_connecting(key);
 		break;
@@ -119,11 +116,9 @@ void socks5_write(struct selector_key *key) {
 		case REQUEST_READ_STATE:
 			// do socks5 request read
 			break;
-
 		case CONNECTED_STATE:
 			write_connected_state(key);
 			break;
-		
 		default:
 			break;
 	}
@@ -135,6 +130,8 @@ void socks5_close(struct selector_key *key) {
 	if (currClient->client_socket == -1 || currClient->remote_socket == -1) {
 		// currClient->client.st_connected.init = 0;
 		// currClient->remote.st_connected.init = 0;
+
+		free(currClient->clientAddr);
 		
 		free(currClient->connection_state);
 
