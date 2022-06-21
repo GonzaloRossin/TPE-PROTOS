@@ -1,0 +1,96 @@
+.\" Macros
+.ds PX \s-1POSIX\s+1
+.de EXAMPLE .\" Format de los ejemplos
+.RS 10
+.BR "\\$1"
+.RE
+..
+
+.TH client SSEMD 0.0.0 "21 de junio 2022"
+.LO 8
+.SH NAME
+manClient \- cliente para servidor proxy socks 5
+
+.SH SINOPSIS
+.HP 10
+.B  ssemd client
+[ POSIX style options ]
+
+.SH OPCIONES
+
+.\".IP "\fB\-d\fB"
+.\"Establece que debe ejecutar con la configuración predeterminada.
+.\".IP
+.\"Aquellos servidores donde la configuración sea persistente (el enunciado
+.\"no lo requiere) presentan un desafío a la hora de realizar pruebas ya que
+.\"se debe conocer la configuración actual.
+.\".IP
+.\"En esos casos esta opción olvida toda configuración previa y establece
+.\"la configuración predeterminada.
+.\".IP
+.\"La configuración predeterminada consiste en tener apagada las transformaciones.
+
+.IP "\fB-h\fR"
+Imprime la ayuda y termina.
+
+.IP "\fB\-t\fB \fItoken\fR"
+Declara el token a utilizar por el cliente de administracion del servidor. 
+Este argumento es obligatorio.
+
+
+.IP "\fB\-G\fB \fIcomandos GET\fR"
+Se ocupa de realizar las operaciones de GET. Va acompañado de un numero que se corresponde con el comando a utilizar de acuerdo al rfc.
+
+    -G1 : Obtiene la cantidad de conexiones historicas.
+
+    -G2 : Obtiene la cantidad de conexiones actuales.
+
+    -G3 : Obtiene la cantidad de bytes transferidos.
+
+    -G4 : Obtiene la lista de usuarios.
+
+    -G5 : Obtiene el status del disector de contraseñas.
+
+    -G6 : Obtiene el status de la authentication del servidor.
+
+    -G7 : Obtiene el tamaño del buffer del servidor.
+
+    -G8 : Obtiene el server timeout.
+
+.IP "\fB\-E\fB \fIcomandos EDIT\fR"
+Se ocupa de realizar las operaciones de EDIT. Va acompañado de un numero que se corresponde con el comando a utilizar de acuerdo al rfc.
+
+    -E1 : Edita el tamaño del buffer del cliente.
+
+            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+
+    -E2 : Edita el timeout del cliente.
+
+            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+
+    -E3 : Activa el disector de contraseñas.
+
+    -E4 : Desactiva el disector de contraseñas.
+
+    -E5 : Agrega un usuario.
+
+            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+
+    -E6 : Remueve un usuario.
+
+            a este comando le sigue el flag -d para indicar el input que se le debe editar.
+
+    -E7 : Activa la autenticacion de contraseñas.
+
+    -E8 : Desactiva la autenticacion de contraseñas.
+
+.SH EJEMPLOS DE USO
+.HP 10
+
+.IP "\./ssemd -t [token] -G1\fR"
+
+Este comando imprimirá la cantidad de conexiones historicas.
+
+.IP "\./ssemd -t [token] -E5 -d username:password \fR"
+
+Este comando agregará un usuario.
