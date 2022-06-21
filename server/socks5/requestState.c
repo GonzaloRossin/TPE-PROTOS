@@ -21,7 +21,7 @@ void printConnectionRegister(struct socks5* clientSocket){
 	switch (clientSocket->client.st_request.request->dest_addr_type)
 	{
 		case socks_req_addrtype_domain:{
-			sprintf(aux,"%s:%d\t\t",clientSocket->client.st_request.request->dest_addr.fqdn,clientSocket->client.st_request.request->dest_port);
+			sprintf(aux,"%s:%d\t\t",clientSocket->client.st_request.request->dest_addr.fqdn,ntohs(clientSocket->client.st_request.request->dest_port));
 			sb_append(stringBuilder, aux);
 			break;
 		}
@@ -29,7 +29,7 @@ void printConnectionRegister(struct socks5* clientSocket){
 			char str[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &(clientSocket->client.st_request.request->dest_addr.ipv4.sin_addr), str, INET_ADDRSTRLEN);
 			sb_append(stringBuilder, str);
-			sprintf(aux,":%d\t\t",clientSocket->client.st_request.request->dest_port);
+			sprintf(aux,":%d\t\t",ntohs(clientSocket->client.st_request.request->dest_port));
 			sb_append(stringBuilder, aux);
 			break;
 		}
@@ -37,7 +37,7 @@ void printConnectionRegister(struct socks5* clientSocket){
 			char str[INET6_ADDRSTRLEN];
 			inet_ntop(AF_INET6, &(clientSocket->client.st_request.request->dest_addr.ipv6.sin6_addr), str, INET6_ADDRSTRLEN);
 			sb_append(stringBuilder, str);
-			sprintf(aux,":\t%d\t\t\t",clientSocket->client.st_request.request->dest_port);
+			sprintf(aux,":\t%d\t\t\t",ntohs(clientSocket->client.st_request.request->dest_port));
 			sb_append(stringBuilder, aux);
 			break;
 		}

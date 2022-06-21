@@ -195,7 +195,7 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
         switch (s->requestRegister->dest_addr_type)
         {
 		    case socks_req_addrtype_domain:{
-			sprintf(aux,"\t%s:%d\t",s->requestRegister->dest_addr.fqdn,s->requestRegister->dest_port);
+			sprintf(aux,"\t%s:%d\t",s->requestRegister->dest_addr.fqdn,ntohs(s->requestRegister->dest_port));
 			sb_append(stringBuilder, aux);
 			break;
 		    }
@@ -203,7 +203,7 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
 			    char str[INET_ADDRSTRLEN];
 			    inet_ntop(AF_INET, &(s->requestRegister->dest_addr.ipv4.sin_addr), str, INET_ADDRSTRLEN);
 			    sb_append(stringBuilder, str);
-			    sprintf(aux,":%d\t\t",s->requestRegister->dest_port);
+			    sprintf(aux,":%d\t\t",ntohs(s->requestRegister->dest_port));
 			    sb_append(stringBuilder, aux);
 			    break;
 		    }
@@ -211,7 +211,7 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
 			    char str[INET6_ADDRSTRLEN];
 			    inet_ntop(AF_INET6, &(s->requestRegister->dest_addr.ipv6.sin6_addr), str, INET6_ADDRSTRLEN);
 			    sb_append(stringBuilder, str);
-			    sprintf(aux,":%d\t\t\t",s->requestRegister->dest_port);
+			    sprintf(aux,":%d\t\t\t",ntohs(s->requestRegister->dest_port));
 			    sb_append(stringBuilder, aux);
 			    break;
 		    }
