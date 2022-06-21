@@ -1,12 +1,15 @@
 Protocolos de Comunicacion - TPE
 ================================
 
-La versión funcional del servidor y cliente SSEMD se encuentra la rama main.
+La versión funcional del servidor y cliente SSEMD se encuentra la rama main de este repositorio.
 
 Códigos Fuente
 --------------
 
-El código fuente del servidor y el cliente se encuentran dentro de la carpeta server mientras que todos los .h involucrados en el proyecto se encuentran dentro de la carpeta include.
+El código fuente del servidor se encuentra dentro de la carpeta server. Este utiliza utilitarios encontrados dentro de la carpeta utils y parsers dentro de la carpeta parsers. Todos sus .h se encuentran dentro de la carpeta include.
+
+El código fuente del cliente del Admin se encuentra dentro de la carpeta admin.
+
 
 Compilación e Instalación
 -------------------------
@@ -15,27 +18,8 @@ Para poder utilizar el proyecto es necesario hacer:
 $ make all
 ```
 
-Este comando va compilar la aplicación servidor y el cliente SSEMD
+Este comando compila la aplicación servidor y el cliente SSEMD, dejándolos en la raíz del proyecto.
 
-Configuración
--------------
-El servidor y el cliente SSEMD poseen un manfile cada uno dentro de la carpeta de documentación (/notes) y se pueden acceder de esta forma:
-```sh
-$ man <path_al_archivo>
-```
-Aquí se pueden ver las configuraciones disponibles para cada una de las aplicaciones que se construyen
-
-Ejecución
----------
-Para ejecutar el sevidor se corre el comando
-```sh
-$ ./socks5d <Opciones>
-```
-Para ejecutar el cliente SSEMD se corre el comando
-```sh
-$ ./ssemd <Opciones>
-```
-Las opciones de cada ejecutable pueden verse utilizando el flag -h
 
 Documentación
 -------------
@@ -49,22 +33,44 @@ $ man <path_al_archivo>
 ```
 Se incluye también una copia del protocolo desarrollado por nosotros en formato .txt, el mismo se encuentra en la carpeta /Documentacion bajo el nombre "SSEMD_rfc.txt".
 
+
+Ejecución
+---------
+Para ejecutar el sevidor se corre el comando
+```sh
+$ ./socks5d <Opciones>
+```
+Para ejecutar el cliente SSEMD se corre el comando
+```sh
+$ ./ssemd <Opciones>
+```
+Las opciones de cada ejecutable pueden verse utilizando el flag -h
+
+
 Tests
 ------
 
-En la carpeta "tests" se encuentran archivos de test para algunos de los parsers desarrollados, cada una de las carpetas del parser contiene su propio makefile para poder compilarlo, y para poder ejecutarlo hay que ejecutar el archivo binario que genera el makefile en cada caso
+En la carpeta "tests" se encuentran archivos de test para algunos de los parsers desarrollados, cada una de las carpetas del parser contiene su propio makefile para poder compilarlo, y para poder ejecutarlo hay que ejecutar el archivo binario que genera el makefile en cada caso.
+
+Otro test utilizado el archivo bomb, que puede ser generado con
+```sh
+$ make bomb
+```
+creando el archivo bomb en la raíz del servidor. Este crea conexiones a la dirección y puerto definidos dentro del bomb.c
 
 Autores
 -------
 Grupo 4
 
-Gonzalo Rossin - grossin@itba.edu.ar
 
 Alberto Abancens - aabancens@itba.edu.ar
 
+Gonzalo Rossin - grossin@itba.edu.ar
+
 Uriel Mihura - umihura@itba.edu.ar
 
-Versión
+
+
 Versión 1.0
 
 1er Cuatrimestre - 2022
