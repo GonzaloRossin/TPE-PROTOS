@@ -11,7 +11,6 @@
 #include "adminUtil.h"
 
 
-
 struct ssemd_args {
     char           *mng_addr;
     char           *mng_port;

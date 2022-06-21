@@ -1,85 +1,81 @@
-#include "./include/bombUtil.h"
+#include <stdio.h>     /* for printf */
+#include <stdlib.h>    /* for exit */
+#include <limits.h>    /* LONG_MIN et al */
+#include <string.h>    /* memset */
+#include <errno.h>
+#include <getopt.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <math.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include "../include/logger.h"
+#include "../include/buffer.h"
 
 #define BUFFSIZE 4096
+#define MAX_ADDR_BUFFER 128
 
-// void handleAdminSend(struct bomb_args *args, int sock, struct buffer * Buffer, ssize_t bytesToSend, struct admin_parser * adminParser);
-// void handleRecv(int sock, struct buffer * Buffer, struct admin_parser * adminParser);
-// void parseResponse(struct buffer * Buffer);
-// void processParser(struct admin_parser * adminParser);
-
+int tcpBombSocket(const char *host, const char *service);
 
 int main(int argc, char *argv[]) {
-    struct bomb_args * args = (struct bomb_args *)calloc(1, sizeof(struct bomb_args));
-	parse_bomb_args(argc, argv, args);
 
-    unsigned long currentCrack = 0;
-    int bytesToSend = 7;
-    buffer * Buffer = (buffer*)malloc(sizeof(buffer));
-    uint8_t * dataClient = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
-    memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
-    buffer_init(Buffer, BUFFSIZE, dataClient);
-
-    //create 1000 connections
-    int connections[1000] = {0};
+    //create n connections
+    int connections[1000];
     int i;
     print_log(INFO, "Hello :D\n");
-    if(args->connections){
-        for(i=0 ; i<100 ; i++){
-            printf("bomb: %d\n", i);
-            connections[i] = tcpBombSocket("127.0.0.1", "8080"); //(args->addr, args->port);
-            if(args->crack && connections[i] != -1){
-                uint8_t message[bytesToSend];
-                int i=0;
-                message[i++] = 0x01; //VER
-                int n=0;
-                // char token;
-                message[i++] = 0x61; // TOKEN
-                // sprintf(token, "%x", currentCrack++);
-                printf("%x", currentCrack++);
-
-                // while(args->admin_token[n] != 0x00){
-                //     message[i++] = args->admin_token[n++];
-                // }
-                message[i++] = 0x00; // END TOKEN
-                message[i++] = 0x01; //TYPE
-                message[i++] = 0x01; //CMD
-                message[i++] = 0x00;
-                message[i++] = 0x00; //SIZE
-                print_log(INFO, "perra");
-
-                int bytesSent = send(connections[i], message, sizeof(message), MSG_CONFIRM);
-                print_log(DEBUG, "sent: %d", bytesSent);
-                if(bytesSent < bytesToSend){
-		            print_log(ERROR, "ERROR, COULDN'T SEND ALL BYTES");
-	            } else {
-                    ssize_t bytesRecieved = recv(connections[i], Buffer->data, BUFFSIZE, 0);
-                    if(Buffer->data[0] == 0xAA){
-                        print_log(INFO, "found token");
-                        exit(1);
-                    }
-                }
-            }
+    for(i=0 ; i<99 ; i++){
+        printf("bomb: %d\n", i);
+        connections[i] = tcpBombSocket("127.0.0.1", "1080");
+        if (connections[i] < 0) {
+            print_log(FATAL, "%d failed", i);
         }
-        exit(0);
     }
+    print_log(INFO, "finshed, bye\n");
+    exit(0);
+}
 
-    // if(args->crack){
+int tcpBombSocket(const char *host, const char *service) {
+	char addrBuffer[MAX_ADDR_BUFFER];
+	struct addrinfo addrCriteria;                   // Criteria for address match
+	memset(&addrCriteria, 0, sizeof(addrCriteria)); // Zero out structure
+	addrCriteria.ai_family = AF_UNSPEC;             // v4 or v6 is OK
+	addrCriteria.ai_socktype = SOCK_STREAM;         // Only streaming sockets
+	addrCriteria.ai_protocol = IPPROTO_TCP;         // Only TCP protocol
 
-    // }
+	// Get address(es)
+	struct addrinfo *servAddr; // Holder for returned list of server addrs
+	int rtnVal = getaddrinfo(host, service, &addrCriteria, &servAddr); //es bloqueante, ojo, hacerlo en un hijo/thread
+	// int rtnVal = getaddrinfo("127.0.0.1", "8889", &addrCriteria, &servAddr);
 
+	if (rtnVal != 0) {
+		print_log(ERROR, "getaddrinfo() failed %s", gai_strerror(rtnVal));
+		return -1;
+	}
 
-    // if(args->isAdmin){
-    //     int sock = tcpBombSocket(args->addr,  args->port);
-    //     ssize_t bytesToSend = getBombSize(args);
-    //     buffer * Buffer = (buffer*)malloc(sizeof(buffer));
-    //     uint8_t * dataClient = (uint8_t *)malloc(sizeof(uint8_t) * BUFFSIZE);
-    //     memset(dataClient, 0, sizeof(uint8_t) * BUFFSIZE);
-    //     buffer_init(Buffer, BUFFSIZE, dataClient);
-    //     // handleAdminSend(args, sock, Buffer, bytesToSend, adminParser);
-    // }
+	int sock = -1;
+	for (struct addrinfo *addr = servAddr; addr != NULL && sock == -1; addr = addr->ai_next) {
+		// Create a reliable, stream socket using TCP
+		sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+		//setear socket como no bloqueante
+		if (sock >= 0) {
+			errno = 0;
+			// Establish the connection to the server
+			if ( connect(sock, addr->ai_addr, addr->ai_addrlen) != 0) { //se bloquea hasta que se conecte
+				// print_log(INFO, "can't connectto %s: %s", printAddressPort(addr, addrBuffer), strerror(errno));
+				print_log(ERROR, "cant connect");
+                close(sock); 	// Socket connection failed; try next address
+				sock = -1;
+			}
+		} else {
+            print_log(ERROR, "cant create socket");
+			// print_log(DEBUG, "Can't create client socket on %s",printAddressPort(addr, addrBuffer));
+		}
+	}
 
-	//send command to server
-	// handleSend(args, sock, Buffer, bytesToSend, adminParser);
-
-	return 0;
+	freeaddrinfo(servAddr); 
+	return sock;
 }
