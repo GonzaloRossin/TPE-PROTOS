@@ -82,6 +82,8 @@ static enum request_state dstaddr(const uint8_t c, struct request_parser * p){
         case socks_req_addrtype_domain:
             p->request->dest_addr.fqdn[p->i++] = c;
             break;
+        default:
+            break;
     }
     if (remaining_is_done(p)) {
         remaining_set(p, 2);
