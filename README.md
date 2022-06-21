@@ -12,7 +12,7 @@ Compilación e Instalación
 -------------------------
 Para poder utilizar el proyecto es necesario hacer:
 ```sh
-$ make clean all
+$ make all
 ```
 
 Este comando va compilar la aplicación servidor y el cliente SSEMD
@@ -29,7 +29,7 @@ Ejecución
 ---------
 Para ejecutar el sevidor se corre el comando
 ```sh
-$ ./server <Opciones>
+$ ./socks5d <Opciones>
 ```
 Para ejecutar el cliente SSEMD se corre el comando
 ```sh
@@ -39,9 +39,9 @@ Las opciones de cada ejecutable pueden verse utilizando el flag -h
 
 Documentación
 -------------
-El informe se encuentra en la carpeta "notes" bajo el nombre "Informe Protocolos de Comunicación".
+El informe se encuentra en la carpeta "Documentación" bajo el nombre "Informe Protocolos de Comunicación".
 
-Los manfiles conteniendo la información sobre los parámetros que reciben el servidor y el client SSEMD se encuentran también en la carpeta "notes" bajo los nombres "socks5d.8" y "ssemd_clientd.8"
+Los manfiles conteniendo la información sobre los parámetros que reciben el servidor y el client SSEMD se encuentran también en la carpeta "Documentación" bajo los nombres "socks5d.8" y "ssemd_clientd.8"
 
 Estos archivos pueden verse con el siguiente comando:
 ```sh
