@@ -185,12 +185,12 @@ void extract_pop3_auth(pop3_parser pop3_p, struct socks5 *s)
 	    StringBuilder * stringBuilder = sb_create();
 	    char* toReturn = NULL;
         char aux[264];
-	    printf("date\t\t\tusername\tregister_type\tprotocol\t\tusr\t\tpwd\t\tdest_address:dest_port\n");
+	    printf("date\t\t\tusername\tregister_type\tprotocol\t\tusr\t\tpwd\t\t\tdest_address:dest_port\n");
         sprintf(aux,"%d-%02d-%02d %02d:%02d:%02d", timeStamp.tm_year + 1900, timeStamp.tm_mon + 1, timeStamp.tm_mday, timeStamp.tm_hour, timeStamp.tm_min, timeStamp.tm_sec);
 	    sb_append( stringBuilder,aux);
         sprintf(aux,"\t%s\t\t",s->username);
 	    sb_append(stringBuilder, aux);
-        sprintf(aux, "%s\t\t%s\t\t\t%s\t%s","p", "POP3", pop3_p->user, pop3_p->pass);
+        sprintf(aux, "%s\t\t%s\t\t\t%s\t%s\t","p", "POP3", pop3_p->user, pop3_p->pass);
         sb_append(stringBuilder, aux);
         switch (s->requestRegister->dest_addr_type)
         {
