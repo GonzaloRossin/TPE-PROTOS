@@ -32,7 +32,6 @@ int create_master_socket_4(struct sockaddr_in * addr) {
 
     if (master_socket <= 0) {
         printf("socket failed");
-        //log(FATAL, "socket failed");
         exit(EXIT_FAILURE);
     }
 
@@ -61,7 +60,6 @@ int create_master_socket_6(struct sockaddr_in6 * addr) {
     int master_socket6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (master_socket6 <= 0) {
         printf("socket6 failed");
-        //log(FATAL, "socket failed");
         exit(EXIT_FAILURE);
     }
 

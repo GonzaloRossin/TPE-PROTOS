@@ -1,5 +1,5 @@
 .PHONY=clean all
-CFLAGS = -fsanitize=address -fno-omit-frame-pointer -g --std=c11 -pedantic -pedantic-errors -Wall -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough -D_POSIX_C_SOURCE=200112L 
+CFLAGS = -fsanitize=address -fno-omit-frame-pointer -g --std=c11 -pedantic -pedantic-errors -Wall -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough -D_POSIX_C_SOURCE=200112L -Werror
 LDFLAGS = -lpthread
 all: socks5d ssemd
 clean:	
@@ -9,6 +9,7 @@ COMMON =  ./utils/logger.o ./utils/util.o ./utils/buffer.o ./utils/args.o
 
 SERVER_SOURCES = -lm ./server/server.o ./utils/selector.o ./utils/tcpServerUtil.o ./server/socks5/socks5Handler.o ./server/socketCreation.o ./server/socks5/socks5.o ./parsers/hello.o ./parsers/auth_parser.o ./parsers/pop3Parser.o ./parsers/protocolParser.o ./parsers/request.o ./server/socks5/helloState.o ./server/socks5/upState.o ./server/socks5/requestState.o ./server/socks5/connectedState.o ./server/adminFunctions/adminGets.o ./server/ssemd/ssemdHandler.o ./server/ssemd/ssemd.o
 CLIENT_SOURCES = -lm ./admin/Admin.o ./admin/adminUtil.o ./admin/adminArgs.o ./admin/adminParser.o
+BOMB_SOURCES = ./admin/bomb.o
 
 logger.o: ./include/logger.h
 args.o : ./include/args.h
@@ -43,3 +44,6 @@ socks5d: $(COMMON) $(SERVER_SOURCES)
 
 ssemd: $(COMMON) $(CLIENT_SOURCES)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o ssemd $(CLIENT_SOURCES) $(COMMON)
+
+bomb: $(COMMON) $(BOMB_SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o bomb $(BOMB_SOURCES) $(COMMON)

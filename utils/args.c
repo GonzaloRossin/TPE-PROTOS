@@ -78,9 +78,6 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
 
     args->disectors_enabled = true;
 
-    // args->admin_token = NULL;
-
-
     int c;
     int nusers = 0;
 
@@ -129,6 +126,10 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
                 args->mng_port   = port(optarg);
                 break;
             case 't':
+                if (strlen(optarg) > 99) {
+                    fprintf(stderr, "maximun token length exceeded: %d.\n", 99);
+                    exit(1);
+                }
                 args->admin_token = optarg;
                 break;
             case 'u':
@@ -184,8 +185,7 @@ get_addr_type(char *address) {
         {
             printf("Cannot determine address family %s, please try again with a valid address.\n", address);
             fprintf(stderr, "Address resolution error\n");
-            // free_memory();
-            // exit(0);
+            exit(0);
         }
         else
         {
@@ -231,8 +231,6 @@ address6(char *address, int port, struct sockaddr_in6 *addr)
     {
         printf("Cannot determine address family %s, please try again with a valid address.\n", address);
         fprintf(stderr, "Address resolution error\n");
-        // free_memory();
-        // exit(0);
     }
     else
     {

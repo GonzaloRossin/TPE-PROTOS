@@ -7,9 +7,8 @@ static unsigned int current_connections = 0;
 static unsigned int bytes_transferred = 0;
 
 static unsigned int BUFFSIZE = 4096;
-// static unsigned int timeout = 1;
 static struct timespec timeout = {
-    .tv_sec  = 10000,
+    .tv_sec  = 10,
     .tv_nsec = 0,
 };
 

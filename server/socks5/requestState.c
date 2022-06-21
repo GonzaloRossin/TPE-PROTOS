@@ -3,11 +3,52 @@
 static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
 	.handle_write      = socks5_write,
-	.handle_close      = socks5_close, // nada que liberar
+	.handle_close      = socks5_close,
 	.handle_block	   = socks5_block,
 };
 
 unsigned int identify_protocol_type(uint8_t * port);
+
+void printConnectionRegister(struct socks5* clientSocket){
+	struct tm timeStamp = clientSocket->timeStamp;
+	StringBuilder * stringBuilder = sb_create();
+	char* strRegister = NULL;
+	char aux[264];
+	sprintf(aux,"%d-%02d-%02d %02d:%02d:%02d", timeStamp.tm_year + 1900, timeStamp.tm_mon + 1, timeStamp.tm_mday, timeStamp.tm_hour, timeStamp.tm_min, timeStamp.tm_sec);
+	sb_append( stringBuilder,aux);
+	sprintf(aux,"\t%s\t\tA\t\t%s\t\t",clientSocket->username,clientSocket->clientAddr);
+	sb_append(stringBuilder, aux);
+	switch (clientSocket->client.st_request.request->dest_addr_type)
+	{
+		case socks_req_addrtype_domain:{
+			sprintf(aux,"%s:%d\t\t",clientSocket->client.st_request.request->dest_addr.fqdn,clientSocket->client.st_request.request->dest_port);
+			sb_append(stringBuilder, aux);
+			break;
+		}
+		case socks_req_addrtype_ipv4:{
+			char str[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &(clientSocket->client.st_request.request->dest_addr.ipv4.sin_addr), str, INET_ADDRSTRLEN);
+			sb_append(stringBuilder, str);
+			sprintf(aux,":%d\t\t",clientSocket->client.st_request.request->dest_port);
+			sb_append(stringBuilder, aux);
+			break;
+		}
+		case socks_req_addrtype_ipv6:{
+			char str[INET6_ADDRSTRLEN];
+			inet_ntop(AF_INET6, &(clientSocket->client.st_request.request->dest_addr.ipv6.sin6_addr), str, INET6_ADDRSTRLEN);
+			sb_append(stringBuilder, str);
+			sprintf(aux,":\t%d\t\t\t",clientSocket->client.st_request.request->dest_port);
+			sb_append(stringBuilder, aux);
+			break;
+		}
+		default:
+			break;
+	}
+	sprintf(aux,"\t%d",clientSocket->client.st_request.state);
+	sb_append(stringBuilder, aux);
+	strRegister = sb_concat(stringBuilder);
+	printf("%s\n",strRegister);
+}
 
 void request_departure(struct socks5 * currClient) {
 	free(currClient->client.st_request.pr->request);
@@ -49,6 +90,7 @@ void request_read(struct selector_key *key) {
 			d->request = pr->request;
 			enum client_state state = process_request(key);
 			change_state(currClient, state);
+			
 		}
 		if (errored) {
 			switch (st) {
@@ -57,7 +99,6 @@ void request_read(struct selector_key *key) {
 				case request_error:
 					currClient->client.st_request.state = status_general_SOCKLS_server_failure;
 					break;
-				/** TODO: El parser tiene que reconocer DestAddr invalida y comando invalido para reportar el error */
 				default:
 					break;
 			}
@@ -191,6 +232,7 @@ void request_connecting(struct selector_key *key) {
 			currClient->client.st_request.state = status_succeeded;
 			currClient->protocol_type = identify_protocol_type(get_port(currClient));
 			currClient->origin_adrr_type = family_to_socks_addr_type(currClient->origin_addr.ss_family);
+			memcpy(currClient->requestRegister,currClient->client.st_request.request,sizeof(struct request));
 			freeaddrinfo(currClient->origin_resolution);
 		} else {
 			if (currClient->origin_resolution_current) {
@@ -304,17 +346,18 @@ int request_marshall(struct socks5 * currClient) {
 void request_write(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
+	// Imprimo por pantalla el registro de la conexion
+	printConnectionRegister(currClient);
 	// Envio el reply
-
 	if(handleWrite(currClient->client_socket, currClient->client.st_request.w) == 0) {
 
 		// Si todo salio bien paso al estado connected
+
 		if (currClient->client.st_request.state == status_succeeded) {
 			selector_set_interest(key->s, key->fd, OP_READ);
 			currClient->connection_state->on_departure = request_departure;
 			currClient->connection_state->on_arrival = connected_init;
 			change_state(currClient, CONNECTED_STATE);
-
 		// Si hubo algun error finalizo conexion
 		} else {
 			socks5_done(key);

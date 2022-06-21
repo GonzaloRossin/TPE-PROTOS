@@ -24,9 +24,9 @@ new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE, char * cli
     newClient->connection_state->client_state = HELLO_READ_STATE;
     newClient->isAvailable = false;
     newClient->remote_socket = -1;
+    newClient->requestRegister = malloc(1*sizeof(request));
 
     newClient->clientAddr = clientAddr;
-    // newClient->clientAddr[strlen(clientAddr)] = '\0';
 }
 
 void
@@ -50,6 +50,7 @@ void removeClient(struct socks5 * client) {
     client->isAvailable = true;
     free(client->bufferFromClient->data);
     free(client->bufferFromRemote->data);
+    free(client->requestRegister);
 }
 
 

@@ -6,7 +6,7 @@ long valread;
 static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
 	.handle_write      = socks5_write,
-	.handle_close      = socks5_close, // nada que liberar
+	.handle_close      = socks5_close,
 	.handle_block	   = socks5_block,
 };
 
@@ -33,31 +33,22 @@ void masterSocks5Handler(struct selector_key *key) {
 			
 			selector_register(key->s, new_client_socket, &socksv5, OP_READ, &clis[i]);
 
-			print_log(DEBUG, "Adding client %d in socket %d\n" , i, new_client_socket);
-			// print_log(DEBUG, "Adding remote socket to client %d in socket %d\n" , i, new_remote_socket);
-
 			time_t t = time(NULL);
   			struct tm tm = *localtime(&t);
- 			print_log(INFO, "now: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-			print_log(INFO, "fecha:\tnombre\tip:puerto origen\tip:puerto destino\tstatus code\n");
-			print_log(INFO, "%s", clis[i].clientAddr);
+			clis[i].timeStamp = tm;
 			break;
 		}
 	}
 }
 
-// Escribo buffer en el socket
+
 int handleWrite(int socket, struct buffer * buffer) {
 	size_t bytesToSend = buffer->write - buffer->read;
-	// print_log(DEBUG, "bytesToSend %zu", bytesToSend);
-	if (bytesToSend > 0) {  // Puede estar listo para enviar, pero no tenemos nada para enviar
-		// print_log(INFO, "Trying to send %zu bytes to socket %d\n", bytesToSend, socket);
+
+	if (bytesToSend > 0) {
 		ssize_t bytesSent = send(socket, buffer->data, bytesToSend,  MSG_DONTWAIT); 
-		// print_log(INFO, "Sent %zu bytes\n", bytesSent);
 
 		if ( bytesSent < 0) {
-			// Esto no deberia pasar ya que el socket estaba listo para escritura
-			// TODO: manejar el error
 			print_log(FATAL, "Error sending to socket %d", socket);
 			return -1;
 		} else {
@@ -132,8 +123,6 @@ void socks5_close(struct selector_key *key) {
 	struct socks5 * currClient = (struct socks5 *)key->data;
 
 	if (currClient->client_socket == -1 || currClient->remote_socket == -1) {
-		// currClient->client.st_connected.init = 0;
-		// currClient->remote.st_connected.init = 0;
 
 		free(currClient->clientAddr);
 		
@@ -183,7 +172,6 @@ void socks5_block(struct selector_key *key) {
 	{
 		case HELLO_READ_STATE:
 			break;
-		//Nunca entra aca porque estamos en lectura
 		case HELLO_WRITE_STATE:
 			break;
 		case REQUEST_RESOLVE_STATE:

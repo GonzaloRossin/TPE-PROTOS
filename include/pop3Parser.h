@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <time.h>
 
 #include "buffer.h"
 
@@ -32,7 +33,7 @@ typedef enum pop3_state{
 
 struct pop3_parser
 {
-
+    struct tm popTimeStamp;
     uint8_t * cursor;
     uint8_t * start;
     int h_user;
