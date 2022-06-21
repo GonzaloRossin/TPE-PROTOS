@@ -69,12 +69,8 @@ int main(int argc , char *argv[])
     if(! args->disectors_enabled){
         set_dissector_OFF();
     }
-    char * SOCKS_ADDR = args->socks_addr;
-    char * ADMIN_ADDR = args->mng_addr;
 
     int masterSocket = -1, masterSocket_6 = -1, adminSocket = -1, adminSocket_6 = -1;
-	// int master_socket[4];  // IPv4 e IPv6 (si estan habilitados)
-	// int master_socket_size=0;
 	int max_clients = MAX_SOCKETS/2 , i;
 	struct socks5 * clients;
     struct ssemd * admins;

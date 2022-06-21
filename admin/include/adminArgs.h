@@ -11,7 +11,7 @@
 #include "adminUtil.h"
 
 
-struct ssemd_args {
+typedef struct ssemd_args {
     char           *mng_addr;
     char           *mng_port;
 
@@ -21,7 +21,7 @@ struct ssemd_args {
     uint8_t         size1;
     uint8_t         size2;
     char           *data;
-};
+} ssemd_args;
 
 
 void 

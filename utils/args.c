@@ -184,8 +184,7 @@ get_addr_type(char *address) {
         {
             printf("Cannot determine address family %s, please try again with a valid address.\n", address);
             fprintf(stderr, "Address resolution error\n");
-            // free_memory();
-            // exit(0);
+            exit(0);
         }
         else
         {

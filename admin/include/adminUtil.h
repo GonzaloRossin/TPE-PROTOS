@@ -22,10 +22,11 @@
 #include <math.h>
 
 
+typedef struct ssemd_args ssemd_args;
 
 // Create and connect a new TCP client socket
 int tcpClientSocket(const char *server, const char *service);
 
-ssize_t getSize(struct ssemd_args *args);
+ssize_t getSize(ssemd_args *args);
 
 #endif 
