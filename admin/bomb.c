@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     int connections[1000];
     int i;
     print_log(INFO, "Hello :D\n");
-    for(i=0 ; i<99 ; i++){
+    for(i=0 ; i<999 ; i++){
         printf("bomb: %d\n", i);
         connections[i] = tcpBombSocket("127.0.0.1", "1080");
         if (connections[i] < 0) {
