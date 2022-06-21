@@ -14,10 +14,10 @@ void printConnectionRegister(struct socks5* clientSocket){
 	StringBuilder * stringBuilder = sb_create();
 	char* strRegister = NULL;
 	char aux[INET6_ADDRSTRLEN];
-	printf("date\t\t\tusername\tregister_type\tOrigin_IP:Origin_port\tDestination:Dest_Port\t\tstatus\n");
+	printf("date\t\t\tusername\tregister_type\tOrigin_IP:Origin_port\tDestination:Dest_Port\tstatus\n");
 	sprintf(aux,"%d-%02d-%02d %02d:%02d:%02d", timeStamp.tm_year + 1900, timeStamp.tm_mon + 1, timeStamp.tm_mday, timeStamp.tm_hour, timeStamp.tm_min, timeStamp.tm_sec);
 	sb_append( stringBuilder,aux);
-	sprintf(aux,"\t%s\t\t\tA\t%s\t\t",clientSocket->username,clientSocket->clientAddr);
+	sprintf(aux,"\t%s\t\tA\t\t%s\t",clientSocket->username,clientSocket->clientAddr);
 	sb_append(stringBuilder, aux);
 	switch (clientSocket->client.st_request.request->dest_addr_type)
 	{
@@ -36,16 +36,16 @@ void printConnectionRegister(struct socks5* clientSocket){
 		}
 		case socks_req_addrtype_ipv6:{
 			char str[INET6_ADDRSTRLEN];
-			inet_ntop(AF_INET6, &(clientSocket->client.st_request.request->dest_addr.ipv4.sin_addr), str, INET6_ADDRSTRLEN);
+			inet_ntop(AF_INET6, &(clientSocket->client.st_request.request->dest_addr.ipv6.sin6_addr), str, INET6_ADDRSTRLEN);
 			sb_append(stringBuilder, str);
-			sprintf(aux,":%d\t",clientSocket->client.st_request.request->dest_port);
+			sprintf(aux,":%d\t\t\t",clientSocket->client.st_request.request->dest_port);
 			sb_append(stringBuilder, aux);
 			break;
 		}
 		default:
 			break;
 	}
-	sprintf(aux,"%d\t",clientSocket->connection_state->client_state);
+	sprintf(aux,"\t%d",clientSocket->connection_state->client_state);
 	sb_append(stringBuilder, aux);
 	strRegister = sb_concat(stringBuilder);
 	printf("%s\n",strRegister);
