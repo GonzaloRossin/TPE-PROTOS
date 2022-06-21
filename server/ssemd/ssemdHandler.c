@@ -23,7 +23,7 @@ void masterssemdHandler(struct selector_key *key) {
 			new_admin(&admin[i], new_admin_socket, get_BUFFSIZE(), adminAddr);
 
 			selector_register(key->s, new_admin_socket, &ssemdHandler, OP_READ, &admin[i]);
-			print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
+			// print_log(DEBUG, "Adding admin in socket %d\n", new_admin_socket);
 			break;
 		}
 	}
@@ -587,8 +587,6 @@ void setResponse(ssemd_response * response, uint8_t code){
 		break;
 	case SSEMD_RESPONSE_LIST:
 		response->code=code;
-		// response->size1=
-		// response->size2=
 		break;
 	case SSEMD_RESPONSE_INT:
 		response->data = (uint8_t*) calloc(1, sizeof(unsigned int));
@@ -630,12 +628,3 @@ void ssemd_close(struct selector_key *key) {
 
 	close(key->fd);
 }
-
-// void ssemd_change_state(struct ssemd * currClient, enum client_state state) {
-// 	currClient->connection_state.client_state = state;
-// 	currClient->connection_state.init = false;
-// 	if (currClient->connection_state.on_departure != 0){
-// 		currClient->connection_state.on_departure(currClient);
-// 		currClient->connection_state.on_departure = NULL;
-// 	}
-// }
