@@ -167,7 +167,9 @@ int main(int argc , char *argv[])
         }
         printf("IP: %s PORT: %d \n", args->mng_addr6, args->mng_port);
     }
-    
+
+    printf("date\t\t\tusername\tregister_type\tOrigin_IP:Origin_port\tDestination:Dest_Port\t\tstatus\n");
+
     for(;!done;) {
         err_msg = NULL;
         ss = selector_select(selector);
@@ -198,15 +200,9 @@ finally:
     selector_close();
 
 
-    // free(admin->pr);
     
     free(admins);
     free(clients);
-	// for (int i = 0; i < master_socket_size; i++) {
-	// 	if(master_socket[i] >= 0) {
-    //     	close(master_socket[i]);
-    // 	}
-	// }
     close(masterSocket);
     close(masterSocket_6);
     close(adminSocket);

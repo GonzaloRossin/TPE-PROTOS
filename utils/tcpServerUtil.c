@@ -98,7 +98,6 @@ int acceptTCPConnection(int servSock, char * clientAddr) {
 
 	// clntSock is connected to a client!
 	printSocketAddress((struct sockaddr *) &clntAddr, addrBuffer);
-	print_log(INFO, "Handling client %s", addrBuffer);
 	strcpy(clientAddr, addrBuffer);
 
 	return clntSock;

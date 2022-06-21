@@ -33,7 +33,6 @@ void ssemd_hello_read(struct selector_key *key) {
 		selector_unregister_fd(key->s, key->fd);
 		return ;
 	} else {
-		print_log(INFO, "Recieved %ld bytes from socket = %d\n", valread, key->fd);
 		buffer_write_adv(buff_r, valread);
 	}
 

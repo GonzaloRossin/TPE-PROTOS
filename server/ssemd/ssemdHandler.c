@@ -79,7 +79,6 @@ void ssemd_read_request(struct selector_key *key) {
 	read_request_init(currAdmin);
 
 	buffer * r = currAdmin->bufferRead;
-	// unsigned ret = SSEMD_READ_REQUEST;
 	size_t count;
 	ssize_t n;
 	bool error = false;
@@ -97,7 +96,6 @@ void ssemd_read_request(struct selector_key *key) {
 				currAdmin->connection_state.ssemd_state = SSEMD_WRITE_REQUEST;
 				selector_set_interest(key->s, key->fd, OP_WRITE);
 			} else {
-				// ret = SSEMD_ERROR_STATE;
 			}
 		} else {
 			if(error){ //is always error here
@@ -108,9 +106,8 @@ void ssemd_read_request(struct selector_key *key) {
 			}
 		}
 	} else {
-		// ret = SSEMD_ERROR_STATE;
 	}
-	// return error ? SSEMD_ERROR_STATE : ret;
+
 }
 
 void ssemd_process_error(struct ssemd * currAdmin, const enum protocol_state st){

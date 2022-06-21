@@ -27,7 +27,6 @@ new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE, char * cli
     newClient->requestRegister = malloc(1*sizeof(request));
 
     newClient->clientAddr = clientAddr;
-    // newClient->clientAddr[strlen(clientAddr)] = '\0';
 }
 
 void

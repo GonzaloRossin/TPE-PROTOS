@@ -3,7 +3,7 @@
 static const struct fd_handler socksv5 = {
 	.handle_read       = socks5_read,
 	.handle_write      = socks5_write,
-	.handle_close      = socks5_close, // nada que liberar
+	.handle_close      = socks5_close,
 	.handle_block	   = socks5_block,
 };
 
@@ -14,15 +14,14 @@ void printConnectionRegister(struct socks5* clientSocket){
 	StringBuilder * stringBuilder = sb_create();
 	char* strRegister = NULL;
 	char aux[264];
-	printf("date\t\t\tusername\tregister_type\tOrigin_IP:Origin_port\tDestination:Dest_Port\tstatus\n");
 	sprintf(aux,"%d-%02d-%02d %02d:%02d:%02d", timeStamp.tm_year + 1900, timeStamp.tm_mon + 1, timeStamp.tm_mday, timeStamp.tm_hour, timeStamp.tm_min, timeStamp.tm_sec);
 	sb_append( stringBuilder,aux);
-	sprintf(aux,"\t%s\t\tA\t\t%s\t",clientSocket->username,clientSocket->clientAddr);
+	sprintf(aux,"\t%s\t\tA\t\t%s\t\t",clientSocket->username,clientSocket->clientAddr);
 	sb_append(stringBuilder, aux);
 	switch (clientSocket->client.st_request.request->dest_addr_type)
 	{
 		case socks_req_addrtype_domain:{
-			sprintf(aux,"\t%s:%d\t",clientSocket->client.st_request.request->dest_addr.fqdn,clientSocket->client.st_request.request->dest_port);
+			sprintf(aux,"%s:%d\t\t",clientSocket->client.st_request.request->dest_addr.fqdn,clientSocket->client.st_request.request->dest_port);
 			sb_append(stringBuilder, aux);
 			break;
 		}
@@ -38,7 +37,7 @@ void printConnectionRegister(struct socks5* clientSocket){
 			char str[INET6_ADDRSTRLEN];
 			inet_ntop(AF_INET6, &(clientSocket->client.st_request.request->dest_addr.ipv6.sin6_addr), str, INET6_ADDRSTRLEN);
 			sb_append(stringBuilder, str);
-			sprintf(aux,":%d\t\t\t",clientSocket->client.st_request.request->dest_port);
+			sprintf(aux,":\t%d\t\t\t",clientSocket->client.st_request.request->dest_port);
 			sb_append(stringBuilder, aux);
 			break;
 		}
@@ -100,7 +99,6 @@ void request_read(struct selector_key *key) {
 				case request_error:
 					currClient->client.st_request.state = status_general_SOCKLS_server_failure;
 					break;
-				/** TODO: El parser tiene que reconocer DestAddr invalida y comando invalido para reportar el error */
 				default:
 					break;
 			}
