@@ -129,6 +129,10 @@ parse_args(const int argc, char **argv, struct socks5args *args) {
                 args->mng_port   = port(optarg);
                 break;
             case 't':
+                if (strlen(optarg) > 99) {
+                    fprintf(stderr, "maximun token length exceeded: %d.\n", 99);
+                    exit(1);
+                }
                 args->admin_token = optarg;
                 break;
             case 'u':
