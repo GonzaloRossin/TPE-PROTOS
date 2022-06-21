@@ -126,6 +126,7 @@ void socks5_close(struct selector_key *key) {
 
 		if(currClient->connection_state->client_state == CONNECTED_STATE && currClient->disector_enabled){
 			free_pop3_parser(currClient->client.st_connected.pop_parser);
+			free(currClient->client.st_connected.pop_parser);
 			free(currClient->client.st_connected.aux_b->data);
 			free(currClient->client.st_connected.aux_b);
 		}
@@ -133,7 +134,15 @@ void socks5_close(struct selector_key *key) {
 			free(currClient->client.st_request.pr->request);
 			free(currClient->client.st_request.pr);
 		}
-
+		if (currClient->connection_state->client_state == HELLO_READ_STATE) {
+			hello_parser_close(currClient->client.hello.pr);
+			free(currClient->client.hello.pr);
+		}
+		if (currClient->connection_state->client_state == UP_READ_STATE) {
+			free_up_req_parser(currClient->client.userpass.parser);
+    		free(currClient->client.userpass.parser);
+		}
+		
 		free(currClient->clientAddr);
 		free(currClient->connection_state);
 
