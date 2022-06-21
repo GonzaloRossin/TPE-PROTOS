@@ -1,5 +1,6 @@
 #include "./../../include/socks5.h"
 
+#define MAX_USERNAME 30
 
 void
 new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE, char * clientAddr){
@@ -25,7 +26,7 @@ new_client(struct socks5 * newClient, int clientSocket, int BUFFSIZE, char * cli
     newClient->isAvailable = false;
     newClient->remote_socket = -1;
     newClient->requestRegister = malloc(1*sizeof(request));
-
+    newClient->username = malloc(MAX_USERNAME);
     newClient->clientAddr = clientAddr;
 }
 

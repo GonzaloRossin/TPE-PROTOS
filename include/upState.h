@@ -10,7 +10,7 @@
 void up_read_close(struct socks5 * currClient);
 
 void up_read_init(struct socks5 * currClient);
-void userpass_process(struct userpass_st *up_s, bool * auth_valid);
+void userpass_process(struct userpass_st *up_s, bool * auth_valid, struct socks5 * currClient);
 
 void up_read(struct selector_key *key);
 void up_write(struct selector_key *key);
