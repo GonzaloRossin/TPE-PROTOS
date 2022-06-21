@@ -17,6 +17,7 @@ enum socks_addr_type {
     socks_req_addrtype_ipv4     = 0x01,
     socks_req_addrtype_domain   = 0x03,
     socks_req_addrtype_ipv6     = 0x04,
+    socks_req_addrtype_failed     = 0x05,
 };
 
 union socks_addr{

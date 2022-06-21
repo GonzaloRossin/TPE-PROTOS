@@ -225,10 +225,9 @@ void request_connecting(struct selector_key *key) {
 	struct connecting * conn = &currClient->remote.conn;
 
 	if (getsockopt(key->fd, SOL_SOCKET, SO_ERROR, &error, &len)) {
-		conn->client_state = status_general_SOCKLS_server_failure;
+		currClient->client.st_request.state = status_general_SOCKLS_server_failure;
 	} else {
 		if (error == 0) {
-			conn->client_state = status_succeeded;
 			conn->origin_fd = key->fd;
 			currClient->remote_socket = key->fd;
 			currClient->client.st_request.state = status_succeeded;
@@ -288,7 +287,7 @@ enum socks_addr_type family_to_socks_addr_type(int family) {
 		break;	
 	}
 	// Aca no llega no se que devolver
-	return status_general_SOCKLS_server_failure;
+	return socks_req_addrtype_failed;
 }
 
 int request_error_marshall(struct socks5 * currClient) {
