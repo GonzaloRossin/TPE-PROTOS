@@ -130,7 +130,7 @@ void socks5_close(struct selector_key *key) {
 			free(currClient->client.st_connected.aux_b->data);
 			free(currClient->client.st_connected.aux_b);
 		}
-		if(currClient->connection_state->client_state == REQUEST_CONNECTING_STATE || currClient->connection_state->client_state == REQUEST_READ_STATE || currClient->connection_state->client_state == REQUEST_RESOLVE_STATE){
+		if(currClient->connection_state->client_state == REQUEST_CONNECTING_STATE || currClient->connection_state->client_state == REQUEST_READ_STATE || currClient->connection_state->client_state == REQUEST_RESOLVE_STATE || currClient->connection_state->client_state == REQUEST_WRITE_STATE){
 			free(currClient->client.st_request.pr->request);
 			free(currClient->client.st_request.pr);
 		}

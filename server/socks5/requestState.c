@@ -192,13 +192,7 @@ enum client_state request_connect(struct selector_key *key) {
 	}
 	if (-1 == connect(request.origin_fd, (const struct sockaddr *)&currClient->origin_addr, currClient->origin_addr_len)) {
 		if (errno == EINPROGRESS) {
-			selector_status st = selector_set_interest_key(key, OP_NOOP);
-			if(SELECTOR_SUCCESS != st) {
-				error = true;
-				goto finally;
-			}
-
-			st = selector_register(key->s, request.origin_fd, &socksv5, OP_WRITE, key->data);
+			selector_status st = selector_register(key->s, request.origin_fd, &socksv5, OP_WRITE, key->data);
 			if (SELECTOR_SUCCESS != st) {
 				close(request.origin_fd);
 			}
@@ -238,6 +232,8 @@ void request_connecting(struct selector_key *key) {
 		} else {
 			if (currClient->origin_resolution_current) {
 				if (currClient->origin_resolution_current->ai_next) {
+					currClient->remote_socket = key->fd;
+					selector_unregister_fd(key->s, key->fd);
 					currClient->origin_resolution_current = currClient->origin_resolution_current->ai_next;
 					set_next_ip(currClient, currClient->origin_resolution_current);
 					enum client_state state = request_connect(key);
@@ -246,12 +242,20 @@ void request_connecting(struct selector_key *key) {
 				} else {
 					// Si no pudimos conectar y no hay mas ips para intentar mando el reply de error
 					freeaddrinfo(currClient->origin_resolution);
+					currClient->remote_socket = key->fd;
 					currClient->client.st_request.state = errno_to_socks(error);
 					request_error_marshall(currClient);
 					selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
 					change_state(currClient, REQUEST_WRITE_STATE);
 					return ;
 				}			
+			} else {
+				currClient->remote_socket = key->fd;
+				currClient->client.st_request.state = errno_to_socks(error);
+				request_error_marshall(currClient);
+				selector_set_interest(key->s, currClient->client_socket, OP_WRITE);
+				change_state(currClient, REQUEST_WRITE_STATE);
+				return ;
 			}
 		}
 		if (-1 == request_marshall(currClient)) {
