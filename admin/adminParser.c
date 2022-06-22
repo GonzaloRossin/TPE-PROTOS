@@ -51,7 +51,7 @@ extern enum admin_state admin_parser_feed(struct admin_parser * adminParser, con
         case read_size2:
             if(byte == 0x00){
                 if(adminParser->size == 0){
-                    if(adminParser->response_code != SSEMD_RESPONSE_OK && adminParser->status != SSEMD_ERROR){
+                    if(adminParser->response_code != SSEMD_RESPONSE_OK && adminParser->status != SSEMD_ERROR && adminParser->cmd_sent != SSEMD_USER_LIST){
                         adminParser->state = read_error; //it should contain data but doesnt
                     } else {
                         adminParser->state = read_done;

@@ -93,6 +93,15 @@ int main(int argc , char *argv[])
         admins[i].isAvailable = true;
         admins[i].pr = NULL;
     }
+
+    struct clients_data *clients_struct = (struct clients_data *)calloc(1, sizeof(struct clients_data));
+	    clients_struct->clients = clients;
+        clients_struct->clients_size = max_clients;
+
+    struct admins_data *admins_struct = (struct admins_data *)calloc(1, sizeof(struct admins_data));
+	    admins_struct->admins = admins;
+        admins_struct->admins_size = max_admins;
+
     // createSocks5MasterSockets();
 	// master sockets para IPv4 y para IPv6 (si estan disponibles)
 	/////////////////////////////////////////////////////////////
@@ -120,14 +129,6 @@ int main(int argc , char *argv[])
         goto finally;
     }
     
-
-    struct clients_data *clients_struct = (struct clients_data *)calloc(1, sizeof(struct clients_data));
-	    clients_struct->clients = clients;
-        clients_struct->clients_size = max_clients;
-
-    struct admins_data *admins_struct = (struct admins_data *)calloc(1, sizeof(struct admins_data));
-	    admins_struct->admins = admins;
-        admins_struct->admins_size = max_admins;
 
     printf("Waiting for proxy connections on: \n");
     if (masterSocket > 0) {

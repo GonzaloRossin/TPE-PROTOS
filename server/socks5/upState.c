@@ -68,13 +68,12 @@ void userpass_process(struct userpass_st *up_s, bool * auth_valid, struct socks5
 bool validate_user_proxy(uint8_t *uid, uint8_t *pw) {
     struct users *users = get_users();
     bool auth_valid = false;
-    char * empty = '\0';
 
     int i = 0;
     while (i < MAX_USERS && !auth_valid) {
-        if (users[i].name != empty) {
+        if (users[i].name != 0) {
             if (0 == strcmp((const char *)users[i].name, (const char *)uid)) {
-                if (users[i].pass != empty) {
+                if (users[i].pass != 0) {
                     if (0 == strcmp((const char *)users[i].pass, (const char *)pw)) {
                         auth_valid = true;
                     }

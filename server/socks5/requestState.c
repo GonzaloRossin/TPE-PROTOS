@@ -168,6 +168,7 @@ enum client_state process_request(struct selector_key *key) { //procesamiento de
 	case socks_req_cmd_associate:
     default:
     	status = status_command_not_supported;
+		ret = ERROR_STATE;
         break;
     }
 	currClient->client.st_request.state = status;

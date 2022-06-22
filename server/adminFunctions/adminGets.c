@@ -20,13 +20,13 @@ static bool auth_status = true;
 static struct users myUsers[MAX_USERS];
 
 void init_users(struct users * new_users){
-    char * empty = '\0';
+    // char * empty = '\0';
     for (int i = 0; i < MAX_USERS; i++) {
-        if(new_users[i].name != empty){
+        if(new_users[i].name != 0){
             myUsers[i].name = (char *)calloc(1, sizeof(uint8_t) * 21);
             memcpy(myUsers[i].name, new_users[i].name, strlen(new_users[i].name) + 1);
         }
-        if(new_users[i].pass != empty){
+        if(new_users[i].pass != 0){
             myUsers[i].pass = (char *)calloc(1, sizeof(uint8_t) * 21);
             memcpy(myUsers[i].pass, new_users[i].pass, strlen(new_users[i].pass) + 1);
         }
@@ -34,12 +34,12 @@ void init_users(struct users * new_users){
 }
 
 void free_users(){
-    char * empty = '\0';
+    // char * empty = '\0';
     for (int i = 0; i < MAX_USERS; i++) {
-        if(myUsers[i].name != empty){
+        if(myUsers[i].name != 0){
             free(myUsers[i].name);
         }
-        if(myUsers[i].pass != empty){
+        if(myUsers[i].pass != 0){
             free(myUsers[i].pass);
         }
     }

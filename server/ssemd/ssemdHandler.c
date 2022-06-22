@@ -293,7 +293,6 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 	int retCode = 2;
 	char * name;
 	char * pass;
-	char * empty = '\0';
 	int dataPointer = 0;
 	int wordPointer = 0;
 	int userNumber;
@@ -305,7 +304,7 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 	for(userNumber = 0; userNumber < MAX_USERS; userNumber++){
 		name = users[userNumber].name;
 		pass = users[userNumber].pass;
-		if(! (name != empty && pass != empty)){ //if is not a valid user, write it here
+		if(! (name != 0 && pass != 0)){ //if is not a valid user, write it here
 			while(request->data[dataPointer] != ':'){ //write username
 				if(wordPointer > 19){
 					retCode = 3;
@@ -335,6 +334,8 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 
 			if(isRemove){
 				if(findUser(newUser, isRemove)){
+					free(newUser.name);
+					free(newUser.pass);
 					retCode = 0;
 				} else {
 					retCode = 4;
@@ -374,18 +375,17 @@ void handleEditUser(struct payload * request, ssemd_response * response, bool is
 bool findUser(struct users findUser, bool andRemove){
     struct users *users = get_users();
     bool found = false;
-	char * empty = '\0';
 
     int i = 0;
     while (i < MAX_USERS && !found) {
-        if (users[i].name != empty) {
+        if (users[i].name != 0) {
             if (0 == strcmp((const char *)users[i].name, findUser.name)) {
-                if (users[i].pass != empty) {
+                if (users[i].pass != 0) {
                     if (0 == strcmp((const char *)users[i].pass, findUser.pass)) {
                         found = true;
 						if(andRemove){
-							users[i].name = empty;
-							users[i].pass = empty;
+							users[i].name[0] = '\0';
+							users[i].pass[0] = '\0';
 						}
                     }
                 }  
@@ -393,7 +393,6 @@ bool findUser(struct users findUser, bool andRemove){
         }
         i++;
     }
-
     return found;
 }
 
@@ -401,7 +400,6 @@ void handleGetUserList(struct payload * request, ssemd_response * response){
 	if(request->type == SSEMD_GET && request->CMD == SSEMD_USER_LIST){
 		struct users * users = get_users();
 		response->data = (uint8_t *)malloc(sizeof(uint8_t) * (3)); // minimum
-		char * empty = '\0';
 		char * name;
 		char * pass;
 		int dataPointer = 0;
@@ -411,7 +409,7 @@ void handleGetUserList(struct payload * request, ssemd_response * response){
 			wordPointer = 0;
 			name = users[userNumber].name;
 			pass = users[userNumber].pass;
-			if(name != empty && pass != empty){ //if is a valid user
+			if(name != 0 && pass != 0){ //if is a valid user
 				// size_t toMalloc = strlen(name) + strlen(pass) +2;
 				response->data = realloc(response->data, sizeof(uint8_t) * (dataPointer + strlen(name) + strlen(pass) + 2)); // + : + \0
 				while(name[wordPointer] != '\0'){
